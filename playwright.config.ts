@@ -11,6 +11,8 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,
+    // The app defaults to Vietnamese; specs asserting English switch it through the UI or set their own locale.
+    locale: "vi-VN",
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

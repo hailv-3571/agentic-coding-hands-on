@@ -2,5 +2,88 @@
   "common": {
     "appName": "Sun* Annual Awards 2025",
     "comingSoon": "Under construction"
+  },
+  "auth": {
+    "login": {
+      "metaTitle": "Sign in",
+      "wordmarkAlt": "ROOT FURTHER",
+      "introLine1": "Start your journey with SAA 2025.",
+      "introLine2": "Sign in to explore!",
+      "googleButton": "LOGIN With Google",
+      "googleButtonPending": "Redirecting to Google…",
+      "errors": {
+        "domain_not_allowed": "Only {domain} accounts can sign in.",
+        "auth_failed": "Sign-in failed, please try again."
+      }
+    },
+    "onboarding": {
+      "metaTitle": "Choose your unit",
+      "title": "Choose your unit",
+      "description": "Pick the unit you work in to finish your profile. You only need to do this once.",
+      "departmentLabel": "Unit",
+      "submit": "Continue",
+      "submitPending": "Saving…",
+      "errors": {
+        "invalid_department": "Please choose a unit from the list.",
+        "unexpected": "Could not save your choice, please try again."
+      }
+    }
+  },
+  "shell": {
+    "brand": "Sun* Annual Awards 2025",
+    "nav": {
+      "label": "Main navigation",
+      "aboutSaa": "About SAA 2025",
+      "awardInfo": "Award Information",
+      "kudos": "Sun* Kudos",
+      "communityStandards": "Community Standards"
+    },
+    "mobileMenu": {
+      "open": "Open menu",
+      "close": "Close menu"
+    },
+    "bell": {
+      "label": "Notifications"
+    },
+    "account": {
+      "open": "Account menu",
+      "profile": "Profile",
+      "dashboard": "Dashboard",
+      "logout": "Logout",
+      "logoutFailed": "Could not sign out, please try again."
+    },
+    "language": {
+      "label": "Language",
+      "vi": "Tiếng Việt",
+      "en": "English",
+      "codeVi": "VN",
+      "codeEn": "EN",
+      "switchFailed": "Could not change the language, please try again."
+    },
+    "admin": {
+      "badge": "ADMIN",
+      "label": "Admin navigation",
+      "backToApp": "Back to Sunner area",
+      "overview": "Overview",
+      "review": "Review content",
+      "users": "User",
+      "settings": "Settings"
+    },
+    "footer": {
+      "copyright": "Copyright belongs to Sun* © 2025"
+    }
+  },
+  "errors": {
+    "forbidden": {
+      "title": "Access Denied",
+      "description": "You don’t have permission to access this resource.",
+      "cta": "Back to home"
+    },
+    "notFound": {
+      "title": "NOT FOUND",
+      "description": "The resource you’re looking for doesn’t exist or has been removed.",
+      "ctaHome": "Back to home",
+      "ctaLogin": "Log in"
+    }
   }
 }

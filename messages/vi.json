@@ -2,5 +2,88 @@
   "common": {
     "appName": "Sun* Annual Awards 2025",
     "comingSoon": "Đang được xây dựng"
+  },
+  "auth": {
+    "login": {
+      "metaTitle": "Đăng nhập",
+      "wordmarkAlt": "ROOT FURTHER",
+      "introLine1": "Bắt đầu hành trình của bạn cùng SAA 2025.",
+      "introLine2": "Đăng nhập để khám phá!",
+      "googleButton": "LOGIN With Google",
+      "googleButtonPending": "Đang chuyển tới Google…",
+      "errors": {
+        "domain_not_allowed": "Chỉ tài khoản {domain} được phép đăng nhập.",
+        "auth_failed": "Đăng nhập không thành công, vui lòng thử lại."
+      }
+    },
+    "onboarding": {
+      "metaTitle": "Chọn đơn vị",
+      "title": "Chọn đơn vị của bạn",
+      "description": "Chọn đơn vị bạn đang làm việc để hoàn tất hồ sơ. Bạn chỉ cần chọn một lần.",
+      "departmentLabel": "Đơn vị",
+      "submit": "Tiếp tục",
+      "submitPending": "Đang lưu…",
+      "errors": {
+        "invalid_department": "Vui lòng chọn một đơn vị trong danh sách.",
+        "unexpected": "Không lưu được lựa chọn, vui lòng thử lại."
+      }
+    }
+  },
+  "shell": {
+    "brand": "Sun* Annual Awards 2025",
+    "nav": {
+      "label": "Điều hướng chính",
+      "aboutSaa": "About SAA 2025",
+      "awardInfo": "Award Information",
+      "kudos": "Sun* Kudos",
+      "communityStandards": "Tiêu chuẩn chung"
+    },
+    "mobileMenu": {
+      "open": "Mở menu",
+      "close": "Đóng menu"
+    },
+    "bell": {
+      "label": "Thông báo"
+    },
+    "account": {
+      "open": "Menu tài khoản",
+      "profile": "Profile",
+      "dashboard": "Dashboard",
+      "logout": "Logout",
+      "logoutFailed": "Không thể đăng xuất, vui lòng thử lại."
+    },
+    "language": {
+      "label": "Ngôn ngữ",
+      "vi": "Tiếng Việt",
+      "en": "English",
+      "codeVi": "VN",
+      "codeEn": "EN",
+      "switchFailed": "Không thể đổi ngôn ngữ, vui lòng thử lại."
+    },
+    "admin": {
+      "badge": "ADMIN",
+      "label": "Điều hướng quản trị",
+      "backToApp": "Về khu Sunner",
+      "overview": "Overview",
+      "review": "Review content",
+      "users": "User",
+      "settings": "Settings"
+    },
+    "footer": {
+      "copyright": "Bản quyền thuộc về Sun* © 2025"
+    }
+  },
+  "errors": {
+    "forbidden": {
+      "title": "Không có quyền truy cập",
+      "description": "Bạn không có quyền truy cập tài nguyên này.",
+      "cta": "Về trang chủ"
+    },
+    "notFound": {
+      "title": "KHÔNG TÌM THẤY",
+      "description": "Tài nguyên bạn tìm không tồn tại hoặc đã bị xóa.",
+      "ctaHome": "Về trang chủ",
+      "ctaLogin": "Đăng nhập"
+    }
   }
 }
