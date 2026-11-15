@@ -29,6 +29,20 @@
       "when": 1794715202177,
       "tag": "0003_storage_kudo_images_bucket",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794730802432,
+      "tag": "0004_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794730812020,
+      "tag": "0005_auth_user_triggers",
+      "breakpoints": true
     }
   ]
 }

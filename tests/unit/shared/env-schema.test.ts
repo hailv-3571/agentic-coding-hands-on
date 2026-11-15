@@ -62,6 +62,13 @@ describe("parseServerEnv", () => {
     expect(env.EXPORT_MAX_ROWS).toBe(500);
   });
 
+  it("reads INTERNAL_APP_ORIGIN as a bare origin and leaves it unset when absent (W-N1)", () => {
+    expect(parseServerEnv(validSource()).INTERNAL_APP_ORIGIN).toBeUndefined();
+    expect(parseServerEnv(validSource({ INTERNAL_APP_ORIGIN: "" })).INTERNAL_APP_ORIGIN).toBeUndefined();
+    const env = parseServerEnv(validSource({ INTERNAL_APP_ORIGIN: "http://app-internal:8080/" }));
+    expect(env.INTERNAL_APP_ORIGIN).toBe("http://app-internal:8080");
+  });
+
   it("names the missing variable in a readable error", () => {
     expect(parseError(validSource({ DATABASE_URL: undefined }))).toMatch(
       /Invalid environment configuration[\s\S]*DATABASE_URL/,
@@ -82,6 +89,8 @@ describe("parseServerEnv", () => {
     ["malformed admin email", { ADMIN_EMAILS: "admin@sun, ok@sun-asterisk.com" }, "ADMIN_EMAILS"],
     ["no admin email", { ADMIN_EMAILS: " , " }, "ADMIN_EMAILS"],
     ["non-postgres database url", { DATABASE_URL: "https://example.com/db" }, "DATABASE_URL"],
+    ["non-http internal origin", { INTERNAL_APP_ORIGIN: "file:///etc/passwd" }, "INTERNAL_APP_ORIGIN"],
+    ["internal origin with a path", { INTERNAL_APP_ORIGIN: "http://app:3000/base" }, "INTERNAL_APP_ORIGIN"],
   ])("rejects %s", (_label, overrides, variable) => {
     expect(parseError(validSource(overrides))).toContain(variable);
   });

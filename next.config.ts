@@ -15,6 +15,9 @@ const withNextIntl = createNextIntlPlugin("./shared/i18n/request.ts");
 const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
+    // Required by forbidden()/unauthorized() (AdminGuard → app/forbidden.tsx), Next 16 docs:
+    // 03-api-reference/04-functions/forbidden.md. Decision-log 2026-11-15.
+    authInterrupts: true,
   },
   cacheComponents: true,
   partialPrefetching: true,

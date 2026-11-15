@@ -42,6 +42,15 @@ const emailList = z
   .pipe(z.array(z.email()).min(1, "At least one admin email is required"))
   .transform((emails) => Object.freeze(emails));
 
+/** `scheme://host[:port]` only (a trailing `/` is fine), normalized to `URL.origin`. */
+const httpOrigin = z
+  .url({ protocol: /^https?$/, message: "Expected an http(s) origin, e.g. http://127.0.0.1:3000" })
+  .refine((value) => {
+    const url = new URL(value);
+    return url.pathname === "/" && !url.search && !url.hash && !url.username && !url.password;
+  }, "Expected an origin only (scheme://host:port), without path, query or credentials")
+  .transform((value) => new URL(value).origin);
+
 const serverShape = {
   ...publicShape,
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, message: "Expected a postgres:// connection URL" }),
@@ -65,6 +74,8 @@ const serverShape = {
     z.string().refine(isIanaTimeZone, "Unknown IANA time zone").default("Asia/Ho_Chi_Minh"),
   ),
   EXPORT_MAX_ROWS: withDefault(z.coerce.number().int().min(1).default(10000)),
+  // Where the server reaches its own pages (the proxy's 403 view). Unset: http://127.0.0.1:$PORT.
+  INTERNAL_APP_ORIGIN: withDefault(httpOrigin.optional()),
 };
 
 /** Run a cross-field check only when the fields it compares parsed cleanly. */
