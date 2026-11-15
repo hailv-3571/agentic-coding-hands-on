@@ -1,0 +1,271 @@
+{
+  "generated_at": "2026-11-15T03:33:59Z",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "features": [
+    {
+      "fcode": "F001",
+      "name": "Auth",
+      "slug": "F001_Auth",
+      "priority": "P0",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR001_Login"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F002",
+      "name": "AppShell",
+      "slug": "F002_AppShell",
+      "priority": "P0",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR002_AdminLayout",
+          "SCR003_AppLayout",
+          "SCR004_Error403",
+          "SCR005_Error404"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F003",
+      "name": "KudosAuthoring",
+      "slug": "F003_KudosAuthoring",
+      "priority": "P0",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR006_WriteKudoModal"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F004",
+      "name": "KudosFeed",
+      "slug": "F004_KudosFeed",
+      "priority": "P1",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR007_KudoDetail",
+          "SCR008_KudosLiveBoardFeed"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F005",
+      "name": "KudosHearts",
+      "slug": "F005_KudosHearts",
+      "priority": "P1",
+      "type": "mixed",
+      "related": {
+        "screens": [],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F006",
+      "name": "AwardsPortal",
+      "slug": "F006_AwardsPortal",
+      "priority": "P1",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR009_AwardsSystem",
+          "SCR010_CommunityStandards",
+          "SCR011_CountdownPrelaunch",
+          "SCR012_Homepage",
+          "SCR013_Rules"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F007",
+      "name": "AdminModeration",
+      "slug": "F007_AdminModeration",
+      "priority": "P1",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR014_AdminReviewContent",
+          "SCR015_SpamAlertOverlay"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F008",
+      "name": "SpotlightBoard",
+      "slug": "F008_SpotlightBoard",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR016_SpotlightBoardRegion"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F009",
+      "name": "HeroBadges",
+      "slug": "F009_HeroBadges",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F010",
+      "name": "SecretBoxRewards",
+      "slug": "F010_SecretBoxRewards",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR017_LiveBoardRewardsColumn",
+          "SCR018_SecretBoxOpen"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F011",
+      "name": "AdminCampaigns",
+      "slug": "F011_AdminCampaigns",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR019_AdminCampaignSettings",
+          "SCR020_CampaignFormModal"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F012",
+      "name": "Profile",
+      "slug": "F012_Profile",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR021_AvatarHoverCard",
+          "SCR022_OtherProfile",
+          "SCR023_OwnProfile"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F013",
+      "name": "Notifications",
+      "slug": "F013_Notifications",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR024_AllNotifications",
+          "SCR025_NotificationDropdown"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F014",
+      "name": "AdminUserManagement",
+      "slug": "F014_AdminUserManagement",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR026_AdminUser"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F015",
+      "name": "AdminOverview",
+      "slug": "F015_AdminOverview",
+      "priority": "P3",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR027_AdminOverview"
+        ],
+        "user_stories": [],
+        "routes": [],
+        "models": [],
+        "bl": [],
+        "perms": []
+      }
+    }
+  ]
+}
