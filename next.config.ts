@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+import { parseServerEnv } from "./shared/config/env-schema";
+
+// Fail fast: `next dev`, `next build` and `next start` all load this file after reading
+// .env*, so a missing/invalid variable stops boot with a readable list of problems.
+// SKIP_ENV_VALIDATION=1 is an explicit opt-out for secret-less steps (`npm run typecheck`,
+// CI typecheck jobs); never set it for dev/build/start. env.ts still validates on import.
+if (process.env.SKIP_ENV_VALIDATION !== "1") {
+  parseServerEnv(process.env);
+}
+
+const withNextIntl = createNextIntlPlugin("./shared/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
     agentFeedback: true,
   },
@@ -17,4 +28,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
