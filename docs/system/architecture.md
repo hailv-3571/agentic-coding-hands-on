@@ -51,7 +51,46 @@ graph TB
 
 Bố cục thư mục/tệp: xem `docs/code-standards.md` (chốt ở phase 01; AGENTS.md yêu cầu đọc `node_modules/next/dist/docs/` trước khi code vì Next.js 16 có thay đổi phá vỡ).
 
-Tiến trình nền (không có FE): trigger Postgres (`auth.users` BEFORE/AFTER INSERT của F001; phát Spotlight của F008; `notify_realtime` của F013), bộ xử lý outbox (F013 A1, kích hoạt sau commit và quét định kỳ), job chốt Kudos Quốc Dân (F010 A7, cron bằng khoá dịch vụ). Cơ chế kích hoạt cron (`pg_cron` / Vercel Cron / Edge Function): `TBD (draft)`.
+Tiến trình nền (không có FE): trigger Postgres (`auth.users` của F001: chặn domain khi INSERT và khi đổi email, tạo hồ sơ, đồng bộ email; phát Spotlight của F008; `notify_realtime` của F013), bộ xử lý outbox (F013 A1, kích hoạt sau commit và quét định kỳ), job chốt Kudos Quốc Dân (F010 A7, cron bằng khoá dịch vụ). Cơ chế kích hoạt cron (`pg_cron` / Vercel Cron / Edge Function): `TBD (draft)`.
+
+## Session proxy và cổng truy cập (F001, đã implement ở phase 02)
+
+Next.js 16 gọi lớp này là Proxy. `proxy.ts` chỉ khai báo `matcher` và gọi `runSessionProxy()` trong `shared/auth/session-proxy.ts`. Matcher loại `_next/static/`, `_next/image`, `images/`, `fonts/`, `favicon.ico`, `robots.txt`, `sitemap.xml`; không loại theo đuôi file, nên Route Handler như `/api/admin/export.xml` vẫn qua cổng. Server action là POST tới đường dẫn trang nên cũng được phủ.
+
+Thứ tự bước cố định cho mọi request khớp matcher:
+
+| Bước | Việc | Kết quả |
+|------|------|---------|
+| 2 | Làm mới session Supabase, xác thực bằng `getUser()` (hỏi Supabase Auth, không chỉ kiểm chữ ký JWT). Auth không trả lời: coi như chưa đăng nhập | Cookie mới đi theo cả request lẫn response |
+| 3 | Đường dẫn công khai (`/login`, `/auth/callback`, `/countdown`, `/access-denied`) đi tiếp; đã đăng nhập mà vào `/login` thì về `/` | `decideRouteAccess()` trong `route-access-policy.ts`, hàm thuần |
+| 4 | Chưa có session, đường dẫn được bảo vệ: chuyển `/login?next=<đường dẫn>`; đường dẫn `/api/` trả JSON 401 `{ code: "unauthorized" }` | Redirect/401 vẫn mang cookie vừa làm mới |
+| 4b | Đã đăng nhập, vào `/admin/*`, `profiles.role` khác `admin` (hoặc không có profile): 403 | Xem dưới |
+| 5 | Cổng prelaunch: để trống tới phase 07 | Điểm chèn đã đánh dấu trong code |
+
+Role chỉ đọc DB (một lần mỗi request, memoized) khi vào `/admin/*`; request khác không tốn truy vấn DB. Onboarding (chưa chọn phòng ban) nằm ở `requireSunner()` chứ không ở proxy.
+
+### 403 của khu Admin do proxy trả
+
+Dưới Cache Components, server gửi shell status 200 trước khi `forbidden()` trong layout kịp chạy, và Next đặt lại status 200 cho proxy rewrite. Vì vậy proxy tự dựng response (`shared/auth/access-denied-response.ts`):
+
+- Trang tải (GET/HEAD, không có header `next-action`): proxy fetch `/access-denied` từ `INTERNAL_APP_ORIGIN` (tùy chọn; chỉ origin http/https) hoặc `http://127.0.0.1:$PORT`, rồi trả HTML đó với status 403, `cache-control: private, no-store`. Chỉ cookie locale và `Accept-Language` được chuyển đi, không có cookie session. `redirect: "manual"`, timeout 5 giây. Fetch lỗi: vẫn 403, body text thuần, ghi log.
+- Non-GET hoặc server action: JSON 403 `{ code: "forbidden" }`.
+- Origin của fetch không bao giờ lấy từ `Host` hay `x-forwarded-*` (chống SSRF). Hosting phải cho server tự gọi được origin nội bộ này; phase 07 phải cho khách vào `/access-denied`.
+
+`app/forbidden.tsx` (khi guard gọi `forbidden()`, bật bằng `authInterrupts: true` trong `next.config.ts`) và `app/access-denied` dùng chung `ForbiddenPanel`. Kiểm status thật bằng `npm run build` rồi `npm run test:prod`.
+
+### Hai lớp kiểm session
+
+`getUser()` chạy ở cả proxy lẫn trang (`getSessionUser()` trong `shared/auth/current-user.ts`, memoized theo lượt render). Có chủ đích: proxy chỉ là lớp lạc quan, còn mỗi page/action tự gọi `requireSunner()` hoặc `requireAdmin()`; hai bên cùng dùng `getUser()` để không lệch nhau và gây vòng lặp `/login` ↔ `/`. Session có user nhưng không có profile: `requireSunner()` trả 401 (`unauthorized()`).
+
+### Cổng domain trên `auth.users` (migration `0005_auth_user_triggers.sql`)
+
+Một vị từ duy nhất `public.is_sunner_email()` (domain `@sun-asterisk.com`), hai lớp chặn:
+
+1. Auth hook `before_user_created` (`public.before_user_created_hook`): từ chối với message `domain_not_allowed`, nên `/auth/callback` nhận được `error_description` đủ để phân biệt với lỗi hệ thống. Bật trong `supabase/config.toml` cho local; hosted phải bật cùng hook trong dashboard.
+2. Trigger chốt chặn, vẫn từ chối nếu hook chưa bật (lúc đó chỉ ra lỗi chung `auth_failed`): `reject_foreign_domain_on_insert` (BEFORE INSERT) và `reject_foreign_domain_on_email_change` (BEFORE UPDATE, chỉ khi `NEW.email IS DISTINCT FROM OLD.email`). Update không đổi email không kiểm lại, nên tài khoản có sẵn ngoài domain không bị khóa khi GoTrue ghi lại các cột khác.
+
+Sau đó: `create_sunner_profile` (AFTER INSERT, `ON CONFLICT DO NOTHING`) tạo `profiles` lần đăng nhập đầu; `sync_profile_email` (AFTER UPDATE khi email đổi) giữ `profiles.email` khớp `auth.users.email`. Mọi hàm đặt `search_path` rỗng và thu hồi `EXECUTE` của `PUBLIC`, `anon`, `authenticated`.
 
 ## Tech Stack
 
@@ -129,7 +168,7 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 
 | Bảng / cột | Feature chủ | Ghi chú |
 |------------|-------------|---------|
-| `auth.users` (Supabase) + trigger chặn domain / tạo hồ sơ | F001 | Hai hàm DB `rejectForeignDomain`, `createSunnerProfile` |
+| `auth.users` (Supabase) + trigger chặn domain / tạo hồ sơ | F001 | Hook `before_user_created` + trigger `reject_foreign_domain_on_insert`, `reject_foreign_domain_on_email_change`, `create_sunner_profile`, `sync_profile_email` (migration `0005`) |
 | `profiles` (`id`, `email`, `full_name`, `avatar_url`, `department_id`, `role`, `last_login_at`) | F001 | `role` enum `user\|admin`, mặc định `user` |
 | `profiles.role_updated_by`, `profiles.role_updated_at` | F014 thêm vào bảng của F001 | Migration do chủ bảng (F001) áp |
 | `departments` | F001 | Nguồn nạp dữ liệu: `TBD (draft)` (xem C-15) |
@@ -152,7 +191,7 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | Hợp đồng | Chủ | Người dùng | Hình dạng / hành vi | Trạng thái |
 |----------|-----|------------|----------------------|------------|
 | `AdminGuard#requireAdmin` | F001 | F002 layout, F007, F011, F014, F015 | Đọc `profiles.role` từ DB mỗi request/action; không từ cookie; từ chối → 403 | Rõ |
-| `SessionProxy` + `isPrelaunch(now)` | F001 / F006 | Mọi route | Proxy làm mới session và chặn khách; `isPrelaunch` là hàm thuần của F006 | Cần thống nhất thứ tự (C-09) |
+| `SessionProxy` + `isPrelaunch(now)` | F001 / F006 | Mọi route | Proxy làm mới session, chặn khách, trả 403 cho `/admin/*` (xem mục Session proxy); `isPrelaunch` là hàm thuần của F006 | Phần F001 đã implement; bước prelaunch chèn ở phase 07 (C-09) |
 | `KudoPublicQuery` | F004 | F012 (và mọi chỗ đọc Kudo công khai) | Chỉ `status = public`; che người gửi khi `is_anonymous` ngay ở server; tính `isOwner` ở server | Thiếu bộ lọc người nhận/người gửi cho F012 (C-05) |
 | `KudoAdminQuery` | F007 | F007 (A1, A4) | Không lọc Public, không che ẩn danh; chỉ gọi sau `requireAdmin` | Rõ; chính sách hiển thị ẩn danh cho Admin còn mở (C-13) |
 | `OwnSpamKudoQuery#listBySender` | F007 | F012 | Chỉ Kudo spam của chính người gửi (từ session) | Rõ |
@@ -235,5 +274,5 @@ Danh sách để planner xử lý. Mức: **blocking** = phải chốt trước 
 
 - Không có `functional-spec.md` của F013 trong thư mục; mục F013 dựa trên `notifications/technical-spec.md`.
 - Mốc thời gian `SECRET_BOX_LOCK_AT`, `NATIONAL_KUDOS_FINALIZE_AT` (2025-12-26) và `LAUNCH_AT`, `EVENT_AT` là `[INFERRED]`/`TBD (draft)`.
-- Chưa đối chiếu API thực của Next.js 16, Supabase Realtime `realtime.send`/policy, trigger trên `auth.users` bằng tài liệu hay thử nghiệm; các spec nguồn đều đã đánh `[UNVERIFIED]`.
+- Proxy, `forbidden()`, hook và trigger trên `auth.users` đã được thử thực tế ở phase 02/03. Supabase Realtime `realtime.send`/policy chưa đối chiếu; các spec nguồn còn lại vẫn đánh `[UNVERIFIED]`.
 - Phiên bản các thư viện ngoài Next/React/Tailwind chưa được cố định.

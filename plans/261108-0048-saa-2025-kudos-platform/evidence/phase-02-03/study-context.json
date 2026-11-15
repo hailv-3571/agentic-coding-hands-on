@@ -1,0 +1,37 @@
+{
+  "task": "Phase 02 (F001 Google sign-in, Sunner domain gate, profiles, department onboarding, admin guard, session proxy) and Phase 03 (F002 app shell: headers, footer, language switcher, account menu, admin top bar, 403/404 pages) for the SAA 2025 Kudos platform",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "only Sunner-domain Google accounts can sign up (hook + trigger, fail closed)",
+    "profile created once per auth user and email kept in sync",
+    "first sign-in forces department selection",
+    "safe next-path: no open redirect",
+    "guest is redirected to /login; /api answers 401",
+    "non-admin on /admin/* gets HTTP 403 in production; admin passes",
+    "ADMIN_EMAILS users become admin",
+    "shell header/footer/menus match Figma on desktop and mobile",
+    "language switch persists via httpOnly cookie",
+    "bare 403/404 pages per Figma",
+    "no secrets or host-derived URLs in server-side fetches"
+  ],
+  "touchpoints": [
+    "proxy.ts", "shared/auth/", "shared/config/env-schema.ts", "shared/db/schema/profiles.ts",
+    "db/migrations/0004_profiles.sql", "db/migrations/0005_auth_user_triggers.sql", "supabase/config.toml",
+    "features/auth/", "features/app-shell/", "app/(app)/", "app/(public)/", "app/admin/", "app/auth/callback/",
+    "app/onboarding/", "app/access-denied/", "app/forbidden.tsx", "app/not-found.tsx",
+    "shared/i18n/", "shared/ui/", "messages/", "next.config.ts", "scripts/typecheck.mjs", "tests/"
+  ],
+  "blastRadius": [
+    "every request passes through the session proxy",
+    "every later phase relies on requireSunner/requireAdmin and the profiles table",
+    "auth.users triggers affect hosted Supabase sign-ups"
+  ],
+  "contracts": [
+    "getSessionUser/requireSunner/requireAdmin in shared/auth",
+    "safeNextPath(raw) returns same-origin path or /",
+    "proxy returns 403 HTML (GET) or JSON (other) for non-admin /admin/*",
+    "profiles(id = auth.users.id, email unique, department_id uuid nullable, role)",
+    "INTERNAL_APP_ORIGIN optional server env for the 403 self-fetch",
+    "layout guards are UX only; every page/action self-guards"
+  ]
+}

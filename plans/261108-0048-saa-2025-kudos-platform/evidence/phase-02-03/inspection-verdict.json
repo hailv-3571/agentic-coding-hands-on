@@ -1,0 +1,64 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "only Sunner-domain Google accounts can sign up (hook + trigger, fail closed): db/migrations/0005_auth_user_triggers.sql:25-33 hook, :80-88 INSERT and email-change triggers; tests/integration/auth/auth-user-triggers.test.ts:36-87",
+    "profile created once per auth user and email kept in sync: db/migrations/0005_auth_user_triggers.sql:49-68 (ON CONFLICT DO NOTHING), :72-78 and :94-97 (sync_profile_email); tests/integration/auth/auth-user-triggers.test.ts:153-188",
+    "first sign-in forces department selection: app/onboarding/department, features/auth/server/choose-department-action.ts:12; tests/integration/auth/choose-department.test.ts (auth recheck)",
+    "safe next-path: no open redirect: shared/auth/safe-next-path.ts:15; tests/unit/auth/safe-next-path.test.ts:4",
+    "guest is redirected to /login; /api answers 401: shared/auth/session-proxy.ts:15 and :71; tests/integration/auth/session-proxy-admin-gate.test.ts:67-71",
+    "non-admin on /admin/* gets HTTP 403 in production; admin passes: shared/auth/session-proxy.ts:103, shared/auth/access-denied-response.ts:40-60; tests/integration/auth/session-proxy-admin-gate.test.ts:73-83 and :129-134; tests/prod/production-admin-403-status.ts:100-125 (test:prod 13/13 PASS on next start, tester-261115-phase-02-03-final.md:23)",
+    "ADMIN_EMAILS users become admin: features/auth/server/complete-login.ts:43; tests/integration/auth/complete-login.test.ts",
+    "shell header/footer/menus match Figma on desktop and mobile: features/app-shell/components/shell-styles.ts:10, admin-top-bar.tsx:32-45, app-header.tsx:27-40; phase-03 recheck and tester screenshot review found no material mismatch",
+    "language switch persists via httpOnly cookie: shared/i18n/set-locale-action.ts:26; features/app-shell/components/language-switcher.tsx:57 (label-in-name)",
+    "bare 403/404 pages per Figma: app/forbidden.tsx, app/not-found.tsx:6",
+    "no secrets or host-derived URLs in server-side fetches: shared/auth/access-denied-response.ts:26-38 (target from INTERNAL_APP_ORIGIN or 127.0.0.1:PORT, session cookies never forwarded); shared/config/env-schema.ts:46-52 and :78; tests/integration/auth/session-proxy-admin-gate.test.ts:93-102; tests/unit/shared/env-schema.test.ts:65-70 and :92-93"
+  ],
+  "regressionChecked": [
+    "0005 update trigger no longer fires on every update: WHEN email IS DISTINCT FROM, unchanged-email update of a pre-gate row still works (auth-user-triggers.test.ts:66-77)",
+    "test-only trigger in auth-user-triggers.test.ts:27-30 rolled back with its transaction (tests/setup/integration-db.ts withRollback)",
+    "session proxy locale-only forwarding and plain-text 403 fallback (session-proxy-admin-gate.test.ts:85-114)",
+    "language switcher, admin top bar, app/public header and login page after fix round 2",
+    "final tester run: all 8 commands exit 0, test:prod 13/13, auth.users left with 0 rows"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Low",
+      "category": "Test",
+      "location": "tests/integration/auth/auth-user-triggers.test.ts:27-30",
+      "summary": "test-only trigger DDL locks auth.users until rollback; possible stall with parallel sign-in tests",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Config",
+      "location": "shared/auth/access-denied-response.ts:27",
+      "summary": "default 127.0.0.1 target fails on an IPv6-only bind; falls back to plain 403 and INTERNAL_APP_ORIGIN is documented in .env.example:30-35",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Security",
+      "location": "plans/261108-0048-saa-2025-kudos-platform/spec/decision-log.md:80",
+      "summary": "OAuth redirectTo taken from Host; user decision 2026-11-15 to settle at hosting choice, go-live checklist recorded",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "shared/auth/access-denied-response.ts:42",
+      "summary": "S-N2: each non-admin /admin hit does an internal render of the 403 HTML; per-locale in-memory cache deferred",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

@@ -187,7 +187,7 @@ flowchart LR
 | A1 · A5 | Phiên hết hạn lúc đang xem | F001_Auth chuyển tới đăng nhập (A0 — § 4.4) |
 | A5 | Admin bị hạ role giữa chừng | Request kế tiếp bị guard từ chối, hiện A7 |
 | A1 | Tên người dùng rất dài | Cắt bằng dấu ba chấm trong header |
-| A6 · A7 | Khách chưa đăng nhập vào trang lỗi | Hiển thị nút dẫn tới đăng nhập (D005, chờ xác nhận) |
+| A6 · A7 | Khách chưa đăng nhập vào trang lỗi | 404: nút "Đăng nhập" cho khách, "Về trang chủ" khi đã đăng nhập. 403: luôn nút "Về trang chủ" |
 
 ## 4. Shared Foundation
 
@@ -274,18 +274,31 @@ LOCALE_COOKIE_MAX_AGE_DAYS = 365 # đề xuất, chờ xác nhận (A3)
 ### 5.2 Assumptions
 
 - *(A3, A4)* Lựa chọn ngôn ngữ chỉ lưu trong cookie, không ghi hồ sơ Sunner (D004 mặc định); URL không có tiền tố locale (D001 mặc định).
-- *(A5, A7)* F001_Auth cung cấp guard cho khu Admin và gọi được trang 403 của F002; F002 không tự cài guard.
+- *(A5, A7)* F001_Auth cung cấp guard cho khu Admin (`requireAdmin`) và proxy trả 403; F002 cung cấp nội dung trang 403 (`ForbiddenPanel`), không tự cài guard.
 - *(A1)* Chuông thông báo là một slot, F013 gắn nội dung vào sau; F002 không chứa logic thông báo.
 
-### 5.3 Unresolved Questions
+### 5.3 Resolved Questions
 
-1. **Cơ chế 403 của Next.js 16** *(A7)*: `forbidden()` / `forbidden.tsx` có thể cần cờ thử nghiệm, và AGENTS.md nói phiên bản này khác kiến thức quen thuộc. Phải đọc tài liệu trong `node_modules/next/dist/docs/` trước khi code; nếu không dùng được thì render trang 403 thủ công từ layout Admin.
-2. **Cách next-intl nạp locale khi không có tiền tố** *(A3, A4)*: cần xác nhận cấu hình cookie-only của next-intl với Next.js 16.
-3. **Slot chuông** *(A1)*: giao diện (props) giữa header và F013 chưa chốt.
+Chốt khi implement phase 03 (code là nguồn đúng).
+
+1. **Cơ chế 403 của Next.js 16** *(A7)*: `forbidden()` cần `experimental.authInterrupts: true` (đã bật trong `next.config.ts`). Nhưng dưới Cache Components, shell status 200 được gửi trước khi `forbidden()` chạy, nên với `/admin/*` **proxy tự trả 403** bằng HTML của `/access-denied` (xem `docs/system/architecture.md`). `app/forbidden.tsx` và `app/access-denied/page.tsx` dùng chung `ForbiddenPanel`.
+2. **next-intl khi không có tiền tố** *(A3, A4)*: locale đọc từ cookie `NEXT_LOCALE`, rồi `Accept-Language`, mặc định `vi` (`shared/i18n/resolve-locale.ts`, `request.ts`); đổi ngôn ngữ bằng server action `shared/i18n/set-locale-action.ts`.
+3. **Slot chuông** *(A1)*: vẫn mở, chờ F013 chốt props.
+4. **Trang 404 (thay D005)**: trang trần theo Figma (frame 1378:5063), không header/footer dù đã đăng nhập. Nút CTA đổi theo trạng thái: "Về trang chủ" khi đã đăng nhập, "Đăng nhập" cho khách (`app/not-found.tsx`).
+5. **Trang 403**: trang trần, có nút "Về trang chủ" (Figma không có; giữ để không thành ngõ cụt). Copy: "Bạn không có quyền truy cập tài nguyên này." (`features/app-shell/components/forbidden-panel.tsx`).
+6. **Guard khu Admin**: layout Admin chỉ để UX; mỗi page và action tự gọi `requireAdmin()` (F001).
 
 ### 5.4 Source References
 
-Chưa có mã nguồn — xem `## 7. User Stories` trong functional-spec.md để biết hành vi dự kiến.
+| Hành động | Mã nguồn |
+|-----------|----------|
+| A1 `AppLayout` | `app/(app)/layout.tsx`, `features/app-shell/components/app-header.tsx`, `app-footer.tsx` |
+| A2 `AccountMenu` | `features/app-shell/components/account-menu.tsx` |
+| A3 `LanguageSwitcher` | `features/app-shell/components/language-switcher.tsx`, `shared/i18n/set-locale-action.ts` |
+| A4 `resolveLocale` | `shared/i18n/resolve-locale.ts`, `shared/i18n/request.ts` |
+| A5 `AdminLayout` | `app/admin/layout.tsx`, `features/app-shell/components/admin-top-bar.tsx` |
+| A6 `NotFoundPage` | `app/not-found.tsx`, `features/app-shell/components/error-panel.tsx` |
+| A7 `ForbiddenPage` | `app/forbidden.tsx`, `app/access-denied/page.tsx`, `features/app-shell/components/forbidden-panel.tsx` |
 
 ### 5.5 Artifact References
 

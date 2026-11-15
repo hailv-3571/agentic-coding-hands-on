@@ -2,7 +2,7 @@
 phase: 03
 feature: F002
 priority: P0
-status: pending
+status: completed
 depends_on: [01]
 file_ownership:
   - app/(app)/layout.tsx                        # phase 13 passes bell into the slot (sanctioned one-line edit)
@@ -29,7 +29,7 @@ file_ownership:
 
 ## Overview
 - Priority: P0
-- Status: pending
+- Status: completed (2026-11-15, SEALED; not committed yet)
 - Description: Sunner layout (header, footer, mobile collapsed menu, account menu, language switcher, bell slot), public layout (logo + language switcher only), admin layout (top bar 4 items), 404/403 pages, cookie-based locale resolution.
 
 ## Key Insights
@@ -98,15 +98,15 @@ Delete — none.
 12. `typecheck`, `lint`, unit + e2e green.
 
 ## Todo List
-- [ ] Next 16 + next-intl docs read (forbidden flag, cookie-only)
-- [ ] `resolveLocale` + request wiring + tests
-- [ ] `setLocale` action + test
-- [ ] Route map
-- [ ] Figma extraction for header/footer/admin bar/menus/error pages
-- [ ] Header, nav links, mobile menu, account menu, avatar, switcher, footer
-- [ ] `(app)`, `(public)`, `admin` layouts
-- [ ] 404 / 403 pages
-- [ ] E2E navigation, language, admin frame, error pages
+- [x] Next 16 + next-intl docs read (forbidden flag, cookie-only)
+- [x] `resolveLocale` + request wiring + tests
+- [x] `setLocale` action + test
+- [x] Route map
+- [x] Figma extraction for header/footer/admin bar/menus/error pages
+- [x] Header, nav links, mobile menu, account menu, avatar, switcher, footer
+- [x] `(app)`, `(public)`, `admin` layouts
+- [x] 404 / 403 pages
+- [x] E2E navigation, language, admin frame, error pages
 
 ## Success Criteria
 - SC-001..SC-005 of technical spec pass.
@@ -143,3 +143,14 @@ Rollback: layouts are additive files; revert per file. No data changes.
 - Phase 07 places homepage/awards/rules/community-standards under `(app)` and `/countdown` under `(public)`.
 - Phases 04/05/12 render inside `(app)`; phases 08/11/14 add pages under `app/admin/*` and must still call `requireAdmin()` in every action.
 - Phase 13 edits `app/(app)/layout.tsx` to pass `bellSlot={<NotificationBell />}` (also admin layout if spec requires).
+- Tester F2 (signed-in 404 has no shell): accepted, matches decision 2026-11-15. No action.
+- Phase 07: homepage key visual must sit under the header (`-mt-20` plus padding).
+- Phase 07: prelaunch gate must let guests reach `/access-denied` (also phase 02).
+- Open success criterion: layout at 768–1199 px equals desktop scaled. Only 1440 and 375 captures exist. Owner: tester.
+
+## Delivery notes / deviations
+- Delivered 2026-11-15. Evidence: same tester and reviewer reports as phase 02, plus 18 screenshots in `evidence/screenshots/phase-03/`. Not committed yet.
+- Deviations (numbering matches phase 02): 1 (403 status from proxy; `app/forbidden.tsx` renders the body only), 7 (bare 404 per Figma, replacing D005), 8 (403 has "Về trang chủ"), 9 (`public/*.svg` deleted), 10 (header `bg-container`, no blur).
+- Admin top bar label is "User" per decision; the Figma frame says "Role".
+- Visual checks are judgment only, with no pixel diff. Not checked against a frame: avatar initial box vs Figma person icon.
+- Bell slot is empty until phase 13. Home body is a placeholder until phases 05/07/12.

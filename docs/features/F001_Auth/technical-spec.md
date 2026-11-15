@@ -144,7 +144,7 @@ sequenceDiagram
 **Who** · *không có người dùng trực tiếp — chạy sau khi A3 cho qua và bản ghi `auth.users` đã được chèn*
 **FE** · không có giao diện
 **Request** · *không có HTTP request* — dữ liệu lấy từ bản ghi `auth.users` mới: email, `raw_user_meta_data` (tên, avatar từ Google)
-**BE** · `` `AuthUserTrigger#createSunnerProfile` `` — chèn một dòng `profiles` cùng khoá với `auth.users.id`, điền tên và avatar từ metadata Google, `department_id` để trống chờ nguồn dữ liệu (TBD (draft), gap phòng ban), `role = user`.
+**BE** · `` `AuthUserTrigger#createSunnerProfile` `` — chèn một dòng `profiles` cùng khoá với `auth.users.id`, điền tên và avatar từ metadata Google, `department_id` (uuid, nullable) để trống tới khi người dùng chọn ở `/onboarding/department`, `role = user`.
 **Rule**
 - **BR-002 — Role mặc định của hồ sơ mới là User.** Không bao giờ tạo Admin tự động; nâng Admin là thao tác riêng (F014 và cách bootstrap Admin đầu tiên — D003 ở functional-spec). *(inline, Bin 1)*
 - **BR-004 — Mỗi tài khoản đăng nhập có đúng một hồ sơ.** Khoá chính của `profiles` là id người dùng nên chèn trùng bị từ chối; trigger chạy một lần trên mỗi bản ghi `auth.users` mới. *(inline, Bin 1)*
@@ -252,7 +252,7 @@ sequenceDiagram
 | `SessionProxy` | Làm mới session và chặn khách ở mọi request | A5 | TBD (draft) |
 | `LogoutAction` | Server action đăng xuất | A6 | TBD (draft) |
 | `AdminGuard` | Hàm kiểm tra role Admin dùng chung cho khu Admin | A7 | TBD (draft) |
-| `AuthUserTrigger` | Hai hàm DB trên `auth.users` (chặn domain, tạo hồ sơ) | A3, A4 | TBD (draft) |
+| `AuthUserTrigger` | Hook `before_user_created` + trigger trên `auth.users` (chặn domain khi insert và đổi email, tạo hồ sơ, đồng bộ email) | A3, A4 | TBD (draft) |
 | `SupabaseServerClient` | Tạo client Supabase theo cookie ở server | A2, A5, A6, A7 | TBD (draft) |
 
 ### 4.2 Data Model
@@ -406,21 +406,38 @@ Cấu hình provider Google (client ID, secret, redirect URL được phép) n�
 
 ### 5.2 Assumptions
 
-- *(A5)* Next.js 16 đổi tên lớp "middleware" thành "proxy" nên spec dùng tên `SessionProxy`; chưa đọc tài liệu trong `node_modules/next/dist/docs` ở bước này, cần xác nhận API chính xác trước khi implement. `[UNVERIFIED]`
-- *(A3)* Hàm DB ném exception trong trigger trên `auth.users` được Supabase hosted cho phép và làm huỷ việc tạo người dùng. `[UNVERIFIED]` — cần thử thực tế.
+- *(A5)* Next.js 16 đổi tên lớp "middleware" thành "proxy"; đã implement ở `proxy.ts` (đã xác nhận ở phase 02).
+- *(A3)* Trigger trên `auth.users` ném exception thì huỷ việc tạo người dùng (đã thử ở local; hosted cần bật thêm hook `before_user_created` trong dashboard).
 - *(A1)* Tham số `hd` của Google chỉ là gợi ý, không thay thế kiểm tra phía server. `[INFERRED]` từ cách OAuth Google hoạt động.
-- *(A4)* Metadata Google (`full_name`/`name`, `avatar_url`/`picture`) có sẵn trong `raw_user_meta_data` lúc trigger chạy. `[UNVERIFIED]`
+- *(A4)* Trigger đọc `full_name`/`name`, `avatar_url`/`picture` từ `raw_user_meta_data`; thiếu tên thì dùng phần trước `@` của email, thiếu avatar thì để trống.
 
-### 5.3 Unresolved Questions
+### 5.3 Resolved Questions
 
-1. **Map lỗi domain** *(A2, A3)*: exception từ trigger có đến được A2 dưới dạng `error_description` đủ để phân biệt với lỗi hệ thống không, hay Supabase gói thành lỗi chung kiểu "Database error saving new user"? Nếu gói chung thì cần cách khác (mã lỗi đặc thù trong message, hoặc Auth Hook "before user created").
-2. **Hằng số domain ở hai nơi** *(A1, A3)*: domain nằm ở biến môi trường (gợi ý `hd`) và hard-code trong hàm DB; cần chọn nguồn duy nhất hoặc chấp nhận trùng có chủ đích.
-3. **Danh sách đường dẫn công khai của proxy** *(A5)*: có gồm Countdown prelaunch và trang nội dung tĩnh không (liên quan gap Countdown ở functional-spec D001).
-4. **Chống đăng nhập đồng thời** *(A2, A4)*: cần xác nhận Supabase tạo `auth.users` một lần cho hai callback gần đồng thời, hay chỉ dựa vào khoá chính của `profiles` (BR-004).
+Các câu hỏi mở của bản nháp đã được chốt khi implement phase 02 (code là nguồn đúng).
+
+1. **Map lỗi domain** *(A2, A3)*: exception của trigger chỉ ra "Database error saving new user" (thử trên GoTrue local v2.197), không đủ để phân biệt. Chốt dùng **hai lớp**: auth hook `before_user_created` trả message `domain_not_allowed` (tới `/auth/callback` dưới dạng `error_description`), cộng trigger `reject_foreign_domain_on_insert` / `reject_foreign_domain_on_email_change` làm chốt chặn khi hook chưa bật (khi đó chỉ ra lỗi chung `auth_failed`). Hosted phải bật hook trong dashboard. Migration: `db/migrations/0005_auth_user_triggers.sql`.
+2. **Hằng số domain ở hai nơi** *(A1, A3)*: domain nằm ở một chỗ trong DB, hàm `is_sunner_email()`; biến `ALLOWED_EMAIL_DOMAIN` chỉ là gợi ý `hd`. Test khẳng định hai giá trị bằng nhau.
+3. **Danh sách đường dẫn công khai của proxy** *(A5)*: `/login`, `/auth/callback`, `/countdown`, `/access-denied` (`shared/auth/public-paths.ts`). Cổng prelaunch thêm ở phase 07.
+4. **Đăng nhập đồng thời** *(A2, A4)*: dựa vào khoá chính `profiles.id`; trigger `create_sunner_profile` dùng `ON CONFLICT (id) DO NOTHING`.
+5. **`getUser()` hay `getClaims()`**: dùng `getUser()` ở cả proxy lẫn page, vì session bị thu hồi phải mất hiệu lực ngay; trộn hai cách làm proxy và page bất đồng, gây vòng lặp chuyển trang.
+6. **Đường dẫn `/api/` khi chưa đăng nhập**: trả JSON 401 `{ "code": "unauthorized" }`, không redirect.
+7. **`profiles.department_id`**: `uuid` cho phép NULL, khoá ngoại tới `departments`. Hồ sơ mới để trống; `requireSunner()` chuyển người chưa chọn tới `/onboarding/department`.
+8. **403 của `/admin/*`**: do proxy trả (status 403 thật, kể cả với Cache Components); chi tiết ở `docs/system/architecture.md`.
+9. **`redirectTo` của OAuth Google**: hiện lấy origin từ request. **Hoãn tới khi chọn hosting** (decision-log, 2026-11-15); go-live chọn `APP_ORIGIN` cố định hoặc allow-list origin, callback route theo cùng quyết định.
+10. **Session có user nhưng không có profile**: `requireSunner()` trả 401, không redirect, để khỏi lặp qua luật `/login` → `/` của proxy.
 
 ### 5.4 Source References
 
-Chưa có mã nguồn nào được viết — xem `## 7. User Stories` trong `functional-spec.md` để biết hành vi dự kiến. Bảng tham chiếu sẽ được điền ở bước đối chiếu sau khi implement.
+| Hành động | Mã nguồn |
+|-----------|----------|
+| A1 `LoginAction` | `features/auth/server/sign-in-with-google-action.ts`, `app/(public)/login/page.tsx` |
+| A2 `AuthCallbackRoute` | `app/auth/callback/route.ts`, `features/auth/server/complete-login.ts` |
+| A3, A4 `AuthUserTrigger` | `db/migrations/0005_auth_user_triggers.sql`, bảng `shared/db/schema/profiles.ts` + `0004_profiles.sql` |
+| A5 `SessionProxy` | `proxy.ts`, `shared/auth/session-proxy.ts`, `route-access-policy.ts`, `public-paths.ts`, `access-denied-response.ts` |
+| A6 `LogoutAction` | `shared/auth/sign-out-action.ts` |
+| A7 `AdminGuard` | `shared/auth/admin-guard.ts`, `shared/auth/current-user.ts` (`requireSunner`) |
+| Chọn phòng ban lần đầu | `app/onboarding/department/page.tsx`, `features/auth/server/choose-department-action.ts` |
+| Chặn open redirect (DEC-001) | `shared/auth/safe-next-path.ts` |
 
 #### Data Flow
 

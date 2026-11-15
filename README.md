@@ -20,6 +20,7 @@ npm run dev                       # http://localhost:3000
 ```
 
 Ánh xạ biến: `DATABASE_URL` ← DB_URL, `NEXT_PUBLIC_SUPABASE_URL` ← API_URL, `NEXT_PUBLIC_SUPABASE_ANON_KEY` ← ANON_KEY, `SUPABASE_SERVICE_ROLE_KEY` ← SERVICE_ROLE_KEY. Các biến còn lại (mốc sự kiện, `ADMIN_EMAILS`...) xem chú thích trong `.env.example`.
+`INTERNAL_APP_ORIGIN` là tùy chọn: để trống thì server tự gọi `http://127.0.0.1:$PORT` (proxy dùng để dựng trang 403 của `/admin/*`). Chỉ đặt khi server bind địa chỉ khác (vd. `-H ::1`) hoặc hosting yêu cầu.
 Thiếu hoặc sai biến thì app từ chối khởi động và in danh sách lỗi. Không commit file `.env.local`.
 
 ## Lệnh thường dùng
@@ -31,6 +32,7 @@ Thiếu hoặc sai biến thì app từ chối khởi động và in danh sách 
 | `npm run test:unit` | Vitest, không cần DB |
 | `npm run test:integration` | Vitest, cần Supabase local đang chạy và đã điền env |
 | `npm run test:e2e` | Playwright (tự bật `npm run dev`, hoặc đặt `PLAYWRIGHT_BASE_URL`) |
+| `npm run build` rồi `npm run test:prod` | Bật `next start` ở cổng trống, kiểm status HTTP thật (vd. 403 của `/admin/*`); cần Supabase local |
 | `npm run db:generate` / `db:migrate` / `db:seed` / `db:reset` | Drizzle migration và seed |
 
 ## Tài liệu

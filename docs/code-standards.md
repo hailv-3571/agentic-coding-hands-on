@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,config,db,events,i18n}`, `db/`, `messages/`, `tests/`. `features/`, `shared/auth`, `shared/ui` do các phase sau tạo.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-shell}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -40,6 +40,13 @@ Hiện có: `shared/{admin,config,db,events,i18n}`, `db/`, `messages/`, `tests/`
 - Schema barrel `shared/db/schema/index.ts`: mỗi feature thêm đúng một dòng `export *`, không sửa dòng khác.
 - Cần SQL viết tay (trigger, `EXCLUDE`, policy) thì đặt trong `db/migrations/`. Sinh migration: `npm run db:generate`.
 - Seed nằm ở `db/seeds/`, chạy bằng `npm run db:seed`.
+
+## Auth và phân quyền
+
+- **Layout guard chỉ để UX.** Mỗi page và mỗi server action tự gọi `requireSunner()` hoặc `requireAdmin()` (`shared/auth/current-user.ts`, `shared/auth/admin-guard.ts`), không dựa vào layout hay proxy đã chặn trước. Layout không bảo vệ được server action; proxy chỉ là lớp lạc quan.
+- **Không dựng URL server-side từ header `Host` hay `x-forwarded-*`** (fetch nội bộ, redirect, link tuyệt đối): caller điều khiển được các header này (SSRF, redirect sai chỗ). Lấy origin từ config: `INTERNAL_APP_ORIGIN` cho fetch tự gọi, mặc định `http://127.0.0.1:$PORT` (`shared/auth/access-denied-response.ts`). Ngoại lệ đã ghi nhận: `redirectTo` của OAuth Google (`features/auth/server/sign-in-with-google-action.ts`) và redirect trong `app/auth/callback/route.ts` còn lấy origin từ request; chốt khi chọn hosting (decision-log, 2026-11-15).
+- **Mọi đích redirect đến từ input (`next`, query, form) phải qua `safeNextPath()`** (`shared/auth/safe-next-path.ts`). Hàm chỉ cho đường dẫn cùng origin, chặn `//host`, dấu `\`, ký tự điều khiển và dot-segment. Không tự kiểm `startsWith("/")`.
+- Xác thực session bằng `getUser()` ở cả proxy lẫn page (`getSessionUser`). Không dùng `getClaims()` để quyết định quyền: hai bên lệch nhau sẽ gây vòng lặp chuyển trang.
 
 ## Domain event outbox
 
@@ -70,6 +77,11 @@ CSV serializer (BOM + chặn formula injection), lọc theo khoảng ngày, help
 |-----|------|---------|
 | Unit | `npm run test:unit` | `tests/unit/**`, Node thuần |
 | Integration | `npm run test:integration` | `tests/integration/**`, cần Supabase local, chạy tuần tự |
-| E2E | `npm run test:e2e` | Playwright, `tests/e2e/` |
+| E2E | `npm run test:e2e` | Playwright, `tests/e2e/`, chạy trên `next dev` |
+| Status production | `npm run build` rồi `npm run test:prod` | `tests/prod/production-admin-403-status.ts`: bật `next start` ở cổng trống, kiểm status HTTP thật. Cần Supabase local |
+
+`test:prod` dành cho thứ chỉ lộ ở bản production, như status 403 của `/admin/*`: e2e chạy trên `next dev` nên không thấy được.
+
+Test tạo user phải gọi `assertLocalSupabaseUrl(url)` (`tests/setup/assert-local-supabase-url.ts`) trước khi tạo, để không tạo tài khoản trên Supabase thật. Helper sẵn có: `tests/setup/local-sunner-accounts.ts`.
 
 Test ở lớp thấp nhất còn bắt được lỗi thật. Test `server-only` chạy được nhờ alias sang `tests/setup/server-only-stub.ts`.

@@ -67,3 +67,14 @@ Danh sách đầy đủ ở `system/architecture.md` § Consistency Check (C-01�
 ## Session 2026-11-15 — Technical decisions from phase 01 review
 - Q: Root layout `export const instant = false` (vì `<html lang>` đọc cookie `NEXT_LOCALE` dưới Cache Components)? → A: **Giữ** — reviewer chấp nhận (docs Next 16 cho phép với app đọc session); hầu hết trang đều cần đăng nhập/cá nhân hoá. Đánh đổi: tắt kiểm tra static shell toàn app; segment con vẫn có thể bật `instant = true` + Suspense. Áp dụng: mọi phase.
 - Q: Cấu hình Vitest? → A: đổi tên `vitest.config.ts` → `vitest.config.mts` (không thêm `"type":"module"`).
+- Q: `forbidden()`/`unauthorized()` cần `experimental.authInterrupts` (Next 16.4.5)? → A: **Bật `authInterrupts: true`** trong `next.config.ts` (orchestrator, 2026-11-15). Lý do: phase 02 (`AdminGuard#requireAdmin`) và phase 03 (`app/forbidden.tsx`) đều thiết kế theo `forbidden()`; cờ có trong docs chính thức; phương án redirect sang route 403 riêng bị loại vì phải sửa kế hoạch 2 phase. Rủi ro: API thử nghiệm có thể đổi khi nâng Next — kiểm lại khi upgrade.
+
+## Session 2026-11-15 — Phase 02/03 test decisions
+- Q: Trang 404 khi đã đăng nhập có hiện header/footer (spec F002 D005)? → A: **Không — trang trần theo Figma** (frame 1378:5063 không có shell); CTA đổi theo trạng thái: "Về trang chủ" khi đã đăng nhập, "Đăng nhập" cho khách. Thay thế D005 của F002. Áp dụng: phase 03.
+- Q: Khách vào `/` bị chuyển tới `/login` (không kèm `?next=%2F`)? → A: **Chấp nhận** — `next` bị bỏ khi bằng `/` (tương đương). Áp dụng: phase 02.
+- Q: Trang 403 có nút "Về trang chủ" (Figma không có)? → A: **Giữ** — tránh ngõ cụt; copy 403 dùng "Bạn không có quyền truy cập tài nguyên này." (khớp frame mobile).
+
+## Session 2026-11-15 — Phase 02/03 review fix round 2
+- Q: Trang 403 cho non-admin ở `/admin/*` trả status 403 thế nào (Cache Components gửi shell 200 trước khi render)? → A: **Proxy tự trả 403**: fetch trang public `/access-denied` (chỉ gửi cookie locale + Accept-Language) rồi trả HTML với status 403; non-GET/Server Action → JSON 403. Origin fetch lấy từ `INTERNAL_APP_ORIGIN` (tùy chọn) hoặc `http://127.0.0.1:$PORT`, **không bao giờ từ header Host** (chống SSRF). Phase 07: cổng prelaunch phải cho khách vào `/access-denied`. Hosting: server phải tự gọi được origin nội bộ đó.
+- Q: Trigger chặn domain ngoài trên `auth.users`? → A: Tách 2 trigger: `reject_foreign_domain_on_insert` và `reject_foreign_domain_on_email_change` (chỉ khi `NEW.email IS DISTINCT FROM OLD.email`) — tài khoản cũ ngoài domain trên hosted không bị chặn khi GoTrue cập nhật cột khác.
+- Q: `redirectTo` của OAuth Google đang lấy từ Host của request? → A: **Để đến lúc chọn hosting** (user, 2026-11-15). Rủi ro thấp (Next đối chiếu Origin/Host cho Server Action; allow-list redirect của Supabase khớp chính xác). Checklist go-live: chọn A (`APP_ORIGIN` cố định) nếu chỉ một origin, B (allow-list origin) nếu có preview; callback route theo cùng quyết định.

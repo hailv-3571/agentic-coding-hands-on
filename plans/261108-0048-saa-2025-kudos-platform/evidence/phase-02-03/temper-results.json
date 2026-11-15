@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations 0000-0005 applied; seeds departments=6 hashtags=8",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "tsc clean",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "no findings",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "15 files, 176/176 passed",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "14 files, 108/108 passed",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "30/30 passed (chromium, next dev)",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled, 8 routes + Proxy, no warnings",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "13/13 status checks on next start: member /admin/* 403, admin 200, guest 307, spoofed-Host safe",
+      "ts": "2026-11-15T15:53:52.669Z"
+    },
+    {
+      "command": "playwright capture desktop 1440x900 + mobile 375x812 (next start)",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "24 PNGs in evidence/screenshots/phase-02 and phase-03; tester found no material Figma mismatch",
+      "ts": "2026-11-15T15:53:52.669Z"
+    }
+  ]
+}

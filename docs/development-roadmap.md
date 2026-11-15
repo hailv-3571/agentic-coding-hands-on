@@ -9,8 +9,8 @@ Nguồn: `plans/261108-0048-saa-2025-kudos-platform/plan.md` (chi tiết từng 
 | # | Phase | Feature | Ưu tiên | Phụ thuộc | Trạng thái |
 |---|-------|---------|---------|-----------|-----------|
 | 01 | Foundation & infrastructure | nền cho mọi feature | P0 | — | Hoàn thành (2026-11-15) |
-| 02 | Auth & onboarding | F001 | P0 | 01 | Chưa làm |
-| 03 | App shell & i18n | F002 | P0 | 01 | Chưa làm |
+| 02 | Auth & onboarding | F001 | P0 | 01 | Hoàn thành (2026-11-15) |
+| 03 | App shell & i18n | F002 | P0 | 01 | Hoàn thành (2026-11-15) |
 | 04 | Kudos authoring | F003 | P0 | 02, 03 | Chưa làm |
 | 05 | Kudos feed & detail | F004 | P1 | 04 | Chưa làm |
 | 06 | Hearts & x2 campaigns | F005, F011 | P1 | 05 | Chưa làm |
@@ -22,5 +22,7 @@ Nguồn: `plans/261108-0048-saa-2025-kudos-platform/plan.md` (chi tiết từng 
 | 12 | Profile | F012 | P2 | 09, 10 | Chưa làm |
 | 13 | Notifications | F013 | P2 | 06, 08, 09, 10 | Chưa làm |
 | 14 | Admin users & overview | F014, F015 | P2/P3 | 08, 09, 10 | Chưa làm |
+
+Tiến độ: 3/14 phase hoàn thành (01, 02, 03).
 
 Chạy song song được: 02 ∥ 03 · 07 ∥ 04 · 08 ∥ 05 (sau 04) · 09 ∥ 06. Phase 10 và 11 cùng sửa file chung của phase 01 nên chạy tuần tự.

@@ -2,7 +2,7 @@
 phase: 02
 feature: F001
 priority: P0
-status: pending
+status: completed
 depends_on: [01]
 file_ownership:
   - proxy.ts                                   # phase 07 adds ONE prelaunch step (sanctioned, serial edit)
@@ -31,7 +31,7 @@ file_ownership:
 
 ## Overview
 - Priority: P0
-- Status: pending
+- Status: completed (2026-11-15, SEALED; not committed yet)
 - Description: Google sign-in restricted to `@sun-asterisk.com`, profile auto-creation, `ADMIN_EMAILS` bootstrap, first-login department picker, session proxy with public-path allowlist, logout, `AdminGuard#requireAdmin`, current-user helpers consumed by every later phase.
 
 ## Key Insights
@@ -109,18 +109,18 @@ Delete — none.
 13. `typecheck`, `lint`, unit + integration + e2e green.
 
 ## Todo List
-- [ ] Next 16 + @supabase/ssr docs read
-- [ ] Spike: domain-rejection error surface → trigger or hook decided
-- [ ] `profiles` migration + triggers migration
-- [ ] Trigger integration tests
-- [ ] Server client, safe-next, route-access policy (+ unit tests)
-- [ ] `proxy.ts` + session proxy
-- [ ] Login page, Google action, error banner
-- [ ] Callback: last_login, ADMIN_EMAILS promotion, destination
-- [ ] `requireSunner` / `requireAdmin` / sign-out + tests
-- [ ] Onboarding department picker + tests
-- [ ] Anon-key RLS test
-- [ ] E2E auth fixture + guest/logout/onboarding specs
+- [x] Next 16 + @supabase/ssr docs read
+- [x] Spike: domain-rejection error surface → trigger or hook decided (both shipped)
+- [x] `profiles` migration + triggers migration
+- [x] Trigger integration tests
+- [x] Server client, safe-next, route-access policy (+ unit tests)
+- [x] `proxy.ts` + session proxy
+- [x] Login page, Google action, error banner
+- [x] Callback: last_login, ADMIN_EMAILS promotion, destination
+- [x] `requireSunner` / `requireAdmin` / sign-out + tests
+- [x] Onboarding department picker + tests
+- [x] Anon-key RLS test
+- [ ] E2E auth fixture + guest/logout/onboarding specs (fixture and guest/logout spec exist; onboarding spec missing, see delivery notes)
 
 ## Success Criteria
 - SC-001..SC-006 of technical spec pass (SC-001 domain rejection via integration test on local stack; real Google flow verified manually once).
@@ -161,3 +161,25 @@ Rollback: revert proxy file to pass-through; migrations additive (drop triggers 
 - Phase 03 consumes `requireSunner`, `requireAdmin`, `signOut`, profile (name/avatar) for header.
 - Phase 07 adds prelaunch step (`isPrelaunch(now)` + admin bypass) to `session-proxy.ts` call chain in `proxy.ts`.
 - Phase 14 adds `role_updated_by/at` and must handle env-admin re-promotion.
+- Go-live checklist (owner: Hai Luong): enable the `before_user_created` hook; Google provider on, email off; set the redirect URL; make `INTERNAL_APP_ORIGIN` reachable from the server; before applying `0005`, check `auth.users` for rows outside the Sunner domain.
+- OAuth `redirectTo` is built from Host. Decide at hosting time (owner: Hai Luong): A = fixed `APP_ORIGIN` for one origin, B = origin allow-list if previews exist. Done when the choice is recorded in the decision log and the callback follows it.
+- Deferred, low priority: S-N2 cache the 403 HTML per locale (`shared/auth/access-denied-response.ts`); db S4 no length cap on `full_name` / `avatar_url`; W3 `getUser` runs twice per request; IPv6-only bind breaks the default self-fetch (falls back to plain 403); test-only trigger DDL on `auth.users` locks until rollback (run that file serially if flakes appear).
+- Phase 07: prelaunch gate must let guests reach `/access-denied`.
+
+## Delivery notes / deviations
+- Delivered 2026-11-15. Evidence: tester `plans/reports/tester-261115-phase-02-03-final.md` (8/8 commands exit 0; unit 176, integration 108, e2e 30, test:prod 13/13); reviewer `plans/reports/reviewer-261115-phase-02-03-final-recheck.md` (9/10, APPROVE); `evidence/phase-02-03/inspection-verdict.json` (SEALED, human signed off). Not committed yet.
+- Deviations (shared with phase 03):
+  1. Admin 403 is served by the proxy (step 4b). It fetches the public `/access-denied` page from `INTERNAL_APP_ORIGIN` or `127.0.0.1:$PORT`, because Cache Components sends a 200 shell and neither `forbidden()` nor a status rewrite can set 403. `authInterrupts` is enabled (decision 2026-11-15).
+  2. New public route `app/access-denied`.
+  3. New optional env var `INTERNAL_APP_ORIGIN` (http/https origin only).
+  4. The `auth.users` domain trigger is split into insert and email-change triggers. The spike shipped both the `before_user_created` hook and the triggers.
+  5. New `sync_profile_email` trigger.
+  6. New npm script `test:prod` (node script against `next start`).
+  7. 404 is bare per Figma, replacing F002 D005.
+  8. 403 page has a "Về trang chủ" button (not in Figma).
+  9. Leftover `public/*.svg` template files deleted.
+  10. Header uses `bg-container` with no blur, per Figma.
+- Open, not covered by evidence:
+  - Real Google sign-in checked manually once per environment (plan success criterion). Owner: Hai Luong.
+  - Onboarding E2E spec (step 12) not written; onboarding is covered by `choose-department.test.ts` only. Owner: tester.
+  - Decision 2026-11-15 "env admin" also applies here. Phase 02 delivers promotion on login. The `ENV_ADMIN` badge and 409 demotion guard belong to phase 14.

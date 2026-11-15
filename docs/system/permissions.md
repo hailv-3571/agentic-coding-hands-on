@@ -114,8 +114,8 @@ lang: vi
 
 ### Ranh giới Guest / User / Admin
 
-- Giữa Guest và User: session Supabase hợp lệ, email đúng domain. Cổng này đặt ở lớp proxy (chuyển trang) và nhắc lại ở đầu mọi route handler / server action (401 cho dữ liệu).
-- Giữa User và Admin: role đọc từ cơ sở dữ liệu. Layout khu Admin chặn ở mức trang, nhưng mỗi action và mỗi truy vấn Admin tự gọi lại `AdminGuard#requireAdmin` (không dựa vào layout, vì layout không chạy lại ở mỗi lần điều hướng phía client). `[UNVERIFIED]` hành vi chính xác của layout trong Next.js 16, cần đối chiếu tài liệu trước khi code.
+- Giữa Guest và User: session Supabase hợp lệ (`getUser()`), email đúng domain. Cổng này đặt ở lớp proxy (khách chuyển `/login?next=…`, đường dẫn `/api/` trả JSON 401) và nhắc lại ở đầu mọi page, route handler, server action qua `requireSunner()`.
+- Giữa User và Admin: role đọc từ cơ sở dữ liệu. Với `/admin/*`, proxy trả luôn 403 cho người không phải Admin (trang tải: HTML của `/access-denied` với status 403; non-GET hoặc server action: JSON 403), vì dưới Cache Components layout không đổi được status. Layout chỉ là UX: mỗi page, action và truy vấn Admin tự gọi `requireAdmin()` (layout không chạy lại ở mỗi lần điều hướng phía client và không bảo vệ server action). Chi tiết: `architecture.md`, mục Session proxy.
 - Khu Admin gồm: Overview, Review content, User, Settings (Campaign), cùng mọi route `/admin/*` và `/api/admin/*`. Không có khu vực nào chỉ dành cho một Sunner cụ thể ngoài dữ liệu của chính người đó.
 
 ### Quyền sở hữu (ownership)
@@ -155,7 +155,7 @@ lang: vi
 - **Phiên hết hạn / hạ role giữa chừng**: coi như chưa có session (chuyển Login kèm đích quay lại) hoặc bị 403 ở request kế (role đọc lại từ DB). Quyền kênh Realtime chỉ cập nhật khi token hết hạn.
 - **Giới hạn nhập**: lời nhắn tối đa 1.000 ký tự, tối đa 5 ảnh; Export tối đa `EXPORT_MAX_ROWS` dòng, ô CSV bắt đầu bằng `= + - @` bị vô hiệu hoá.
 - **Gọi trực tiếp API / server action khi chưa đủ quyền**: bị từ chối theo cùng quy tắc như đi qua giao diện (401 chưa đăng nhập, 403 không đủ quyền, 404 với tài nguyên không được phép biết là tồn tại: Kudo spam, thông báo của người khác).
-- **Cấu hình môi trường**: `ALLOWED_EMAIL_DOMAIN` chỉ là gợi ý cho màn chọn tài khoản Google; chốt chặn thật nằm ở hàm cơ sở dữ liệu trước khi tạo tài khoản.
+- **Cấu hình môi trường**: `ALLOWED_EMAIL_DOMAIN` chỉ là gợi ý cho màn chọn tài khoản Google; chốt chặn thật nằm ở auth hook `before_user_created` cùng trigger trên `auth.users` (INSERT và đổi email), chung vị từ `is_sunner_email()`.
 
 ### Quyết định còn mở liên quan phân quyền
 
