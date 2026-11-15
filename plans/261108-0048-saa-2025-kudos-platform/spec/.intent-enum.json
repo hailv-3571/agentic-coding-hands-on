@@ -1,0 +1,16 @@
+{
+  "mode": "system",
+  "intents": [
+    "(Sunner, auth & app shell, đăng nhập Google công ty / đổi ngôn ngữ / trang lỗi)",
+    "(Sunner, awards portal, xem countdown, giới thiệu SAA, hệ thống giải, thể lệ, tiêu chuẩn cộng đồng)",
+    "(Sunner, kudos authoring, viết / sửa / gửi ẩn danh Kudo)",
+    "(Sunner, kudos discovery, xem live board, highlight, spotlight realtime, feed, chi tiết)",
+    "(Sunner, gamification, thả tim, huy hiệu Hero, mở Secret Box, quà)",
+    "(Sunner, profile & notification, xem profile mình / người khác, thông báo)",
+    "(Admin, analytics, overview theo đơn vị + export)",
+    "(Admin, moderation, review content, mark spam)",
+    "(Admin, user management, quản lý user / role)",
+    "(Admin, campaign settings, CRUD chiến dịch x2 tim)"
+  ],
+  "justification": ""
+}

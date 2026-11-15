@@ -1,0 +1,36 @@
+{
+  "task": "Phase 01 — foundation & infrastructure for the SAA 2025 Kudos platform (Supabase local stack, Zod env config, Drizzle migrations 0000-0003, domain event outbox, seeds, RLS baseline, private storage bucket, shared admin utils, next-intl base, Figma design tokens, test tooling)",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "env fail-fast",
+    "outbox commit/rollback",
+    "RLS baseline",
+    "private bucket",
+    "CSV BOM+formula guard",
+    "half-open date range",
+    "seed idempotency",
+    "tooling scripts",
+    "single bounded db pool",
+    "typecheck without secrets",
+    "design tokens"
+  ],
+  "touchpoints": [
+    "package.json", "next.config.ts", "eslint.config.mjs", ".gitignore", ".env.example",
+    "drizzle.config.ts", "vitest.config.mts", "playwright.config.ts", "supabase/config.toml",
+    "scripts/typecheck.mjs", "app/layout.tsx", "app/globals.css", "app/page.tsx",
+    "shared/config/", "shared/db/", "shared/events/", "shared/admin/", "shared/i18n/", "messages/",
+    "db/migrations/0000-0003", "db/seeds/", "tests/"
+  ],
+  "blastRadius": [
+    "every later phase: schema barrel, env config, outbox contract, RLS/grant convention, test harness",
+    "app boot (env validation in next.config.ts)",
+    "root layout rendering (instant=false, locale cookie)"
+  ],
+  "contracts": [
+    "DomainEventOutbox.add(tx: DbTx, type, payload) — tx-only, strict 6-event union, ids-only payloads",
+    "shared/config/env.ts parsed env (milestones as epoch ms)",
+    "isEventWritingOpen(now) exclusive at EVENT_END_AT",
+    "every table migration enables RLS; anon/authenticated hold no table privileges",
+    "npm scripts: typecheck, lint, test:unit, test:integration, test:e2e, db:generate, db:migrate, db:seed, db:reset"
+  ]
+}

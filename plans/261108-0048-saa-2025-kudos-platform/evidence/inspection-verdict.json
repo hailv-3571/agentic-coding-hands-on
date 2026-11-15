@@ -1,0 +1,49 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "env fail-fast: next.config.ts:9 validates the server env at boot unless SKIP_ENV_VALIDATION is exactly \"1\"; env.ts still validates on import; SKIP_ENV_VALIDATION=0 with a bad var exits 1 with the Zod error",
+    "outbox commit/rollback: integration test writes a pending row visible after commit and leaves no row after a failed business transaction (tester 18/18 pass)",
+    "RLS baseline: migration 0002 enables RLS, revokes table privileges from anon/authenticated incl. default privileges; rls-baseline test asserts RLS on, no client policies, no grants, future-table default, anon denied",
+    "private bucket: migration 0003 upserts kudo-images with public=false, 5 MB, jpeg/png/webp (DO UPDATE corrects drift); tested incl. re-run correction; no storage.objects client policy",
+    "CSV BOM+formula guard: csv-serializer.ts emits BOM, RFC 4180 quoting with CRLF, prefixes formula triggers, rejects non-finite numbers and ragged rows; unit tested",
+    "half-open date range: date-range-filter.ts yields [start, nextDay(to)) in ADMIN_TIMEZONE; unit tested",
+    "seed idempotency: departments/hashtags seeds upsert by natural key in one transaction; integration test runs twice and keeps same rows and ids",
+    "tooling scripts: package.json defines typecheck, lint, test:unit, test:integration, test:e2e, db:generate, db:migrate, db:seed, db:reset; unit 52/52, integration 18/18, e2e 2/2, lint 0",
+    "single bounded db pool: shared/db/client.ts caches one postgres-js pool on globalThis with max 10, idle 20s, connect 10s, prepare false; unit tested for dev and production reuse",
+    "typecheck without secrets: scripts/typecheck.mjs sets SKIP_ENV_VALIDATION=1 only for next typegen + tsc; npm run typecheck exit 0",
+    "design tokens: app/globals.css @theme colors, gold shadow and Montserrat font match research/figma-design-tokens-and-seed-lists.md verbatim (#00101a, #ffea9e, #998c5f, #2e3940, #d4271d); tester confirmed computed styles in screenshots"
+  ],
+  "regressionChecked": [
+    "milestone env vars now epoch ms: all consumers (event-window.ts, tests) compile and behave",
+    "realtime.messages policies are independent of the public-schema privilege revoke; Auth/Storage schemas untouched",
+    "dev/build/start still fail fast on invalid env (flag only set by typecheck script)",
+    "typecheck, eslint and unit suites green after fix round 1 and the SKIP_ENV_VALIDATION strict-compare change"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Low",
+      "category": "Config",
+      "location": "next.config.ts:9",
+      "summary": "SKIP_ENV_VALIDATION=0 or false skipped validation; fixed by strict !== \"1\" compare and re-verified",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Security",
+      "location": "db/migrations/0002_rls_baseline.sql:11",
+      "summary": "If a later realtime.messages policy subqueries a public table, authenticated needs a narrow GRANT SELECT; note for phases 11 and 13",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

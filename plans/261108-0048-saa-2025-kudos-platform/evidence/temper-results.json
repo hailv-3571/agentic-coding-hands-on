@@ -1,0 +1,74 @@
+{
+  "commands": [
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations 0000-0003 applied from empty DB; departments=6 hashtags=8 (run twice, idempotent)",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "7 files, 52/52 passed",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "4 files, 18/18 passed (run twice, stable)",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "2/2 passed (chromium)",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "tsc clean after SKIP_ENV_VALIDATION fix (orchestrator re-run)",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "no findings",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "two runs 15s and 11s, no warnings; 25-min stall not reproduced",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "playwright screenshot / (desktop 1440x900, mobile 375x812)",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "saved evidence/screenshots/phase-01/home-*.png; bg #00101a, gold #ffea9e, Montserrat confirmed",
+      "ts": "2026-11-15T00:00:00.000Z"
+    },
+    {
+      "command": "! LAUNCH_AT=garbage npx next build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "negated probe: build fails fast with readable Zod error at LAUNCH_AT (inner exit non-zero)",
+      "ts": "2026-11-15T05:46:29.307Z"
+    },
+    {
+      "command": "! SKIP_ENV_VALIDATION=0 LAUNCH_AT=garbage npx next typegen",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "negated probe: only SKIP_ENV_VALIDATION=1 opts out; =0 still validates",
+      "ts": "2026-11-15T05:46:29.307Z"
+    }
+  ]
+}
