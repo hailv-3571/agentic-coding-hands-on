@@ -52,7 +52,7 @@ lang: vi
 | D010 | Định dạng lời nhắn: văn bản thuần kèm thẻ nhắc tên, hay rich text? | Văn bản thuần kèm thẻ nhắc tên và link | Dễ kiểm giới hạn 1.000 ký tự, dễ chống chèn mã độc | yes |
 | D011 | Nhắc tên bằng "@" có sinh thông báo riêng cho người được nhắc? | Không, ở bản đầu chỉ gắn tên | Tránh nở phạm vi sang F013 | no |
 | D012 | Quy tắc ảnh: định dạng, dung lượng mỗi ảnh, tối đa đúng 5 ảnh hay khác? | JPG/PNG/WEBP, 5 MB mỗi ảnh, tối đa 5 ảnh | Thiết kế ghi "tối đa ~5"; cần số chính xác | no |
-| D013 | Số hashtag tối đa trên một Kudo? | Tối đa 3 | Tránh thẻ Kudo bị tràn | no |
+| D013 | Số hashtag tối đa trên một Kudo? | Tối đa 5 (theo Figma "Tối đa 5"; decision-log 2026-11-15) | Khớp thiết kế | no |
 | D014 | Ngoài ô trên Live board, còn lối vào nào để viết Kudo (nút nổi, trang profile người khác)? | Chỉ ô trên Live board | Chưa có thiết kế xác nhận các lối khác | no |
 
 ## 4. Requirements
