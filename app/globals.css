@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens from Figma 9ypp4enmFmdK3YAFJLIu6C (Details/* variables, Gold/Shaddow effect,
+ * Montserrat type scale) — see plans/.../research/figma-design-tokens-and-seed-lists.md.
+ * Values are verbatim; spacing uses Tailwind's default 4px scale (covers padding4/12, size48/64).
+ */
+@theme {
+  /* Colors */
+  --color-background: #00101a;
+  --color-container: #101417cc;
+  --color-container-2: #00070c;
+  --color-primary: #ffea9e;
+  --color-primary-hover: #fff8e1;
+  --color-on-primary: #00101a;
+  --color-secondary: #ffea9e1a;
+  --color-secondary-hover: #ffea9e66;
+  --color-text: #ffffff;
+  --color-text-muted: #999999;
+  --color-border: #998c5f;
+  --color-divider: #2e3940;
+  --color-error: #d4271d;
+
+  /* Effects */
+  --shadow-gold: 0 0 6px #fae287, 0 4px 4px #00000040;
+
+  /* Font family: next/font exposes Montserrat (latin + vietnamese) as --font-montserrat */
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale: size / line-height / letter-spacing / weight (px) */
+  --text-display-large: 57px;
+  --text-display-large--line-height: 64px;
+  --text-display-large--letter-spacing: -0.25px;
+  --text-display-large--font-weight: 400;
+  --text-display-medium: 45px;
+  --text-display-medium--line-height: 52px;
+  --text-display-medium--letter-spacing: 0px;
+  --text-display-medium--font-weight: 400;
+  --text-display-small: 36px;
+  --text-display-small--line-height: 44px;
+  --text-display-small--letter-spacing: 0px;
+  --text-display-small--font-weight: 400;
+  --text-headline-large: 32px;
+  --text-headline-large--line-height: 40px;
+  --text-headline-large--letter-spacing: 0px;
+  --text-headline-large--font-weight: 400;
+  --text-headline-small: 24px;
+  --text-headline-small--line-height: 32px;
+  --text-headline-small--letter-spacing: 0px;
+  --text-headline-small--font-weight: 400;
+  --text-title-large: 22px;
+  --text-title-large--line-height: 28px;
+  --text-title-large--letter-spacing: 0px;
+  --text-title-large--font-weight: 400;
+  --text-kudos: 20px;
+  --text-kudos--line-height: 32px;
+  --text-kudos--letter-spacing: 0px;
+  --text-kudos--font-weight: 400;
+  --text-title-medium: 16px;
+  --text-title-medium--line-height: 24px;
+  --text-title-medium--letter-spacing: 0.15px;
+  --text-title-medium--font-weight: 500;
+  --text-title-small: 14px;
+  --text-title-small--line-height: 20px;
+  --text-title-small--letter-spacing: 0.1px;
+  --text-title-small--font-weight: 500;
+  --text-label-large: 14px;
+  --text-label-large--line-height: 20px;
+  --text-label-large--letter-spacing: 0.1px;
+  --text-label-large--font-weight: 500;
+  --text-body-large: 16px;
+  --text-body-large--line-height: 24px;
+  --text-body-large--letter-spacing: 0.5px;
+  --text-body-large--font-weight: 400;
+  --text-body-medium: 14px;
+  --text-body-medium--line-height: 20px;
+  --text-body-medium--letter-spacing: 0.25px;
+  --text-body-medium--font-weight: 400;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* The whole product is dark; keep native controls and scrollbars dark too. */
+    color-scheme: dark;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

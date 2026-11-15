@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794715176300,
+      "tag": "0000_reference_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794715195995,
+      "tag": "0001_domain_event_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794715199320,
+      "tag": "0002_rls_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794715202177,
+      "tag": "0003_storage_kudo_images_bucket",
+      "breakpoints": true
+    }
+  ]
+}
