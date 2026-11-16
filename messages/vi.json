@@ -294,5 +294,77 @@
       "message": "Kudo này không tồn tại hoặc đã bị gỡ.",
       "back": "Quay lại Live board"
     }
+  },
+  "kudosHearts": {
+    "label": "{count} lượt thả tim",
+    "errors": {
+      "SELF_HEART": "Bạn không thể thả tim cho Kudo của mình",
+      "KUDO_UNAVAILABLE": "Kudo này không còn khả dụng",
+      "EVENT_ENDED": "Sự kiện đã kết thúc, không thể thả tim nữa",
+      "UNEXPECTED": "Không thể cập nhật, vui lòng thử lại"
+    }
+  },
+  "adminCampaigns": {
+    "metaTitle": "Setting",
+    "title": "Setting",
+    "addButton": "Add Campaign",
+    "table": {
+      "caption": "Danh sách chiến dịch x2 tim",
+      "id": "ID",
+      "name": "Name",
+      "time": "Time",
+      "actions": "Actions",
+      "until": "đến",
+      "empty": "Chưa có chiến dịch nào. Bấm Add Campaign để tạo.",
+      "loadFailed": "Không tải được danh sách chiến dịch.",
+      "retry": "Thử lại"
+    },
+    "menu": {
+      "trigger": "Thao tác {name}",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "form": {
+      "addTitle": "Add Campaign",
+      "editTitle": "Edit Campaign",
+      "name": "Campaign Name",
+      "startsAt": "Start Date",
+      "endsAt": "End Date",
+      "cancel": "Cancel",
+      "submitAdd": "Add Campaign",
+      "submitEdit": "Save Campaign",
+      "saving": "Đang lưu…"
+    },
+    "delete": {
+      "title": "Delete Campaign",
+      "question": "Bạn có chắc chắn muốn xoá campaign",
+      "confirm": "Delete",
+      "cancel": "Cancel",
+      "deleting": "Đang xoá…",
+      "failed": "Không xoá được, vui lòng thử lại"
+    },
+    "toast": {
+      "created": "Đã thêm chiến dịch",
+      "updated": "Đã lưu chiến dịch",
+      "deleted": "Đã xoá chiến dịch",
+      "dismiss": "Đóng"
+    },
+    "errors": {
+      "VALIDATION": "Vui lòng kiểm tra lại các trường được đánh dấu",
+      "NOT_FOUND": "Chiến dịch không còn tồn tại",
+      "OVERLAP": "Khoảng thời gian trùng với một chiến dịch khác",
+      "overlapWith": "Khoảng thời gian trùng với chiến dịch {name} ({startsAt} - {endsAt})",
+      "ENDED": "Chiến dịch đã kết thúc, không thể sửa hoặc xoá",
+      "UNEXPECTED": "Không lưu được, vui lòng thử lại",
+      "fields": {
+        "nameRequired": "Vui lòng nhập tên chiến dịch (tối đa 100 ký tự)",
+        "startRequired": "Vui lòng chọn giờ bắt đầu",
+        "endRequired": "Vui lòng chọn giờ kết thúc",
+        "invalidDateTime": "Ngày giờ không hợp lệ",
+        "endBeforeStart": "Giờ kết thúc phải sau giờ bắt đầu",
+        "endInPast": "Giờ kết thúc phải sau thời điểm hiện tại",
+        "startLocked": "Chiến dịch đang chạy, không thể đổi giờ bắt đầu"
+      }
+    }
   }
 }

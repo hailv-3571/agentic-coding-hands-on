@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { isKudoWritingOpen } from "@/features/kudos-authoring/server/kudo-write-window";
 import { KudoDetailView } from "@/features/kudos-feed/components/kudo-detail-view";
 import { filterButton, statusText } from "@/features/kudos-feed/components/kudo-feed-styles";
 import { LiveBoardKeyvisualBackground } from "@/features/kudos-feed/components/live-board-keyvisual";
@@ -43,7 +44,7 @@ export default async function KudoDetailPage({ params }: PageProps<"/kudos/[id]"
   const { userId } = await requireSunner();
   const { id } = await params;
   const t = await getTranslations("kudosFeed");
-  const kudo = await findKudo(id, userId);
+  const [kudo, writingOpen] = await Promise.all([findKudo(id, userId), isKudoWritingOpen()]);
   if (kudo === null) notFound();
 
   return (
@@ -58,7 +59,7 @@ export default async function KudoDetailPage({ params }: PageProps<"/kudos/[id]"
           </a>
         </div>
       ) : (
-        <KudoDetailView kudo={kudo} />
+        <KudoDetailView kudo={kudo} writingOpen={writingOpen} />
       )}
     </main>
   );

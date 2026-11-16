@@ -15,8 +15,9 @@ import { cardActionButton, cardBodyBox, cardDivider } from "./kudo-feed-styles";
  * (Bold 24/32, no clamp), every image (each opens the full file in a new tab), every hashtag,
  * hearts (gap 8), Copy Link and "Đóng" back to the Live board. The author's own spam Kudo is a
  * read-only view: spam tag and the edit-locked note instead of hearts and Copy Link (C-17, D006).
+ * `writingOpen` (`isKudoWritingOpen()`) disables the heart from EVENT_END_AT (F005).
  */
-export function KudoDetailView({ kudo }: { kudo: KudoCardView }) {
+export function KudoDetailView({ kudo, writingOpen }: { kudo: KudoCardView; writingOpen: boolean }) {
   const t = useTranslations("kudosFeed");
   return (
     <article
@@ -43,7 +44,14 @@ export function KudoDetailView({ kudo }: { kudo: KudoCardView }) {
         {kudo.isSpam ? (
           <span />
         ) : (
-          <KudoCardHeartSlot kudoId={kudo.id} heartCount={kudo.heartCount} heartedByMe={kudo.heartedByMe} variant="detail" />
+          <KudoCardHeartSlot
+            kudoId={kudo.id}
+            heartCount={kudo.heartCount}
+            heartedByMe={kudo.heartedByMe}
+            isOwner={kudo.isOwner}
+            writingOpen={writingOpen}
+            variant="detail"
+          />
         )}
         <div className="ml-auto flex items-center">
           {!kudo.isSpam && <KudoCopyLinkButton kudoId={kudo.id} />}

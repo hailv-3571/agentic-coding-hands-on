@@ -294,5 +294,77 @@
       "message": "This Kudo does not exist or has been removed.",
       "back": "Back to the Live board"
     }
+  },
+  "kudosHearts": {
+    "label": "{count} hearts",
+    "errors": {
+      "SELF_HEART": "You can't heart your own Kudo",
+      "KUDO_UNAVAILABLE": "This Kudo is no longer available",
+      "EVENT_ENDED": "The event has ended, hearts can no longer be changed",
+      "UNEXPECTED": "Couldn't update, please try again"
+    }
+  },
+  "adminCampaigns": {
+    "metaTitle": "Setting",
+    "title": "Setting",
+    "addButton": "Add Campaign",
+    "table": {
+      "caption": "x2 heart campaigns",
+      "id": "ID",
+      "name": "Name",
+      "time": "Time",
+      "actions": "Actions",
+      "until": "to",
+      "empty": "No campaigns yet. Click Add Campaign to create one.",
+      "loadFailed": "Couldn’t load the campaigns.",
+      "retry": "Try again"
+    },
+    "menu": {
+      "trigger": "Actions for {name}",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "form": {
+      "addTitle": "Add Campaign",
+      "editTitle": "Edit Campaign",
+      "name": "Campaign Name",
+      "startsAt": "Start Date",
+      "endsAt": "End Date",
+      "cancel": "Cancel",
+      "submitAdd": "Add Campaign",
+      "submitEdit": "Save Campaign",
+      "saving": "Saving…"
+    },
+    "delete": {
+      "title": "Delete Campaign",
+      "question": "Are you sure you want to delete the campaign",
+      "confirm": "Delete",
+      "cancel": "Cancel",
+      "deleting": "Deleting…",
+      "failed": "Couldn’t delete, please try again"
+    },
+    "toast": {
+      "created": "Campaign added",
+      "updated": "Campaign saved",
+      "deleted": "Campaign deleted",
+      "dismiss": "Close"
+    },
+    "errors": {
+      "VALIDATION": "Please check the highlighted fields",
+      "NOT_FOUND": "This campaign no longer exists",
+      "OVERLAP": "The time range overlaps another campaign",
+      "overlapWith": "The time range overlaps campaign {name} ({startsAt} - {endsAt})",
+      "ENDED": "This campaign has ended and can no longer be edited or deleted",
+      "UNEXPECTED": "Couldn't save, please try again",
+      "fields": {
+        "nameRequired": "Please enter a campaign name (up to 100 characters)",
+        "startRequired": "Please choose a start time",
+        "endRequired": "Please choose an end time",
+        "invalidDateTime": "Invalid date and time",
+        "endBeforeStart": "The end time must be after the start time",
+        "endInPast": "The end time must be in the future",
+        "startLocked": "This campaign is running; its start time can't be changed"
+      }
+    }
   }
 }

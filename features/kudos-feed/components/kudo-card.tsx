@@ -22,7 +22,7 @@ export type KudoCardVariant = "post" | "highlight";
  * the parent. `isSpam` (the viewer's own spam Kudo) hides hearts, Copy Link and the pen
  * (F007 FR-303/D006). The pen shows only for `isOwner && !isSpam` while writing is open
  * (`writingOpen` from `isKudoWritingOpen()`: false from EVENT_END_AT, like the launcher; the
- * server still answers WRITING_CLOSED on save).
+ * server still answers WRITING_CLOSED on save). The same `writingOpen` disables the heart (F005).
  */
 export function KudoCard({ kudo, variant, writingOpen }: { kudo: KudoCardView; variant: KudoCardVariant; writingOpen: boolean }) {
   const t = useTranslations("kudosFeed.card");
@@ -53,7 +53,14 @@ export function KudoCard({ kudo, variant, writingOpen }: { kudo: KudoCardView; v
         {kudo.isSpam ? (
           <span />
         ) : (
-          <KudoCardHeartSlot kudoId={kudo.id} heartCount={kudo.heartCount} heartedByMe={kudo.heartedByMe} variant="card" />
+          <KudoCardHeartSlot
+            kudoId={kudo.id}
+            heartCount={kudo.heartCount}
+            heartedByMe={kudo.heartedByMe}
+            isOwner={kudo.isOwner}
+            writingOpen={writingOpen}
+            variant="card"
+          />
         )}
         <div className="ml-auto flex items-center">
           {!kudo.isSpam && <KudoCopyLinkButton kudoId={kudo.id} />}
