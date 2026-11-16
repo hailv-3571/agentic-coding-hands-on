@@ -74,6 +74,18 @@ Danh sách đầy đủ ở `system/architecture.md` § Consistency Check (C-01�
 - Q: Khách vào `/` bị chuyển tới `/login` (không kèm `?next=%2F`)? → A: **Chấp nhận** — `next` bị bỏ khi bằng `/` (tương đương). Áp dụng: phase 02.
 - Q: Trang 403 có nút "Về trang chủ" (Figma không có)? → A: **Giữ** — tránh ngõ cụt; copy 403 dùng "Bạn không có quyền truy cập tài nguyên này." (khớp frame mobile).
 
+## Session 2026-11-15 — Phase 04 Figma vs spec (user)
+- Q: Danh hiệu bắt buộc (Figma có dấu *) hay tuỳ chọn? → A: **Tuỳ chọn, ≤ 50 ký tự** (giữ D006; câu báo lỗi Figma chỉ nêu 3 trường). Sửa bài vẫn sửa được danh hiệu. Áp dụng: F003 (phase 04), F004.
+- Q: Thanh định dạng lời nhắn (B / I / S / danh sách / link / trích dẫn) trong Figma? → A: **Làm thanh định dạng, lưu Markdown rút gọn** — thay D010. Tập cú pháp cho phép: `**đậm**`, `_nghiêng_`, `~~gạch~~`, danh sách `1.`/`-`, `> trích dẫn`, `[text](http(s)://…)`; giới hạn 1.000 ký tự tính trên text gốc; không bao giờ lưu/hiển thị HTML thô. Phase 05 render bằng bộ render whitelist (chỉ các thẻ trên, link chỉ http/https, `rel="noopener noreferrer nofollow"`). "@ + tên" vẫn là token văn bản. Áp dụng: F003 (phase 04), F004 (phase 05), F007, F012.
+- Q: Ô "Nickname ẩn danh" (Figma, bắt buộc khi tick ẩn danh)? → A: **Thêm** cột `kudos.anonymous_nickname` (1–30 ký tự sau trim, bắt buộc khi `is_anonymous`, null khi không ẩn danh; CHECK ở DB). Bảng tin/thông báo hiện nickname thay cho tên thật; Admin vẫn thấy người gửi thật kèm nhãn "Ẩn danh". Áp dụng: F003 (phase 04), F004, F007, F012, F013.
+
+## Session 2026-11-16 — Phase 04 review decisions (orchestrator)
+- Lời nhắn **không cho chèn ảnh Markdown** `![…](…)` (lỗi `imageNotAllowed`) và **không cho link dạng tham chiếu** `[x]: url`; chỉ link inline `[text](http(s)://…)` và URL http(s) trần. Phase 05 render whitelist theo `research/phase-04-backend-contracts.md` § 1.1.
+- Giới hạn **20 lượt ký upload ảnh chưa dùng / người / 24 giờ** (429 `UPLOAD_LIMIT`); job dọn ảnh mồ côi để sau.
+- CHECK `kudos_body_not_blank` dùng regex `[^[:space:]]` (khớp trim của form).
+- Câu DEC-001 nguyên văn Figma: "Bạn cần điền đủ Người nhận, Lời nhắn gửi và Hashtag để gửi Kudos!"
+- Hoãn: magic-byte check ảnh, oracle 403/404 ở route sửa, trigram index tìm Sunner, soft-deactivate profile (FK RESTRICT nên không xóa profile).
+
 ## Session 2026-11-15 — Phase 02/03 review fix round 2
 - Q: Trang 403 cho non-admin ở `/admin/*` trả status 403 thế nào (Cache Components gửi shell 200 trước khi render)? → A: **Proxy tự trả 403**: fetch trang public `/access-denied` (chỉ gửi cookie locale + Accept-Language) rồi trả HTML với status 403; non-GET/Server Action → JSON 403. Origin fetch lấy từ `INTERNAL_APP_ORIGIN` (tùy chọn) hoặc `http://127.0.0.1:$PORT`, **không bao giờ từ header Host** (chống SSRF). Phase 07: cổng prelaunch phải cho khách vào `/access-denied`. Hosting: server phải tự gọi được origin nội bộ đó.
 - Q: Trigger chặn domain ngoài trên `auth.users`? → A: Tách 2 trigger: `reject_foreign_domain_on_insert` và `reject_foreign_domain_on_email_change` (chỉ khi `NEW.email IS DISTINCT FROM OLD.email`) — tài khoản cũ ngoài domain trên hosted không bị chặn khi GoTrue cập nhật cột khác.

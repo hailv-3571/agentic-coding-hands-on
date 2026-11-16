@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-shell}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-shell,kudos-authoring,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -36,6 +36,7 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-
 
 ## Database
 
+- Ràng buộc đơn bảng (độ dài, không rỗng, khác nhau) đặt thành CHECK ở DB bằng SQL viết tay (`0007_kudos_constraints.sql`), ngoài kiểm Zod ở server; Drizzle schema khai báo `.enableRLS()` cho từng bảng.
 - Mỗi migration tạo bảng phải bật RLS cho bảng đó trong cùng migration, không tạo policy cho `anon`/`authenticated`. `0002_rls_baseline.sql` đã REVOKE quyền của hai role này, kể cả bảng tạo sau. Test `tests/integration/foundation/rls-baseline.test.ts` kiểm tra điều này.
 - Schema barrel `shared/db/schema/index.ts`: mỗi feature thêm đúng một dòng `export *`, không sửa dòng khác.
 - Cần SQL viết tay (trigger, `EXCLUDE`, policy) thì đặt trong `db/migrations/`. Sinh migration: `npm run db:generate`.
@@ -48,9 +49,19 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-
 - **Mọi đích redirect đến từ input (`next`, query, form) phải qua `safeNextPath()`** (`shared/auth/safe-next-path.ts`). Hàm chỉ cho đường dẫn cùng origin, chặn `//host`, dấu `\`, ký tự điều khiển và dot-segment. Không tự kiểm `startsWith("/")`.
 - Xác thực session bằng `getUser()` ở cả proxy lẫn page (`getSessionUser`). Không dùng `getClaims()` để quyết định quyền: hai bên lệch nhau sẽ gây vòng lặp chuyển trang.
 
+## Route handler dữ liệu và Server Action ghi (phase 04)
+
+- Route handler JSON tự gọi guard riêng (`requireApiSunner()` ở `features/kudos-authoring/server/`): trả JSON 401/403, không redirect. Body lỗi chỉ `{ code, fieldErrors? }`, không kèm nội dung bản ghi. Endpoint trả dữ liệu riêng tư đặt `Cache-Control: private, no-store`.
+- Server Action ghi trả kết quả có kiểu `{ ok: true, id } | { ok: false, code, fieldErrors? }` (HTTP 200, mã lỗi nằm trong body), không ném lỗi cho trường hợp nghiệp vụ. Action không tự `revalidate`: client gọi `router.refresh()`.
+- Thao tác ghi gắn với mốc sự kiện kiểm lại `isEventWritingOpen(new Date())` ở server mỗi lần gọi; `isKudoWritingOpen()` chỉ để truyền cờ cho UI.
+- Hằng số và schema Zod dùng chung client + server (`kudo-authoring-limits.ts`, `schemas/`) không import `server-only`; client import từ đó, không import từ `server/`.
+- Độ dài chữ đếm theo code point (`kudoTextLength`), cùng đơn vị với `char_length` của CHECK ở DB.
+- Upload ảnh: server chỉ cấp signed upload URL; đường dẫn lưu không chứa id người dùng. Khi ghi chỉ nhận đường dẫn chính người đó đã ký. Request nhận body JSON nhỏ thì đọc có trần byte (`read-capped-json-body.ts`), vượt trần trả 413 trước khi parse.
+- Nội dung người dùng dạng Markdown rút gọn lưu nguyên văn, không bao giờ coi là HTML. Kiểm ở bước ghi chỉ là lớp phụ; chỗ hiển thị phải dùng renderer whitelist (phạm vi cú pháp: `plans/261108-0048-saa-2025-kudos-platform/research/phase-04-backend-contracts.md` § 1.1).
+
 ## Domain event outbox
 
-`DomainEventOutbox.add(tx, type, payload)` (`shared/events/domain-event-outbox.ts`) chỉ gọi bên trong transaction nghiệp vụ của caller. Hàm không tự mở transaction, nên event chỉ tồn tại nếu thay đổi nghiệp vụ commit. Payload được kiểm bằng Zod theo `domain-event-types.ts`; sai thì ném lỗi và rollback.
+`DomainEventOutbox.add(tx, type, payload)` (`shared/events/domain-event-outbox.ts`) chỉ gọi bên trong transaction nghiệp vụ của caller. Hàm không tự mở transaction, nên event chỉ tồn tại nếu thay đổi nghiệp vụ commit. Payload được kiểm bằng Zod theo `domain-event-types.ts`; sai thì ném lỗi và rollback. Ví dụ: `createKudo` gọi `DomainEventOutbox.add(tx, "KudoCreated", { kudoId })` cùng transaction với `kudos`; sửa Kudo không phát event.
 
 ## Mutation (C-18)
 

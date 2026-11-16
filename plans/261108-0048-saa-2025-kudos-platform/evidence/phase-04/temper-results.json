@@ -1,0 +1,60 @@
+{
+  "commands": [
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations 0000-0008 applied; seeds departments=6 hashtags=8",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "route types generated, no errors",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "eslint clean",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "23 files, 285/285 passed",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "21 files, 168/168 passed (local Supabase)",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "40/40 passed (chromium); rerun 40/40 flake check",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled, TypeScript pass, no warnings",
+      "ts": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "13/13 production status checks pass on next start",
+      "ts": "2026-11-16T00:00:00.000Z"
+    }
+  ]
+}

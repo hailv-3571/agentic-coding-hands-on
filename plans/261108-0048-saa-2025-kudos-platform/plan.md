@@ -50,7 +50,7 @@ Tên file kebab-case, mỗi file code < 200 dòng.
 | 01 | [Foundation & infrastructure](phase-01-foundation-infrastructure.md) | all (enables) | P0 | — | completed |
 | 02 | [Auth & onboarding](phase-02-auth-and-onboarding.md) | F001 | P0 | 01 | completed |
 | 03 | [App shell & i18n](phase-03-app-shell-and-i18n.md) | F002 | P0 | 01 | completed |
-| 04 | [Kudos authoring](phase-04-kudos-authoring.md) | F003 | P0 | 02, 03 | pending |
+| 04 | [Kudos authoring](phase-04-kudos-authoring.md) | F003 | P0 | 02, 03 | completed |
 | 05 | [Kudos feed & detail](phase-05-kudos-feed-and-detail.md) | F004 | P1 | 04 | pending |
 | 06 | [Hearts & x2 campaigns](phase-06-kudos-hearts-and-campaigns.md) | F005, F011 | P1 | 05 | pending |
 | 07 | [Awards portal & prelaunch](phase-07-awards-portal.md) | F006 | P1 | 02, 03 | pending |

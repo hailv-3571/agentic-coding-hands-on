@@ -1,0 +1,37 @@
+{
+  "task": "Phase 04 (F003 Kudos authoring): kudos schema + constraints, create/update Server Actions with outbox, image upload signing, Sunner search, hashtag list, edit prefill route, and the Write Kudo composer modal for the SAA 2025 Kudos platform",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "new kudo is public with session sender, 1-5 hashtags, ordered images and exactly one KudoCreated outbox row; failure after insert rolls back both",
+    "self-send rejected by action and by DB CHECK; second kudo to same recipient succeeds",
+    "over-length body, 0 or 6 hashtags, inactive hashtag, 6 images, foreign or unknown upload path are rejected server-side with no rows written",
+    "non-owner update 403 and spam update 423 leave the row unchanged; recipient and created_at immutable",
+    "after EVENT_END_AT create and update return WRITING_CLOSED and the launcher is disabled",
+    "no route or action deletes a kudo",
+    "Sunner search is diacritic-insensitive, honours excludeSelf, treats LIKE metachars literally and answers 401 without session",
+    "title optional up to 50 chars; Markdown subset body up to 1,000 raw chars, no HTML, no images, no reference-style links",
+    "anonymous kudo requires a 1-30 char nickname enforced by CHECK",
+    "missing required fields show the DEC-001 message verbatim",
+    "pending uploads capped at 20 per user per 24h (429 UPLOAD_LIMIT); sign body capped at 4 KB (413)",
+    "composer modal matches Figma on desktop and mobile; double submit creates one kudo"
+  ],
+  "touchpoints": [
+    "shared/db/schema/kudos.ts", "shared/db/schema/index.ts",
+    "db/migrations/0006_kudos.sql", "db/migrations/0007_kudos_constraints.sql", "db/migrations/0008_kudos_review_fixes.sql",
+    "features/kudos-authoring/", "features/sunner-search/",
+    "app/api/sunners/search/", "app/api/hashtags/", "app/api/kudos/images/sign/", "app/api/kudos/[id]/edit/",
+    "app/(app)/page.tsx", "messages/", "public/images/kudos-composer/", "tests/"
+  ],
+  "blastRadius": [
+    "phase 05 feed reads kudos and renders the Markdown body and anonymous nickname",
+    "phases 06/09/10 count over kudos; phase 08 adds moderation transitions",
+    "phase 12 reuses the locked-recipient composer and search; phase 13 consumes KudoCreated outbox rows",
+    "kudo-images Storage bucket objects referenced from kudo_images"
+  ],
+  "contracts": [
+    "createKudoAction/updateKudoAction return KudoWriteResult with error codes (MISSING_REQUIRED, WRITING_CLOSED, FORBIDDEN 403, LOCKED 423, PAYLOAD_TOO_LARGE 413, UPLOAD_LIMIT 429)",
+    "GET /api/sunners/search, GET /api/hashtags, POST /api/kudos/images/sign, GET /api/kudos/[id]/edit (private, no-store)",
+    "sender_id only from session; status never accepted from client",
+    "phase 05 renderer whitelist pinned in research/phase-04-backend-contracts.md section 1.1"
+  ]
+}

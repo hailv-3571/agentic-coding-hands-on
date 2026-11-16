@@ -92,6 +92,24 @@ Một vị từ duy nhất `public.is_sunner_email()` (domain `@sun-asterisk.com
 
 Sau đó: `create_sunner_profile` (AFTER INSERT, `ON CONFLICT DO NOTHING`) tạo `profiles` lần đăng nhập đầu; `sync_profile_email` (AFTER UPDATE khi email đổi) giữ `profiles.email` khớp `auth.users.email`. Mọi hàm đặt `search_path` rỗng và thu hồi `EXECUTE` của `PUBLIC`, `anon`, `authenticated`.
 
+## Ghi Kudo (F003, đã implement ở phase 04)
+
+Hợp đồng đầy đủ (mã lỗi, shape input, phạm vi cú pháp Markdown cho renderer phase 05): `plans/261108-0048-saa-2025-kudos-platform/research/phase-04-backend-contracts.md`.
+
+| Điểm vào | Vai trò | Lỗi chính |
+|----------|---------|-----------|
+| `createKudo(input)` (server action) | Một transaction: `kudos` + `kudo_hashtags` + `kudo_images` + outbox `KudoCreated { kudoId }`; `sender_id` từ session | `WRITING_CLOSED`, `MISSING_REQUIRED`, `VALIDATION`, `SELF_SEND`, `RECIPIENT_INVALID`, `HASHTAG_INVALID`, `IMAGE_INVALID` |
+| `updateKudo(kudoId, input)` (server action) | Một `UPDATE` có điều kiện (chủ bài và `status = 'public'`), thay tập hashtag/ảnh; không đổi người nhận, không phát event | `FORBIDDEN` (403), `SPAM_LOCKED` (423), `NOT_FOUND`, `WRITING_CLOSED` |
+| `GET /api/sunners/search?q&limit&excludeSelf` | Tìm người nhận / người được nhắc | 400 `VALIDATION`, 401, 403 `ONBOARDING_REQUIRED` |
+| `GET /api/hashtags` | Hashtag đang hoạt động, nhãn theo locale | 401, 403 |
+| `POST /api/kudos/images/sign` | Cấp signed upload URL; ghi `kudo_image_uploads` | 413 (body > 4 KB), 429 `UPLOAD_LIMIT` (20 lượt chưa dùng / người / 24 giờ), 403 `WRITING_CLOSED` |
+| `GET /api/kudos/{id}/edit` | Nạp dữ liệu sửa, `Cache-Control: private, no-store`; `locked: true` khi Kudo là spam | 403 `FORBIDDEN`, 404 `NOT_FOUND` |
+
+- **Cửa ghi đóng từ `EVENT_END_AT`**: hai action và route ký ảnh tự kiểm lại mỗi lần gọi (`isEventWritingOpen`); `isKudoWritingOpen()` chỉ để server component truyền `writingOpen` cho `KudoComposerLauncher`.
+- **Route handler tự gác cổng bằng `requireApiSunner()`** (trả JSON 401/403, không redirect); proxy chỉ là lớp lạc quan. Body lỗi chỉ có `{ code, fieldErrors? }`, không chứa nội dung Kudo.
+- **Ảnh**: trình duyệt xin URL ký, tải thẳng lên bucket `kudo-images`, rồi gửi `imagePaths`. Khi ghi, server chỉ nhận đường dẫn mà chính người đó đã ký và object đã tồn tại. Đường dẫn không chứa id người gửi (Kudo ẩn danh không lộ tác giả qua URL ảnh).
+- **Lời nhắn** là Markdown rút gọn lưu nguyên văn, không HTML, không ảnh Markdown, không link tham chiếu. Server chỉ chặn ở bước ghi; renderer whitelist ở phase 05 mới là ranh giới an toàn.
+
 ## Tech Stack
 
 | Layer | Technology | Version |
@@ -148,7 +166,7 @@ Mỗi feature là một module; ranh giới = bảng nó ghi + hàm/component n�
 |---------|---------------|-----|---------------------|---------------------------|
 | F001_Auth | Đăng nhập, `SessionProxy`, `AdminGuard`, trigger `auth.users` | `profiles`, `departments` | — | `AdminGuard#requireAdmin`, session/`userId`, `profiles.role` |
 | F002_AppShell | Layout Sunner/Admin, `LanguageSwitcher`, `AccountMenu`, trang 404/403, `I18nRequestConfig` | cookie locale | session, role (F001) | Slot chuông, layout |
-| F003_KudosAuthoring | `KudoComposerModal`, `KudoActions`, `KudoRepository`, `KudoImageUpload`, `SunnerSearch` | `kudos` (khởi tạo `status=public`), `kudo_hashtags`, `kudo_images` | `hashtags`, `profiles` | `KudoComposerModal`, `SunnerSearch`, `KudoInputSchema` |
+| F003_KudosAuthoring | `features/kudos-authoring/` (modal `KudoComposerModal`, server action `createKudo`/`updateKudo`, dịch vụ ký upload ảnh, `isKudoWritingOpen`), `features/sunner-search/` | `kudos` (khởi tạo `status=public`), `kudo_hashtags`, `kudo_images`, `kudo_image_uploads` | `hashtags`, `profiles` | `KudoComposerModal`, `KudoComposerLauncher`, `searchSunners`, `KudoInputSchema` / `KUDO_LIMITS` (module client-safe) |
 | F004_KudosFeed | `KudosFeedHandler`, `KudoCard`, `KudoPublicQuery`, trang Live board | — (chỉ đọc) | `kudos`, hashtag, ảnh, `kudo_hearts` (F005), `profiles`, `departments` | `KudoPublicQuery`, `KudoCard`, `AvatarHoverCard` host |
 | F005_KudosHearts | `KudoHeartService/Query`, `HeartStatsQuery`, `HeartMultiplierResolver`, `KudoHeartButton` | `kudo_hearts` | `campaigns` qua `ActiveCampaignReader` | `KudoHeartQuery#summaryForKudos`, `HeartStatsQuery#receivedByUser`, `ActiveCampaignReader` (giao diện) |
 | F006_AwardsPortal | 5 trang tĩnh, `PrelaunchGate`, `awardsData`, `CountdownTimer` | — | — | `isPrelaunch(now)` |
@@ -172,10 +190,11 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | `profiles` (`id`, `email`, `full_name`, `avatar_url`, `department_id`, `role`, `last_login_at`) | F001 | `role` enum `user\|admin`, mặc định `user` |
 | `profiles.role_updated_by`, `profiles.role_updated_at` | F014 thêm vào bảng của F001 | Migration do chủ bảng (F001) áp |
 | `departments` | F001 | Nguồn nạp dữ liệu: `TBD (draft)` (xem C-15) |
-| `kudos` (`id`, `sender_id`, `recipient_id`, `title`, `body`, `is_anonymous`, `created_at`, `updated_at`) | F003 | F003 chỉ ghi `status = public` lúc tạo |
-| `kudos.status` (enum `kudo_status`), `moderated_by`, `moderated_at` | F007 thêm vào bảng của F003 | Index gợi ý `(status, created_at DESC)`, index từng phần cho F009/F015: `TBD (draft)` |
-| `kudo_hashtags`, `kudo_images` | F003 | |
-| `hashtags` | F003 (chỉ đọc ở F003) | Chưa ai sở hữu việc nạp dữ liệu (xem C-15) |
+| `kudos` (`id`, `sender_id`, `recipient_id`, `title`, `body`, `is_anonymous`, `anonymous_nickname`, `status`, `created_at`, `updated_at`) | F003 (`shared/db/schema/kudos.ts`, migration `0006`–`0008`) | F003 chỉ ghi `status = public` lúc tạo; enum `kudo_status` (`public|spam`) đã có từ phase 04. CHECK: `kudos_no_self_send`, `kudos_body_length` (1–1000), `kudos_body_not_blank`, `kudos_title_not_blank`, `kudos_anonymous_nickname` (1–30 khi ẩn danh, NULL khi không). RLS bật, không có policy cho client |
+| `kudos.moderated_by`, `moderated_at` | F007 thêm vào bảng của F003 | Index gợi ý `(status, created_at DESC)`, index từng phần cho F009/F015: `TBD (draft)` |
+| `kudo_hashtags`, `kudo_images` | F003 | Tối đa 5 ảnh, `position` 0–4, `storage_path` duy nhất dạng `kudos/{uuid}.{jpg|png|webp}` (không chứa id người gửi) |
+| `kudo_image_uploads` | F003 | Đường dẫn do `POST /api/kudos/images/sign` cấp; bản ghi bị xóa khi ảnh gắn vào Kudo. Trần 20 lượt chưa dùng / người / 24 giờ |
+| `hashtags` | F003 (chỉ đọc ở F003) | Nạp bằng seed phase 01 (`db/seeds/`, 8 hashtag); F003 chỉ đọc hashtag đang hoạt động |
 | `kudo_hearts` (`kudo_id`, `user_id`, `multiplier`, `created_at`; `UNIQUE (kudo_id, user_id)`) | F005 | `multiplier` là ảnh chụp lúc thả |
 | `campaigns` (`name`, `starts_at`, `ends_at`; `EXCLUDE` gist) | F011 | Constraint `EXCLUDE` nằm trong migration SQL viết tay |
 | `secret_boxes`, `secret_box_prizes`, `user_icons`, `mystery_gift_awards`, `national_kudos` | F010 | Có các `UNIQUE` chống cấp/mở đôi |
@@ -183,7 +202,7 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | `notifications` | F013 | `UNIQUE (event_id, recipient_id, type)` + chỉ mục duy nhất từng phần cho tim chưa đọc và `hero_tier_up` |
 | Hàm + trigger Spotlight, policy `realtime.messages` (topic `spotlight`) | F008 | Đối tượng DB, không phải bảng |
 | Hàm `notify_realtime`, policy `realtime.messages` (topic `notifications:{auth.uid()}`) | F013 | |
-| Storage bucket ảnh Kudo | F003 | Tên bucket, giới hạn dung lượng/định dạng: `TBD (draft)` |
+| Storage bucket ảnh Kudo `kudo-images` | F003 | Riêng tư, JPG/PNG/WEBP, 5 MB (migration 0003, phase 01). Ảnh mồ côi chưa có job dọn (hoãn) |
 | `awardsData` (hằng số có kiểu) | F006 | Không phải bảng |
 
 ## Cross-Feature Contracts
@@ -203,8 +222,8 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | `DomainEventOutbox#add(tx, type, payload)` | Chung (xem C-16) | F003, F005, F007, F010 ghi; F013 đọc | Ghi cùng giao dịch nghiệp vụ; payload không có nội dung nhạy cảm | Nhiều nguồn chưa ghi (C-01) |
 | Bảng sự kiện outbox | — | F013 | `KudoCreated{kudoId}`, `HeartAdded{kudoId,heartUserId}`, `KudoMarkedSpam{kudoId,ownerId,moderatedAt}`, `BoxGranted{userId,count}`, `SetCompleted{userId,giftName}`, `NationalKudosFinalized{items[{kudoId,senderId,rank}]}` | Lệch payload `SetCompleted` (C-03) |
 | `CsvSerializer`, `ADMIN_TIMEZONE`, `EXPORT_MAX_ROWS`, bộ lọc ngày | F007 (đề xuất) | F014, F015 | CSV UTF-8 BOM, vô hiệu hoá ô bắt đầu bằng `= + - @`; cắt ngày theo giờ Việt Nam | Chưa có chủ chính thức (C-14) |
-| `SunnerSearch#search` | F003 | F004, F007 | Tìm Sunner theo tên | Trùng đường dẫn với F004 (C-06) |
-| `KudoComposerModal` (tham số) | F003 | F004 (ô trên Live board), F012 | Chế độ tạo/sửa; cần `recipient` điền sẵn + khoá | Chưa có tham số (C-07) |
+| `GET /api/sunners/search` · `searchSunners(q, { viewerId, limit, excludeSelf, locale })` | F003 (`features/sunner-search/`) | F004, F007 | Tên khớp chuỗi con không phân biệt dấu/hoa thường, email khớp tiền tố; `limit` ≤ 20; `excludeSelf` (mặc định false) | Đã có `excludeSelf` (hướng C-06); handler F004 A5 chưa làm, vẫn phải dùng chung đường dẫn |
+| `KudoComposerModal` (props) | F003 | F004 (ô trên Live board), F012 | `{ mode: "create", recipient?, lockRecipient? } | { mode: "edit", kudoId }`; chế độ sửa luôn khóa người nhận | Props đã có (hướng C-07); lối vào Live board là `KudoComposerLauncher`, nhận `writingOpen` từ `isKudoWritingOpen()` |
 | `HeroBadge`, `IconCollection`, `PersonalStatsPanel`, `AvatarHoverCard` | F009, F010, F010, F012 | F004, F012, F014 | Component dùng lại | Rõ |
 | `LevelQuery` | F014 | F014 | Giao diện thay thế được, mặc định rỗng | Level chưa được định nghĩa (C-12) |
 | Slot chuông | F002 | F013 | Chỗ đặt component chuông trong header | Props chưa chốt |
@@ -253,16 +272,16 @@ Danh sách để planner xử lý. Mức: **blocking** = phải chốt trước 
 | C-03 | blocking | F010, F013 | Outbox: F010 phác `type, payload, created_at, consumed_at`; F013 cần `id`, `attempts`, `failed_at`. F010 INT-002 `SetCompleted {userId}` thiếu `giftName` mà F013 cần | Định nghĩa schema outbox một lần (cột đủ cho F013) và payload `SetCompleted {userId, giftName}`; cập nhật F010 INT-002 |
 | C-04 | non-blocking | F009, F013 | F013 ALG-002 tự đếm người gửi khác nhau trước/sau một Kudo (cùng điều kiện `public`, `sender <> recipient` như F009) — trùng logic đếm của F009; chỉ chia sẻ `tierFromCount` | F009 công bố hàm đếm người gửi khác nhau theo vị trí `(created_at, id)`; F013 gọi lại, không tự viết truy vấn thứ hai |
 | C-05 | blocking | F004, F012 | F012 A3 cần `KudoPublicQuery` lọc theo người nhận (`received`) và người gửi (`sent`, gắn từ session, không từ client); F004 chỉ có lọc hashtag + phòng ban. Cursor `(created_at, id)` của F004 và khoá gộp ALG-001 của F012 phải trùng định nghĩa | F004 mở rộng `KudoPublicQuery` với `recipientId`, `senderId`, cursor chung; che ẩn danh vẫn chỉ ở một nơi |
-| C-06 | non-blocking | F003, F004, F007 | Hai handler cùng `GET /api/sunners/search`: F003 A1 (`SunnerSearch#search`, có thể loại chính mình) và F004 A5 (`SunnerSearchHandler#search`, ô tìm profile theo tên/email). F007 dùng lại bản F003 nhưng cần tìm được cả chính mình | Một handler duy nhất, một chủ (đề xuất F001, bảng `profiles`), tham số `excludeSelf`; F003/F004/F007 cùng gọi |
-| C-07 | blocking | F003, F004, F012 | `KudoComposerModal` chưa có tham số `recipient` điền sẵn và khoá (F012 A4, D008); F003 D014 ghi lối vào từ profile "chưa có thiết kế xác nhận"; ô "gửi lời cảm ơn" trên Live board nằm ở F003 hay F004 chưa rõ | F003 công bố props `{mode, recipient?, lockRecipient?}`; F004 chỉ nhúng |
+| C-06 | non-blocking | F003, F004, F007 | Hai handler cùng `GET /api/sunners/search`: F003 A1 (`SunnerSearch#search`, có thể loại chính mình) và F004 A5 (`SunnerSearchHandler#search`, ô tìm profile theo tên/email). F007 dùng lại bản F003 nhưng cần tìm được cả chính mình | Một handler duy nhất, một chủ (đề xuất F001, bảng `profiles`), tham số `excludeSelf`; F003/F004/F007 cùng gọi **Phase 04**: F003 đã công bố `excludeSelf`; handler F004 A5 chưa làm. |
+| C-07 | blocking | F003, F004, F012 | `KudoComposerModal` chưa có tham số `recipient` điền sẵn và khoá (F012 A4, D008); F003 D014 ghi lối vào từ profile "chưa có thiết kế xác nhận"; ô "gửi lời cảm ơn" trên Live board nằm ở F003 hay F004 chưa rõ | F003 công bố props `{mode, recipient?, lockRecipient?}`; F004 chỉ nhúng **Phase 04**: modal đã có props `recipient`/`lockRecipient`; ô trên Live board là `KudoComposerLauncher` của F003 (còn lối vào từ profile chờ phase 12). |
 | C-08 | non-blocking | F001, F007, F014, F003, F010, F013 | Mã `DISC-001` đã dùng cho `profiles.role` (F001, F014 nhắc lại "tạm"); các spec khác để `kudos.status` (F003, F004, F007, F009, F015), `SecretBoxPrize.kind`, `SecretBox.status`, `Notification.type` là `DISC-### TBD` — nếu mỗi feature đánh số từ 001 khi reconcile sẽ va nhau (đặc biệt `role` vs `kudos.status`) | Cấp `DISC-###` một lần ở reconcile theo bảng toàn hệ thống; mỗi trường phân loại một mã, có một chủ (`profiles.role` → F001, `kudos.status` → F007) |
 | C-09 | blocking | F001, F006 | Hai cổng route chồng nhau: `SessionProxy` (F001 A5) chuyển khách tới Login, trong khi `PrelaunchGate` (F006 A1, allowlist login/countdown/awards) phục vụ cả khách. Danh sách đường dẫn công khai của proxy còn TBD (F001 §5.3 mục 3); F006 D001/D002 chưa chốt khách có xem Countdown/`/awards`; "người dùng thường bị chặn" ngụ ý Admin được vào trước giờ mở nhưng chưa ghi. Đích sau đăng nhập (F001 DEC-001) phụ thuộc F006 | Một điểm vào proxy duy nhất ghép hai bước theo thứ tự cố định: (1) allowlist công khai, (2) session, (3) `isPrelaunch` (F006 chỉ cấp hàm thuần); chốt Admin có bypass trước giờ mở hay không |
-| C-10 | non-blocking | F003, F005, F008, F009, F010, F013, F015 | Kudo tự gửi cho chính mình: F003 để TBD; F009 và F013 loại `sender = recipient`; F005 cấm tự thả tim; F008, F015, F004, F010 không loại | Chốt ở F003: cấm tạo (loại khỏi kết quả tìm), bỏ các nhánh đặc biệt ở feature khác |
+| C-10 | non-blocking | F003, F005, F008, F009, F010, F013, F015 | Kudo tự gửi cho chính mình: F003 để TBD; F009 và F013 loại `sender = recipient`; F005 cấm tự thả tim; F008, F015, F004, F010 không loại | Chốt ở F003: cấm tạo (loại khỏi kết quả tìm), bỏ các nhánh đặc biệt ở feature khác **Phase 04 đã chốt phần F003**: cấm tạo (CHECK `kudos_no_self_send`, lỗi `SELF_SEND` 422, picker gọi `excludeSelf=true`); các nhánh `sender = recipient` ở feature khác chưa gỡ. |
 | C-11 | non-blocking | F005, F010, F014 | F014 "Total Heart" = `COUNT(kudo_hearts ...)` nhưng ghi "định nghĩa F005"; F005/F010 dùng tổng `multiplier` (weighted). F014 còn tự viết truy vấn thay vì dùng `HeartStatsQuery` | Chốt định nghĩa (weighted hay thô) và dùng `HeartStatsQuery` |
 | C-12 | blocking | F009, F014 | F014 cột/bộ lọc Level qua `LevelQuery` chưa có cài đặt; Level chưa được định nghĩa; Hero tier của F009 là khái niệm phân cấp duy nhất hiện có | Chốt Level = Hero tier (dùng `HeroTierQuery`) hoặc bỏ cột Level khỏi phạm vi |
 | C-13 | blocking | F007, F014, F015, F010, F013 | Chính sách hiển thị người gửi Kudo ẩn danh với Admin chưa chốt (F007 D001/RISK-01, mặc định Admin thấy người gửi thật kèm nhãn "Ẩn danh" trong bảng, lọc và Export). Thông báo Kudos Quốc Dân (F010) mang `senderId` tới chính người gửi | Chốt một chính sách toàn hệ thống; `permissions.md` đang ghi mặc định `[INFERRED]` |
 | C-14 | non-blocking | F007, F014, F015, F011, F006 | Tiện ích dùng chung chưa có chủ: `CsvSerializer` (F007 vs F014/F015), `AdminDateRangeFilter`, hàm đổi múi giờ, `ADMIN_TIMEZONE` (F007, F011, F014, F015) và `EVENT_TIMEZONE` (F006), `EXPORT_MAX_ROWS` (F007, F014) lặp hằng số | Một module quản trị dùng chung (chủ đề xuất: F007, build trước F014/F015) và một hằng số múi giờ |
-| C-15 | blocking | F001, F003, F010 | Dữ liệu không có chủ nạp: `departments` (F001 "nguồn TBD", F004/F014/F015 phụ thuộc, `department_id` null lúc tạo hồ sơ), `hashtags` (F003 chỉ đọc, F004 lọc), kho `secret_box_prizes` (F010 §5.3 mục 6), bucket Storage ảnh Kudo và việc dọn tệp mồ côi | Giao mỗi tập dữ liệu cho một feature kèm cách nạp (seed/migration/Admin); chốt ở planner |
+| C-15 | blocking | F001, F003, F010 | Dữ liệu không có chủ nạp: `departments` (F001 "nguồn TBD", F004/F014/F015 phụ thuộc, `department_id` null lúc tạo hồ sơ), `hashtags` (F003 chỉ đọc, F004 lọc), kho `secret_box_prizes` (F010 §5.3 mục 6), bucket Storage ảnh Kudo và việc dọn tệp mồ côi | Giao mỗi tập dữ liệu cho một feature kèm cách nạp (seed/migration/Admin); chốt ở planner **Phase 04**: bucket `kudo-images` và seed `hashtags` đã có (phase 01); job dọn ảnh mồ côi vẫn hoãn. |
 | C-16 | blocking | F010, F003, F005, F007, F013 | Thứ tự build: bảng `domain_event_outbox` đang do F010 (P2) giới thiệu, nhưng F003 (P0), F005, F007 (P1) phải ghi vào nó theo C-01 | Chuyển chủ sở hữu bảng + helper `DomainEventOutbox#add` về nền tảng (F001/migration nền) để có trước F003 |
 | C-17 | non-blocking | F003, F004, F007, F012 | Đường của chủ bài với Kudo spam: F004 A3 trả 404 cho spam (cả chủ bài); F007 A5 chỉ liệt kê; F003 A5/A6 (sửa) chưa nói chủ bài có sửa được Kudo spam hay không; thẻ spam bấm vào đâu chưa rõ | Chốt: chủ bài xem/sửa Kudo spam của mình hay chỉ xem cảnh báo; nếu sửa thì không đổi `status` (F003 BR-005) |
 | C-18 | non-blocking | F003, F005, F007, F010, F011, F013, F014 | Kiểu mutation không thống nhất: F005 (`PUT/DELETE` route handler), F010 (`POST` route handler + `Idempotency-Key`), F013 (`POST` route handler) so với F003/F007/F011/F014 (server action). Next.js 16 (đổi tên middleware → proxy, `forbidden()`, route chặn) chưa được xác nhận bằng tài liệu trong `node_modules/next/dist/docs/` ở bất kỳ spec nào | Quy ước: route handler cho đọc + endpoint cần header đặc thù (idempotency); server action cho form/mutation nội bộ; đọc tài liệu Next.js 16 trước khi code |

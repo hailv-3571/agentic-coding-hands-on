@@ -1,0 +1,66 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "new kudo is public with session sender, 1-5 hashtags, ordered images and exactly one KudoCreated outbox row; failure after insert rolls back both: features/kudos-authoring create-kudo-action.ts:30-34 single db.transaction (insertKudoGraph + outbox add); sender from session; integration create-kudo.test.ts",
+    "self-send rejected by action and by DB CHECK; second kudo to same recipient succeeds: db/migrations/0006_kudos.sql self-send CHECK, no pair-unique constraint; integration create-kudo.test.ts",
+    "over-length body, 0 or 6 hashtags, inactive hashtag, 6 images, foreign or unknown upload path are rejected server-side with no rows written: kudo-input-schema.ts:36-57, kudo-image-upload-service.ts:60-92 claim under FOR UPDATE; integration create-kudo.test.ts",
+    "non-owner update 403 and spam update 423 leave the row unchanged; recipient and created_at immutable: kudo-write-repository.ts:78 conditional UPDATE (id+sender+status), KudoUpdateSchema rejects recipientId; integration update tests",
+    "after EVENT_END_AT create and update return WRITING_CLOSED and the launcher is disabled: server-side WRITING_CLOSED path covered by integration tests (create/update actions and sign route check isEventWritingOpen before validation); isKudoWritingOpen unit test in kudo-write-window.test.ts; launcher code sets disabled={!writingOpen} at features/kudos-authoring/components/kudo-composer-launcher.tsx:28 but NO e2e or unit test renders the launcher in its disabled state (launcher half verified by code reading only)",
+    "no route or action deletes a kudo: no delete route or action in features/kudos-authoring or app/api/kudos; FK RESTRICT on sender/recipient",
+    "Sunner search is diacritic-insensitive, honours excludeSelf, treats LIKE metachars literally and answers 401 without session: sunner-search-query.ts f_unaccent + escaped LIKE (reviewer-261116-phase-04-actions.md), integration search tests",
+    "title optional up to 50 chars; Markdown subset body up to 1,000 raw chars, no HTML, no images, no reference-style links: kudo-input-schema.ts:29-44, kudo-body-link-policy.ts:25 and :100-108; tests/unit/kudos-authoring/kudo-body-link-policy.test.ts (109 unit pass)",
+    "anonymous kudo requires a 1-30 char nickname enforced by CHECK: db/migrations/0007_kudos_constraints.sql kudos_anonymous_nickname; kudo-input-schema.ts:72-81; kudos-migration.test.ts",
+    "missing required fields show the DEC-001 message verbatim: parseKudoInput MISSING_REQUIRED mapping (kudo-input-schema.ts:97-117), banner in kudo-composer-form.tsx:70; e2e compose-kudo",
+    "pending uploads capped at 20 per user per 24h (429 UPLOAD_LIMIT); sign body capped at 4 KB (413): kudo-image-upload-service.ts:40-51 advisory lock + count, read-capped-json-body.ts:20-49, app/api/kudos/images/sign/route.ts:23-24; tests/integration/kudos-authoring/kudo-image-sign-route.test.ts (run, pass)",
+    "composer modal matches Figma on desktop and mobile; double submit creates one kudo: reviewer-261116-phase-04-ui.md visual check (screenshots 02/05/06/08) and ref-guard + e2e dblclick; compose-kudo-guards.spec.ts:10-41"
+  ],
+  "regressionChecked": [
+    "claim path (row locks, storage_path order) vs sign path (advisory lock) cannot form a lock cycle",
+    "0008 journal entry and snapshot ordered after 0007; 0006/0007 untouched",
+    "Esc layering combobox, hashtag list, link dialog, confirm and dialog; no close while a save is in flight",
+    "429/413 in KUDO_ERROR_STATUS, vi/en messages and upload client mapping",
+    "Cache-Control private, no-store on every edit-route answer (kudo-edit-route.test.ts:112)",
+    "final recheck run: unit kudos-authoring 109/109, integration sign-route + migration + edit-route 20/20; temper-results.json all 8 commands exit 0"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "features/kudos-authoring/schemas/kudo-body-link-policy.ts:77-92",
+      "summary": "findMarkdownImages escape scan is quadratic per ](; about 83 ms worst case at 1,000 chars, bounded by the body cap",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Logic",
+      "location": "db/migrations/0008_kudos_review_fixes.sql:6",
+      "summary": "locale-dependent [:space:] CHECK may disagree with JS trim (U+0085); violation surfaces as UNEXPECTED",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "UX",
+      "location": "features/kudos-authoring/server/kudo-image-upload-service.ts:48",
+      "summary": "removed or retried uploads still count toward the 20 per 24h quota",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Logic",
+      "location": "features/kudos-authoring/components/kudo-composer-form.tsx:48",
+      "summary": "busy flag reaches the dialog via an effect, one-frame lag before Esc is refused",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

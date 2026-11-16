@@ -2,7 +2,7 @@
 phase: 04
 feature: F003
 priority: P0
-status: pending
+status: completed
 depends_on: [02, 03]
 file_ownership:
   - app/api/sunners/search/route.ts
@@ -31,7 +31,7 @@ resolves: [C-01 (KudoCreated in-tx), C-06 (owner), C-07, C-10, C-17 (edit side)]
 - Upstream: phase-01 (`env.EVENT_END_AT`, `isEventWritingOpen` from `shared/config/event-window.ts`, `DomainEventOutbox#add(tx,…)` with `KudoCreated{kudoId}`, `hashtags` seed, bucket `kudo-images` private 5 MB jpeg/png/webp, RLS convention, `DbTx`), phase-02 (`requireSunner()`, `getSessionUser()`, `profiles`), phase-03 (app shell, toast, `app-routes.ts`)
 
 ## Overview
-- Priority: P0 · Status: pending
+- Priority: P0 · Status: completed (2026-11-16, see Delivery notes)
 - Write side of Kudos: shared `KudoComposerModal` (create / edit), Sunner search, hashtag list, image upload to Storage, `createKudo` / `updateKudo` server actions, edit-load endpoint.
 - **Creates the `kudos` table INCLUDING `status kudo_status NOT NULL DEFAULT 'public'`** (enum `'public' | 'spam'` created here) plus `kudo_hashtags`, `kudo_images`, `kudo_image_uploads`. Phase 08 adds ONLY moderation columns (`moderated_by`, `moderated_at`) and the public↔spam transitions; it never re-creates the enum or column. Phase 04 never writes `status` (always DB default).
 - Owns the ONE Sunner search endpoint (C-06), reused by phases 05 (profile search), 08 (admin filters), 12.
@@ -91,7 +91,7 @@ Create:
 - `db/migrations/NNNN_kudos.sql`, `NNNN_kudos_constraints.sql`
 - `features/sunner-search/server/sunner-search-query.ts`, `features/sunner-search/schemas/sunner-search-params-schema.ts`, `features/sunner-search/components/sunner-search-combobox.tsx` (shared combobox, reused by 05/12)
 - `app/api/sunners/search/route.ts`, `app/api/hashtags/route.ts`, `app/api/kudos/images/sign/route.ts`, `app/api/kudos/[id]/edit/route.ts`
-- `features/kudos-authoring/kudo-authoring-limits.ts` (BODY 1000, TITLE 50, HASHTAGS 1..3, IMAGES 5, IMAGE_BYTES 5 MB, mime list)
+- `features/kudos-authoring/kudo-authoring-limits.ts` (BODY 1000, TITLE 50, HASHTAGS 1..5, IMAGES 5, IMAGE_BYTES 5 MB, mime list)
 - `features/kudos-authoring/schemas/kudo-input-schema.ts` (create + update, shared client/server), `kudo-image-sign-schema.ts`
 - `features/kudos-authoring/server/create-kudo-action.ts`, `update-kudo-action.ts`, `kudo-write-repository.ts` (tx helpers), `kudo-image-upload-service.ts` (sign + ownership/existence check), `kudo-edit-query.ts`, `hashtag-list-query.ts`, `kudo-write-errors.ts`
 - `features/kudos-authoring/components/kudo-composer-modal.tsx`, `kudo-composer-launcher.tsx`, `kudo-composer-form.tsx`, `recipient-picker.tsx`, `kudo-message-editor.tsx` (`@` mention + Add link), `add-link-popover.tsx`, `hashtag-picker.tsx`, `kudo-image-picker.tsx`, `use-kudo-composer-submit.ts`
@@ -104,32 +104,32 @@ Modify: `shared/db/schema/index.ts` (export only). Delete: none.
 1. Read `node_modules/next/dist/docs/`: Server Actions (return shape, `useActionState`/`useTransition`), route handlers, async `params`; record any deviation here.
 2. Figma MCP `create_session` → `get_metadata`/`get_design_context`/`get_screenshot` for the 8 frames; map states (create, edit "Sửa bài viết", recipient/hashtag dropdowns, Add link, DEC-001 error, anonymous, image thumbnails). Copy text verbatim. Never guess values.
 3. Schema + migrations; `db:reset`; confirm `rls-baseline.test.ts` (phase 01) still green for the 4 new tables.
-4. `kudo-authoring-limits.ts` + `kudo-input-schema.ts` (trim body, 1–1000; title ≤ 50 or empty→null; hashtagIds unique 1..3; imagePaths ≤ 5 unique, `^kudos/[0-9a-f-]{36}\.(jpg|png|webp)$`; update schema has no `recipientId`) — unit tests first.
+4. `kudo-authoring-limits.ts` + `kudo-input-schema.ts` (trim body, 1–1000; title ≤ 50 or empty→null; hashtagIds unique 1..5; imagePaths ≤ 5 unique, `^kudos/[0-9a-f-]{36}\.(jpg|png|webp)$`; update schema has no `recipientId`) — unit tests first.
 5. `sunner-search-query.ts` + route (401 / 400 / 200); `hashtag-list-query.ts` + route.
 6. `kudo-image-upload-service.ts`: validate mime/size → path `kudos/{uuid}.{ext}` → insert `kudo_image_uploads` → `createSignedUploadUrl` via service client → `{ path, token, signedUrl }`. `assertUploadsUsable(tx, senderId, paths)` checks upload rows + `storage.objects(bucket_id='kudo-images', name=path)`; on update, paths already attached to this kudo are accepted.
 7. `create-kudo-action.ts`: `requireSunner` → window → Zod → tx per Architecture → `KudoCreated` via outbox in same tx. Errors mapped to codes: `VALIDATION` (field errors, DEC-001 message), `SELF_SEND`, `RECIPIENT_INVALID`, `HASHTAG_INVALID`, `IMAGE_INVALID`, `WRITING_CLOSED`.
 8. `update-kudo-action.ts` + `kudo-edit-query.ts` / edit route: owner + `status='public'` conditional update; replace hashtag/image sets; `NOT_FOUND` 404, `FORBIDDEN` 403 (no content), `SPAM_LOCKED` 423, `WRITING_CLOSED`. Edit route returns spam kudo to owner with `locked: true` (modal read-only notice).
-9. Components: modal (focus trap, Esc/Hủy confirm if dirty), launcher (disabled with notice when writing closed — server passes flag), recipient picker (locked render for C-07/edit), editor (counter, hard stop at 1000, `@` popover), hashtag picker (max 3), image picker (per-file error/retry/remove, max 5), submit hook (disable while pending, toast, `onSaved` → `router.refresh()`).
+9. Components: modal (focus trap, Esc/Hủy confirm if dirty), launcher (disabled with notice when writing closed — server passes flag), recipient picker (locked render for C-07/edit), editor (counter, hard stop at 1000, `@` popover), hashtag picker (max 5), image picker (per-file error/retry/remove, max 5), submit hook (disable while pending, toast, `onSaved` → `router.refresh()`).
 10. i18n keys vi/en; error messages from functional spec § 9 + DEC-001 verbatim.
 11. Tests (Scope Contract), then reviewer.
 
 ## Todo List
-- [ ] Read Next.js 16 docs (Server Actions, route handlers)
-- [ ] Figma study of 8 frames
-- [ ] `kudos` schema incl. `status` enum + child tables + constraints migration; RLS green
-- [ ] Input schema + limits (+unit)
-- [ ] Sunner search (C-06) + hashtags routes
-- [ ] Image sign + ownership check (no sender id in path)
-- [ ] `createKudo` with in-tx `KudoCreated` outbox (C-01)
-- [ ] `updateKudo` + edit load, spam lock, owner check (C-17)
-- [ ] Composer modal + launcher with prefilled/locked recipient (C-07)
-- [ ] i18n keys
-- [ ] Integration + e2e green
+- [x] Read Next.js 16 docs (Server Actions, route handlers)
+- [x] Figma study of 8 frames
+- [x] `kudos` schema incl. `status` enum + child tables + constraints migration; RLS green
+- [x] Input schema + limits (+unit)
+- [x] Sunner search (C-06) + hashtags routes
+- [x] Image sign + ownership check (no sender id in path)
+- [x] `createKudo` with in-tx `KudoCreated` outbox (C-01)
+- [x] `updateKudo` + edit load, spam lock, owner check (C-17)
+- [x] Composer modal + launcher with prefilled/locked recipient (C-07)
+- [x] i18n keys
+- [x] Integration + e2e green
 
 ## Success Criteria
 - New kudo row has `status='public'` (DB default), correct sender from session, 1–5 hashtags, ordered images; exactly one `KudoCreated{kudoId}` outbox row; forced failure after insert rolls back kudo + outbox together.
 - Self-send rejected by action AND by DB CHECK (direct insert test). Second kudo to same recipient succeeds.
-- 1,001-char body, 0 or 4 hashtags, inactive hashtag, 6 images, foreign/unknown upload path → rejected server-side with no rows written.
+- 1,001-char body, 0 or 6 hashtags, inactive hashtag, 6 images, foreign/unknown upload path → rejected server-side with no rows written.
 - Non-owner update → 403, row unchanged; spam kudo update by owner → 423, row unchanged; recipient change impossible; `created_at` unchanged after edit.
 - After `EVENT_END_AT` (test env override) create + update → `WRITING_CLOSED`; launcher disabled.
 - No route/action exists that deletes a kudo.
@@ -169,3 +169,35 @@ Rollback: down migration drops 4 tables + enum + extension wrapper (only valid b
 ## Open Questions
 - Profiles have no "deactivated" flag → "người nhận bị vô hiệu" = profile missing only; revisit if phase 14 adds deactivation.
 - Editing a kudo whose hashtag was later deactivated: v1 requires re-pick (active only).
+
+## Delivery notes
+
+Completed 2026-11-16. Review SEALED (score 9/10, 0 critical; 4 low/suggestion deferred). Risk signed off by user 2026-11-16.
+
+### Decisions that overrode the phase text
+- Title optional, ≤ 50 chars (D006 kept).
+- Body is a Markdown subset, capped at 1,000 raw chars. No HTML, no images (`![…](…)` → `imageNotAllowed`), no reference-style links (`[x]: url`). Allowed: `**bold**`, `_italic_`, `~~strike~~`, `1.`/`-` lists, `> quote`, `[text](http(s)://…)`, bare http(s) URLs. Decision log 2026-11-15 and 2026-11-16.
+- Anonymous nickname 1–30 chars after trim, required exactly when anonymous. Enforced by CHECK `kudos_anonymous_nickname` (migration 0007).
+- Hashtags 1–5 (Figma "Tối đa 5", decision log 2026-11-15). Rejected counts are 0 or 6.
+- Pending image uploads capped at 20 per user per rolling 24 h (429 `UPLOAD_LIMIT`), serialized by a transaction advisory lock.
+- Sign request body capped at 4 KB (413 `PAYLOAD_TOO_LARGE`).
+- DEC-001 text verbatim: "Bạn cần điền đủ Người nhận, Lời nhắn gửi và Hashtag để gửi Kudos!"
+
+### Deferred
+- Orphan upload/Storage cleanup job. Abandoned `kudo_image_uploads` rows and objects are not swept yet, and they still count toward the 20/24 h quota until claimed.
+- `/community-standards` page does not exist yet. The composer link (`APP_ROUTES.communityStandards`, new tab) returns 404 until it ships (owner: phase 07, F006 A6).
+- Phase 05 must remove the `/?editKudo` deep link (`kudo-edit-deep-link.tsx`, exercised by `tests/e2e/kudos-authoring/edit-kudo.spec.ts`) and move the launcher from the placeholder home to the Live board.
+- Four low/suggestion findings from the final re-check (`reviewer-261116-phase-04-final-recheck.md`), all dispositioned Defer:
+  1. `findMarkdownImages` escape scan is quadratic per `](`, about 83 ms worst case at 1,000 chars.
+  2. Locale-dependent `[:space:]` in CHECK `kudos_body_not_blank` may disagree with JS `trim()` on U+0085. The violation would surface as UNEXPECTED.
+  3. Removed or retried uploads still consume the 20/24 h quota.
+  4. The busy flag reaches the dialog one frame late, so Esc is refused one frame late.
+- No rendered test of the launcher in its disabled state after `EVENT_END_AT`. Server-side `WRITING_CLOSED` is covered by integration tests (create, update, sign route) and the `isKudoWritingOpen` unit test.
+- Deferred by decision-log 2026-11-16: magic-byte image type check; the 403/404 existence oracle on `GET /api/kudos/[id]/edit`; a trigram index for Sunner search; soft-deactivating profiles.
+- F003 feature specs (`docs/features/F003_KudosAuthoring/`), `docs/screens/SCR006_WriteKudoModal/spec.md` and F003 mentions in F004/`docs/generated/*` are still pre-implementation; refresh with `/tkm:rebuild-spec --features F003` (user chose commit-first 2026-11-16).
+- No coverage tool. There is no `test:coverage` script and no `@vitest/coverage-*` dependency.
+
+### Test results
+- Unit 285/285 (23 files), integration 168/168 (21 files), e2e 40/40 on chromium (run twice, identical).
+- `db:reset`, typecheck, lint, build, and `test:prod` 13/13 all exit 0.
+- Source: `plans/reports/tester-261116-phase-04-final.md`.

@@ -46,10 +46,14 @@ lang: vi
 
 **F003_KudosAuthoring**
 - *Người gửi luôn là người đang đăng nhập*: không nhận `sender_id` từ client.
-- *Chỉ chủ bài được sửa Kudo*; Admin có được sửa hay không: `TBD (draft)`. Người khác gọi đọc/sửa nhận 403.
+- *Chỉ chủ bài được sửa Kudo*: `updateKudo` và `GET /api/kudos/{id}/edit` so `sender_id` với session, người khác nhận 403 `FORBIDDEN` không kèm nội dung; Admin không có ngoại lệ (cùng 403). Id lạ hoặc sai dạng nhận 404 `NOT_FOUND`.
+- *Kudo `spam` không sửa được*: chủ bài nhận 423 `SPAM_LOCKED` khi lưu; route nạp dữ liệu trả `locked: true` để hiện thông báo chỉ đọc.
+- *Không đổi được người nhận khi sửa*: gửi `recipientId` ở `updateKudo` bị từ chối (`recipientImmutable`). Không có thao tác xóa Kudo.
+- *Cửa ghi đóng từ `EVENT_END_AT`*: tạo, sửa và xin URL upload ảnh đều trả 403 `WRITING_CLOSED`, kiểm lại ở server mỗi lần gọi.
 - *Không đặt được trạng thái Kudo*: Kudo mới luôn `public`; luồng tạo/sửa không nhận `status`.
-- *Ảnh đính kèm phải nằm trong thư mục Storage của người gửi*, tối đa 5; không tham chiếu được ảnh của người khác.
-- *Tìm Sunner làm người nhận hoặc người được nhắc* dành cho mọi User; có loại chính mình khỏi kết quả hay không: `TBD (draft)`.
+- *Ảnh đính kèm chỉ nhận đường dẫn do chính người gửi xin ký* (bảng `kudo_image_uploads`) và object đã tồn tại, tối đa 5; không tham chiếu được ảnh của người khác. Mỗi người giữ tối đa 20 lượt ký chưa dùng trong 24 giờ (429 `UPLOAD_LIMIT`); body yêu cầu ký tối đa 4 KB (413).
+- *Tìm Sunner làm người nhận hoặc người được nhắc* dành cho mọi User đã chọn phòng ban (chưa chọn: 403 `ONBOARDING_REQUIRED`); tham số `excludeSelf` loại chính mình, ô Người nhận luôn bật.
+- *Không tự gửi Kudo cho chính mình*: chặn ở server (`SELF_SEND` 422) và ở DB (CHECK `kudos_no_self_send`).
 
 **F004_KudosFeed**
 - *Chỉ Kudo `public` được hiển thị*: Highlight, All Kudos, chi tiết. Kudo spam và id lạ trả cùng 404 (cả với chủ bài ở màn chi tiết).
@@ -145,7 +149,7 @@ lang: vi
 - Không có policy đọc cho `anon`/`authenticated` trên `kudos` và các bảng khác chứa thông tin nhạy cảm (người gửi ẩn danh, Kudo spam): nếu cần đọc trực tiếp từ client trong tương lai, phải thêm policy tối thiểu riêng cho từng bảng và rà lại quy tắc che dữ liệu. (Câu chữ "RLS yêu cầu đã đăng nhập" ở F001 cần hiểu theo hướng này — xem Consistency Check trong `architecture.md`, C-20.)
 - Ngoại lệ duy nhất là chính sách đọc trên `realtime.messages` (Supabase Realtime): cho vai trò đã xác thực nhận kênh `spotlight` và kênh `notifications:{auth.uid()}` của chính mình. Kênh Realtime công khai phải tắt.
 - Khoá dịch vụ (service role) chỉ ở phía máy chủ, không bao giờ gửi xuống client: dùng cho bộ xử lý outbox (F013) và job chốt Kudos Quốc Dân (F010). Khoá công khai (anon) đi cùng RLS như trên.
-- Storage ảnh Kudo: upload qua signed upload URL vào thư mục của người gửi; chính sách đọc bucket (công khai hay signed URL): `TBD (draft)`.
+- Storage ảnh Kudo: bucket `kudo-images` riêng tư; upload qua signed upload URL do server cấp, đường dẫn `kudos/{uuid}.{ext}` không chứa id người gửi. Đọc ảnh khi sửa bằng signed read URL 10 phút (`previewUrl`); đường đọc cho feed thuộc phase 05.
 
 ## Special Conditions
 
@@ -160,8 +164,6 @@ lang: vi
 ### Quyết định còn mở liên quan phân quyền
 
 - Admin đầu tiên được tạo bằng cách nào (F001 D003).
-- Admin có được sửa Kudo của người khác không (F003).
 - Admin có vào được trang trước giờ mở không (F006); Guest có xem Countdown, `/awards`, đổi ngôn ngữ ở Login không (F001, F002, F006).
 - Admin có thấy người gửi thật của Kudo ẩn danh không (F007 D001, RISK-01).
-- Chủ bài có xem/sửa được Kudo spam của mình không (F003, F004, F007).
-- Tự gửi Kudo cho chính mình có bị cấm không (F003).
+- Chủ bài có xem Kudo spam của mình không (F004, F007); sửa thì đã chốt là không (F003, 423).
