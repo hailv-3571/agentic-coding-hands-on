@@ -110,6 +110,25 @@ Hợp đồng đầy đủ (mã lỗi, shape input, phạm vi cú pháp Markdown
 - **Ảnh**: trình duyệt xin URL ký, tải thẳng lên bucket `kudo-images`, rồi gửi `imagePaths`. Khi ghi, server chỉ nhận đường dẫn mà chính người đó đã ký và object đã tồn tại. Đường dẫn không chứa id người gửi (Kudo ẩn danh không lộ tác giả qua URL ảnh).
 - **Lời nhắn** là Markdown rút gọn lưu nguyên văn, không HTML, không ảnh Markdown, không link tham chiếu. Server chỉ chặn ở bước ghi; renderer whitelist ở phase 05 mới là ranh giới an toàn.
 
+## Đọc Kudo (F004, đã implement ở phase 05)
+
+Hợp đồng đầy đủ: `plans/261108-0048-saa-2025-kudos-platform/research/phase-05-backend-contracts.md`. Feature chỉ đọc, không thêm bảng; migration `0009_kudos_feed_indexes.sql` thêm ba index `(cột, created_at DESC, id DESC)` trên `kudos` cho `status`, `recipient_id`, `sender_id`.
+
+| Điểm vào | Vai trò | Lỗi chính |
+|----------|---------|-----------|
+| Trang `/kudos` (Live board) | Server component: ô viết Kudo, tìm Sunner, Highlight, All Kudos, slot Spotlight và cột phần thưởng. Vùng nào đọc lỗi thì chỉ vùng đó hiện lỗi inline | Khách bị đưa về đăng nhập |
+| Trang `/kudos/{id}` | Chi tiết một Kudo (`instant = false`) | `notFound()` cho id sai dạng, id lạ, spam của người khác. Trên production là soft 404: shell có thể đã stream nên status không đảm bảo 404 (decision-log 2026-11-16) |
+| `GET /api/kudos?cursor` | Trang tiếp của All Kudos: `{ items, nextCursor? }`, 10 Kudo mỗi trang, mới nhất trước | 401 `UNAUTHENTICATED`, 403 `ONBOARDING_REQUIRED`, 400 `VALIDATION` (cursor), 500 `UNEXPECTED` |
+| `GET /api/kudos/highlight?hashtag&department` | Carousel: `{ items, total }`, tối đa 5; hashtag AND phòng ban người nhận; vắng tham số là "Tất cả" | 401, 403, 400 `VALIDATION` (uuid sai), 500 |
+
+- **Cả hai route** gác bằng `requireApiSunner()` và luôn trả `Cache-Control: private, no-store` (có `isOwner` và URL ảnh ký theo người xem). Param có mặt mà rỗng hoặc sai dạng là 400; key lạ bị bỏ qua.
+- **`KudoPublicQuery` (`list`, `findForViewer`)**: chỉ `status = public`; riêng `findForViewer` còn trả Kudo spam cho chính người gửi (`isSpam: true`, chỉ đọc). Thẻ dựng từ whitelist cột ở `kudo-row-mask.ts`: Kudo ẩn danh chỉ còn `{ anonymous: true, nickname }`, không id, tên, ảnh, phòng ban, cấp. `isOwner` tính ở server nên chủ bài ẩn danh vẫn có nút sửa.
+- **Cursor**: base64url của `{c, i}` (`created_at` giữ độ chính xác micro giây, và `id`), sắp `(created_at DESC, id DESC)`, trang sau là `(created_at, id) < (c, i)`. Giải mã nghiêm ngặt, dài tối đa 200 ký tự; cursor không do encoder sinh ra bị từ chối.
+- **Ảnh**: bucket `kudo-images` riêng tư, ký URL đọc 30 phút, một lần gọi Storage cho cả trang. Ký lỗi thì thẻ hiện placeholder, trang vẫn dựng.
+- **Renderer Markdown** (`features/kudos-feed/markdown/`): parser tự viết theo whitelist, không dùng thư viện, không bao giờ coi là HTML. Link chỉ nhận `http(s)` có host và không có `user:pass@` (cả `[chữ](url)` lẫn URL trần); cú pháp ảnh `![..](..)` giữ nguyên dạng chữ; chuỗi dài quá 5.000 đơn vị UTF-16 không được phân tích.
+- **Seam chờ phase sau** (hiện là mặc định): `enrich-heart-summary.ts` (phase 06 viết lại; hiện mọi thẻ 0 tim, Highlight xếp theo mới nhất, không đọc `kudo_hearts`) và `enrich-hero-tier.ts` (phase 09; hiện không có huy hiệu). Slot Spotlight và cột phần thưởng là chỗ giữ chỗ cho phase 10, 11.
+- **Ô viết Kudo** (`KudoComposerLauncher`) chuyển từ `/` sang `/kudos`; deep link tạm `/?editKudo` đã bỏ, sửa Kudo mở modal ngay trên thẻ bằng nút bút của chủ bài.
+
 ## Tech Stack
 
 | Layer | Technology | Version |
@@ -167,7 +186,7 @@ Mỗi feature là một module; ranh giới = bảng nó ghi + hàm/component n�
 | F001_Auth | Đăng nhập, `SessionProxy`, `AdminGuard`, trigger `auth.users` | `profiles`, `departments` | — | `AdminGuard#requireAdmin`, session/`userId`, `profiles.role` |
 | F002_AppShell | Layout Sunner/Admin, `LanguageSwitcher`, `AccountMenu`, trang 404/403, `I18nRequestConfig` | cookie locale | session, role (F001) | Slot chuông, layout |
 | F003_KudosAuthoring | `features/kudos-authoring/` (modal `KudoComposerModal`, server action `createKudo`/`updateKudo`, dịch vụ ký upload ảnh, `isKudoWritingOpen`), `features/sunner-search/` | `kudos` (khởi tạo `status=public`), `kudo_hashtags`, `kudo_images`, `kudo_image_uploads` | `hashtags`, `profiles` | `KudoComposerModal`, `KudoComposerLauncher`, `searchSunners`, `KudoInputSchema` / `KUDO_LIMITS` (module client-safe) |
-| F004_KudosFeed | `KudosFeedHandler`, `KudoCard`, `KudoPublicQuery`, trang Live board | — (chỉ đọc) | `kudos`, hashtag, ảnh, `kudo_hearts` (F005), `profiles`, `departments` | `KudoPublicQuery`, `KudoCard`, `AvatarHoverCard` host |
+| F004_KudosFeed | `features/kudos-feed/` (`KudoPublicQuery`, `listHighlightKudos`, `KudoCard`, trang `/kudos` và `/kudos/[id]`, `GET /api/kudos`, `GET /api/kudos/highlight`) | — (chỉ đọc) | `kudos`, hashtag, ảnh, `kudo_hearts` (F005), `profiles`, `departments` | `KudoPublicQuery`, `KudoCard`, `AvatarHoverCard` host |
 | F005_KudosHearts | `KudoHeartService/Query`, `HeartStatsQuery`, `HeartMultiplierResolver`, `KudoHeartButton` | `kudo_hearts` | `campaigns` qua `ActiveCampaignReader` | `KudoHeartQuery#summaryForKudos`, `HeartStatsQuery#receivedByUser`, `ActiveCampaignReader` (giao diện) |
 | F006_AwardsPortal | 5 trang tĩnh, `PrelaunchGate`, `awardsData`, `CountdownTimer` | — | — | `isPrelaunch(now)` |
 | F007_AdminModeration | `AdminKudoReview/Moderation/Export`, `KudoAdminQuery`, `OwnSpamKudoQuery`, `SpamAlertOverlay` | `kudos.status`, `kudos.moderated_by`, `kudos.moderated_at` | `kudo_hearts`, hashtag, `profiles` | `OwnSpamKudoQuery#listBySender`, `KudoSpamCard`, `CsvSerializer` |
@@ -191,7 +210,7 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | `profiles.role_updated_by`, `profiles.role_updated_at` | F014 thêm vào bảng của F001 | Migration do chủ bảng (F001) áp |
 | `departments` | F001 | Nguồn nạp dữ liệu: `TBD (draft)` (xem C-15) |
 | `kudos` (`id`, `sender_id`, `recipient_id`, `title`, `body`, `is_anonymous`, `anonymous_nickname`, `status`, `created_at`, `updated_at`) | F003 (`shared/db/schema/kudos.ts`, migration `0006`–`0008`) | F003 chỉ ghi `status = public` lúc tạo; enum `kudo_status` (`public|spam`) đã có từ phase 04. CHECK: `kudos_no_self_send`, `kudos_body_length` (1–1000), `kudos_body_not_blank`, `kudos_title_not_blank`, `kudos_anonymous_nickname` (1–30 khi ẩn danh, NULL khi không). RLS bật, không có policy cho client |
-| `kudos.moderated_by`, `moderated_at` | F007 thêm vào bảng của F003 | Index gợi ý `(status, created_at DESC)`, index từng phần cho F009/F015: `TBD (draft)` |
+| `kudos.moderated_by`, `moderated_at` | F007 thêm vào bảng của F003 | Migration 0009 đã thêm `(status, created_at DESC, id DESC)`, `(recipient_id, …)`, `(sender_id, …)`; index từng phần cho F009/F015: `TBD (draft)` |
 | `kudo_hashtags`, `kudo_images` | F003 | Tối đa 5 ảnh, `position` 0–4, `storage_path` duy nhất dạng `kudos/{uuid}.{jpg|png|webp}` (không chứa id người gửi) |
 | `kudo_image_uploads` | F003 | Đường dẫn do `POST /api/kudos/images/sign` cấp; bản ghi bị xóa khi ảnh gắn vào Kudo. Trần 20 lượt chưa dùng / người / 24 giờ |
 | `hashtags` | F003 (chỉ đọc ở F003) | Nạp bằng seed phase 01 (`db/seeds/`, 8 hashtag); F003 chỉ đọc hashtag đang hoạt động |
@@ -211,10 +230,10 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 |----------|-----|------------|----------------------|------------|
 | `AdminGuard#requireAdmin` | F001 | F002 layout, F007, F011, F014, F015 | Đọc `profiles.role` từ DB mỗi request/action; không từ cookie; từ chối → 403 | Rõ |
 | `SessionProxy` + `isPrelaunch(now)` | F001 / F006 | Mọi route | Proxy làm mới session, chặn khách, trả 403 cho `/admin/*` (xem mục Session proxy); `isPrelaunch` là hàm thuần của F006 | Phần F001 đã implement; bước prelaunch chèn ở phase 07 (C-09) |
-| `KudoPublicQuery` | F004 | F012 (và mọi chỗ đọc Kudo công khai) | Chỉ `status = public`; che người gửi khi `is_anonymous` ngay ở server; tính `isOwner` ở server | Thiếu bộ lọc người nhận/người gửi cho F012 (C-05) |
+| `KudoPublicQuery` | F004 | F012 (và mọi chỗ đọc Kudo công khai) | Chỉ `status = public`; che người gửi khi `is_anonymous` ngay ở server; tính `isOwner` ở server | Đã implement ở phase 05 (`list`, `findForViewer`, một cursor duy nhất); thiếu bộ lọc người nhận/người gửi cho F012 (C-05), index đã sẵn ở migration 0009 |
 | `KudoAdminQuery` | F007 | F007 (A1, A4) | Không lọc Public, không che ẩn danh; chỉ gọi sau `requireAdmin` | Rõ; chính sách hiển thị ẩn danh cho Admin còn mở (C-13) |
 | `OwnSpamKudoQuery#listBySender` | F007 | F012 | Chỉ Kudo spam của chính người gửi (từ session) | Rõ |
-| `KudoHeartQuery#summaryForKudos` | F005 | F004 | `heartCount`, `heartedByMe` theo lô, gọi trong tiến trình | Rõ; F004 còn đọc `kudo_hearts` trực tiếp để xếp Highlight (C-19) |
+| `KudoHeartQuery#summaryForKudos` | F005 | F004 | `heartCount`, `heartedByMe` theo lô, gọi trong tiến trình | Rõ; F004 còn đọc `kudo_hearts` trực tiếp để xếp Highlight (C-19). Phase 05 chỉ có seam `enrich-heart-summary.ts` trả 0 tim |
 | `HeartStatsQuery#receivedByUser` | F005 | F010, (F014) | Tổng tim nhận đã nhân `multiplier`, chỉ Kudo Public | Thiếu tham số `asOf` và kiểu trả `{weightedTotal, rawTotal, campaignActive}` (C-02) |
 | `ActiveCampaignReader` | F005 khai báo (mặc định trả `null`) | F005 resolver, F010 (tooltip x2) | `findActive(now)`; F011 cài đặt, không khai báo lại | Rõ |
 | `HeartMultiplierResolver#resolve` | F005 | F005 | Không bao giờ ném lỗi, không trả < 1 | Rõ |

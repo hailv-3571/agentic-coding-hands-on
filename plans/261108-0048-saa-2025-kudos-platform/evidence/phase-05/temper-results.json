@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations 0000-0009 applied; seeds departments=6 hashtags=8",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "route types generated, no errors",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "0 errors, 0 warnings",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "29 files, 376/376 passed",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "27 files, 203/203 passed (local Supabase)",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "59/59 passed (chromium), run 1",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "59/59 passed (chromium), run 2 flake check",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled, no warnings; /kudos/[id] partial prerender",
+      "ts": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "13/13 production status checks pass",
+      "ts": "2026-11-16T12:00:00.000Z"
+    }
+  ]
+}

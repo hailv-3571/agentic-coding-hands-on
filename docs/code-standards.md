@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-shell,kudos-authoring,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-shell,kudos-authoring,kudos-feed,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -58,6 +58,14 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-
 - Độ dài chữ đếm theo code point (`kudoTextLength`), cùng đơn vị với `char_length` của CHECK ở DB.
 - Upload ảnh: server chỉ cấp signed upload URL; đường dẫn lưu không chứa id người dùng. Khi ghi chỉ nhận đường dẫn chính người đó đã ký. Request nhận body JSON nhỏ thì đọc có trần byte (`read-capped-json-body.ts`), vượt trần trả 413 trước khi parse.
 - Nội dung người dùng dạng Markdown rút gọn lưu nguyên văn, không bao giờ coi là HTML. Kiểm ở bước ghi chỉ là lớp phụ; chỗ hiển thị phải dùng renderer whitelist (phạm vi cú pháp: `plans/261108-0048-saa-2025-kudos-platform/research/phase-04-backend-contracts.md` § 1.1).
+
+## Đọc dữ liệu công khai (phase 05)
+
+- Truy vấn đọc dữ liệu người dùng dựng DTO bằng whitelist cột (`kudo-row-mask.ts`), không spread dòng DB; che danh tính ở server, không trông vào UI hay RLS. Client component chỉ nhận DTO đó (payload RSC cũng là response).
+- Phân trang theo cursor mờ đục, giữ micro giây của `timestamptz`, giải mã nghiêm ngặt (`kudo-feed-cursor.ts`); route đọc trả 400 trước khi truy vấn.
+- Page gọi `notFound()` ngoài try/catch, cùng một kết quả cho mọi trường hợp "không thấy được"; trên production đây là soft 404.
+- Hiển thị Markdown của người dùng chỉ qua `features/kudos-feed/markdown/` (whitelist, `http(s)` không kèm credentials, ảnh là chữ, trần 5.000 đơn vị UTF-16).
+- Chỗ giao cho phase sau để lại thành file "seam" với chữ ký cố định (`enrich-heart-summary.ts`, `enrich-hero-tier.ts`); phase sở hữu viết lại cả file, không rải logic ở nơi gọi.
 
 ## Domain event outbox
 

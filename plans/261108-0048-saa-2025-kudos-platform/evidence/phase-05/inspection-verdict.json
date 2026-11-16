@@ -1,0 +1,80 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "SC-001..SC-006 from technical spec pass (spam absent; anonymous payload has no sender identifiers; highlight top N after AND filters; cursor pages 10/10/5 with no dup/gap; uniform 404; no session → redirect/401): by test, tester run exit 0 (integration 203, e2e 59 twice, test:prod 13/13); kudo-public-query.test.ts (public only, masked), kudo-highlight-query.test.ts 'applies hashtag AND department', kudo-feed-cursor-pagination.test.ts 'pages 25 kudos ... as 10/10/5', kudo-detail-access.test.ts 'answers the same null', kudos-feed-routes.test.ts 'answers 401 JSON without a session', live-board.spec.ts 'is redirected to /login'; I re-read the query/mask/route code, I did not re-run integration or e2e",
+    "Grep of RSC/JSON response for an anonymous kudo contains no sender id/name/email/avatar: by test, kudos-feed-routes.test.ts 'never puts an anonymous sender's identifiers in the JSON' and live-board.spec.ts 'an anonymous card shows the nickname and the sender never reaches the page HTML' (raw HTML of /kudos and /kudos/{id}); by code reading, kudo-row-mask.ts:25-39 explicit whitelist, anonymous sender is {anonymous:true,nickname} only, typed KudoSenderView union",
+    "list({senderId: other}) never returns other's anonymous kudos; list({senderId: self}) does: by test, kudo-public-query.test.ts 'never lets a senderId filter reveal someone else's anonymous kudos (C-05)'; by code reading, kudo-public-query.ts:47 and(eq(senderId), or(isAnonymous=false, senderId=viewer))",
+    "Author opening own spam kudo sees spam view; any other user gets 404: by test, kudo-detail-access.test.ts 'opens a spam Kudo for its sender only, flagged isSpam' and 'answers the same null for someone else's spam'; e2e kudo-card-and-detail.spec.ts 'the author sees a read-only spam view of their own spam Kudo; others get the uniform not-found copy'; code kudo-public-query.ts:88-93",
+    "includeOwnSpam ignored unless senderId === viewerId (integration test with two users): by test, kudo-public-query.test.ts 'adds own spam, flagged, only when senderId is the viewer' and 'ignores includeOwnSpam for another sender or without a sender filter'; code kudo-public-query.ts:42-45",
+    "Live board renders with empty slots and no layout break with < 3 highlight cards: by test, live-board.spec.ts 'has no horizontal page scroll at 375 px and 1440 px' plus the Hashtag filter test that narrows the Highlight; screenshots phase-05 01/01b; carousel works with 1 or 2 cards by code reading (highlight-carousel.tsx), no test seeds exactly 1 or 2 cards for the layout assertion",
+    "uniform 404 is a soft 404 on production (identical not-found content, status 200) per decision-log 2026-11-16: user decision recorded in decision-log; by test, kudo-card-and-detail.spec.ts 'an unknown or malformed id renders the uniform not-found copy' asserts content only, no status code (as decided); status 200 on production was observed by the UI fix round, not asserted by any test; by code reading [id]/page.tsx:47 notFound() outside try/catch, same null for bad uuid, unknown id and foreign spam",
+    "Markdown body renders only the phase-04 whitelist: no HTML, image syntax literal, only http(s) links without credentials: by test, parse-kudo-body-links-and-redos.test.ts 'keeps Markdown image syntax literal: no image node, no link, not even the bare URL inside' and 'rejects URLs that carry credentials', kudo-body-markdown.test.ts 'keeps javascript: links and raw HTML as escaped text'; I probed ![a](https://a.b/c.png) => one text node, \\![..] => '!' plus a visible-label link (CommonMark-consistent), \\\\![..] => literal, ![x](http://u:p@h.com) => literal; React elements only, no dangerouslySetInnerHTML",
+    "forged or out-of-range cursor returns 400, not 500: by test, kudo-feed-cursor.test.ts rejects 'year 0000' and round-trips year 0001; kudos-feed-routes.test.ts 400 VALIDATION rows for undecodable, over-200 and empty cursors; the route schema (kudo-feed-params-schema.ts:14-17) calls decodeKudoFeedCursor, so year-0000 is 400 by composition; no route-level case for year 0000 itself",
+    "owner edit pen hidden after EVENT_END_AT and for spam; detail page has no pen: by test, kudo-card-can-edit.test.ts (9-row truth table incl. writingOpen=false); e2e 'the owner gets an edit pen that opens the composer prefilled; others get none' and detail no-pen assertion; writingOpen threading page.tsx:48,81,91 -> HighlightSection/AllKudosFeed -> KudoCard is a required prop (typecheck exit 0); the closed-window wiring end to end was verified only by the UI fix round's one-off two-server script (16/16), not by an automated test and not re-run by me",
+    "filter dropdown and load-more are keyboard and screen-reader accessible: by test, live-board-keyboard-and-states.spec.ts 'the filter list is one tab stop; Tab moves on and closes it, Esc returns to the button' and 'the pager keeps focus on its button at the last card'; live-board.spec.ts load-more aria-disabled, focus on first new card, status line announced; by code reading, highlight-filter-dropdown.tsx:63-77 flushSync Tab handling, roving tabIndex :111, all-kudos-feed.tsx aria-disabled + role=status; no screen reader run, only DOM/ARIA assertions"
+  ],
+  "regressionChecked": [
+    "dropdown focus handling: roving tabindex, Tab/Shift+Tab flushSync close, Esc refocus via useDismissable, activeIndex synced by onFocus, open-effect focuses tabindex=0 option (read + e2e green)",
+    "load-more focus and abort: inFlight ref guard, AbortController aborted on unmount, functional setOlder + uniqueById at render, focus request object re-triggers effect, 400 restarts after first page (read)",
+    "carousel reset logic: setActive(0) applied with the fetched result, active clamped to items length, aria-disabled arrows with clamped go(), newer request aborts older (read)",
+    "writingOpen threading: required prop on KudoCard, HighlightCarousel, HighlightSection, AllKudosFeed; both KudoCard call sites pass it; detail view renders no pen",
+    "kudoCardCanEdit: pure isOwner && !isSpam && writingOpen, unit truth table",
+    "linkAt/followsUnescapedBang: backslash-run parity counted once per successful link tail so total work stays linear; adversarial probes at the 5,000 cap: '![a](' x1000 31.6 ms, '[a](\"' x1000 27.9 ms, 2,500 backslashes + 100 links 0.5 ms, '**a ' x1250 1.4 ms; no ReDoS or quadratic blowup",
+    "5,000 UTF-16 unit parse cap: write cap 1,000 code points <= 2,000 units so stored bodies are never cut; surrogate cut only on out-of-contract input",
+    "cursor refine: isPostgresYear lexicographic on the fixed-width regex-checked format; encoder round-trip still enforces one spelling",
+    "FR-602 masking path: maskKudoRow whitelist, senderId guard, highlight second statement, routes no-store, detail uniform null; unchanged by the fix round (no edits in features/kudos-feed/server except cursor)",
+    "migration 0009: plain CREATE INDEX x3, rollback documented in SQL comment, journal idx 9 monotonic, schema index definitions match; touched sensitive area, risk gate set",
+    "phase 04 e2e shift to pen-based edit: edit-kudo.spec.ts non-owner case now asserts no pen plus API 403 {code:FORBIDDEN} without body leak; owner case gained a post-save card assertion; FORBIDDEN dialog branch covered by 'a pen left in a tab after switching accounts' e2e",
+    "launcher moved from / to /kudos, deep link and ic-pencil asset removed, KudoComposerLauncherPlaceholder kept (used by live-board-skeleton)",
+    "files under 200 lines (largest parse-kudo-inline.ts 150), no secret-like strings in phase 05 sources",
+    "my run: typecheck exit 0, unit tests/unit/kudos-feed 91/91; tester run recorded in temper-results.json all commands exit 0"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Suggestion",
+      "category": "Maintainability",
+      "location": "app/(app)/kudos/[id]/page.tsx:20",
+      "summary": "doc comments (lines 20 and 40) still promise a real 404 status; the user decision is a soft 404 (status 200 on production), so the comments mislead the next reader",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Tests",
+      "location": "tests/integration/kudos-feed/kudos-feed-routes.test.ts:72",
+      "summary": "route-level 400 table has no year-0000 cursor row; covered only by the decoder unit test plus composition",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Tests",
+      "location": "features/kudos-feed/components/kudo-card.tsx:27",
+      "summary": "writingOpen=false hides the pen is proven by a pure-function truth table and a one-off two-server script, not by an automated render or e2e test of the wiring",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Logic",
+      "location": "features/kudos-feed/markdown/parse-kudo-inline.ts:137",
+      "summary": "an escaped bang before a link (\\![x](https://..)) renders '!' plus a link with its visible label; CommonMark-consistent and not hidden, but not literally 'image syntax literal'",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Logic",
+      "location": "features/kudos-feed/components/all-kudos-feed.tsx:79",
+      "summary": "announcement count and focus target use the render-time 'shown' closure; a router.refresh during a fetch can make the announced count off by a few, harmless",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

@@ -31,7 +31,7 @@ Sổ quyết định chốt sau Stage 1.5 (gap clarification). **Ưu tiên cao h
 
 ### Luật viết Kudo
 - Q: Tự gửi / giới hạn? → A: **Cấm tự gửi Kudo cho mình và cấm tự thả tim Kudo của mình; không giới hạn số lượng**, gửi nhiều lần cho cùng người được. Áp dụng: F003, F005; các feature đếm không cần loại self-kudo (vì không tồn tại) — giải C-10.
-- Q: Hashtag? → A: **Danh sách cố định (seed), chọn 1–3 hashtag/Kudo**. Áp dụng: F003, F004, F007.
+- Q: Hashtag? → A: **Danh sách cố định (seed), chọn 1–3 hashtag/Kudo** (superseded: 1–5, see 2026-11-15). Áp dụng: F003, F004, F007.
 - Q: Sửa/xóa? → A: **Sửa mọi trường trừ người nhận; Kudo đang Spam thì khóa sửa; không ai xóa** (Admin dùng Spam để ẩn). Áp dụng: F003, F007, F012 (giải C-17 phần sửa).
 - Q: Sau sự kiện? → A: **Khóa gửi Kudo và thả tim sau `EVENT_END_AT`**; chỉ còn xem; chốt Kudos Quốc Dân; hộp đã có vẫn mở được. Áp dụng: F003, F005, F010.
 
@@ -90,3 +90,19 @@ Danh sách đầy đủ ở `system/architecture.md` § Consistency Check (C-01�
 - Q: Trang 403 cho non-admin ở `/admin/*` trả status 403 thế nào (Cache Components gửi shell 200 trước khi render)? → A: **Proxy tự trả 403**: fetch trang public `/access-denied` (chỉ gửi cookie locale + Accept-Language) rồi trả HTML với status 403; non-GET/Server Action → JSON 403. Origin fetch lấy từ `INTERNAL_APP_ORIGIN` (tùy chọn) hoặc `http://127.0.0.1:$PORT`, **không bao giờ từ header Host** (chống SSRF). Phase 07: cổng prelaunch phải cho khách vào `/access-denied`. Hosting: server phải tự gọi được origin nội bộ đó.
 - Q: Trigger chặn domain ngoài trên `auth.users`? → A: Tách 2 trigger: `reject_foreign_domain_on_insert` và `reject_foreign_domain_on_email_change` (chỉ khi `NEW.email IS DISTINCT FROM OLD.email`) — tài khoản cũ ngoài domain trên hosted không bị chặn khi GoTrue cập nhật cột khác.
 - Q: `redirectTo` của OAuth Google đang lấy từ Host của request? → A: **Để đến lúc chọn hosting** (user, 2026-11-15). Rủi ro thấp (Next đối chiếu Origin/Host cho Server Action; allow-list redirect của Supabase khớp chính xác). Checklist go-live: chọn A (`APP_ORIGIN` cố định) nếu chỉ một origin, B (allow-list origin) nếu có preview; callback route theo cùng quyết định.
+
+## Session 2026-11-16 — Phase 05 Figma vs plan (orchestrator)
+- Route Live board là `/kudos` (đã có trong `APP_ROUTES`); nút viết Kudo (launcher phase 04) chuyển từ `/` sang `/kudos`, đổi dáng thành viên thuốc theo Figma 2940:13449; bỏ deep link tạm `/?editKudo` — sửa Kudo mở modal ngay trên thẻ (nút bút của chủ bài).
+- Chi tiết Kudo: **trang riêng `/kudos/[id]`** (giữ D004, Copy Link cần URL cố định) nhưng **vẽ theo Figma View Kudo 520:18779** — khung 680 giữa màn trên nền keyvisual mờ, nút "Đóng" quay về `/kudos`.
+- Thẻ ẩn danh: avatar ẩn danh + **nickname** (Bold 22/28) + dòng phụ "Người gửi ẩn danh" (Figma 2099:9148, khớp quyết định nickname 2026-11-15). Không link profile.
+- Thời gian trên thẻ theo đúng Figma `HH:mm - MM/DD/YYYY` cho cả vi/en (giờ Việt Nam `Asia/Ho_Chi_Minh`).
+- Thẻ feed hiện cả "Copy Link" và "Xem chi tiết" (spec E20/E21; Figma thẻ feed chỉ vẽ Copy Link, thẻ Highlight vẽ cả hai).
+- Huy hiệu Hero (phase 09) và số tim thật (phase 06) để seam: phase 05 không hiện huy hiệu (ẩn cả dấu chấm), tim hiện số đọc từ seam (mặc định 0).
+- Highlight hiển thị tối đa 5 thẻ (Figma "2/5", D001); dropdown lọc có mục đầu "Tất cả".
+- Lời nhắn render bằng bộ render Markdown whitelist tự viết (không thêm thư viện), theo `research/phase-04-backend-contracts.md` § 1.1; thẻ cắt bằng line-clamp, trang chi tiết hiện đủ.
+- (review UI 2026-11-16) Nút bút sửa trên thẻ **ẩn khi hết hạn viết** (`EVENT_END_AT`), đồng bộ với nút viết Kudo bị khoá; server vẫn là bên quyết định (`WRITING_CLOSED`).
+- (review UI 2026-11-16) Trang chi tiết **không có nút sửa** (Figma 520:18779 không vẽ) — đóng E11 "TBD".
+- (review UI 2026-11-16) Ô tìm Sunner dùng debounce 250 ms của combobox dùng chung phase 04 (không sửa `features/sunner-search`); chấp nhận thay cho 300 ms trong phase file.
+- (vòng sửa 2026-11-16) `/kudos/[id]` khi không có quyền xem (không tồn tại / id sai / spam của người khác) là **404 mềm**: trang "không tìm thấy" giống hệt nhau, status 200 trên production (Cache Components đã gửi shell trước khi `notFound()` chạy; Next tự thêm `noindex`). **User chọn 2026-11-16**, không kiểm tra ở proxy. E2E kiểm tra nội dung trang, không kiểm tra status.
+- (vòng sửa 2026-11-16) Giữ nhánh FORBIDDEN trong hộp sửa Kudo (tab cũ còn nút bút sau khi đổi tài khoản ở tab khác) — có e2e phủ. Giữ `KudoComposerLauncherPlaceholder` (skeleton Live board đang dùng).
+- (vòng sửa 2026-11-16) Markdown: `![x](url)` hiện nguyên văn (không link); URL có username/password bị bỏ; thân bài cắt 5.000 đơn vị UTF-16 trước khi parse (giới hạn ghi 1.000 code point nên không thân bài lưu nào bị cắt).

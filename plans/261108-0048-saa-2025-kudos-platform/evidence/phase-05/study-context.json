@@ -1,0 +1,41 @@
+{
+  "task": "Phase 05 (F004 Kudos feed and detail): public kudo read query with anonymous masking, feed cursor pagination, highlight query, GET /api/kudos and /api/kudos/highlight, feed indexes migration, whitelist Markdown renderer, Live board page /kudos (launcher pill, Highlight carousel with filters, All Kudos feed) and detail page /kudos/[id] for the SAA 2025 Kudos platform",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "SC-001..SC-006 from technical spec pass (spam absent; anonymous payload has no sender identifiers; highlight top N after AND filters; cursor pages 10/10/5 with no dup/gap; uniform 404; no session → redirect/401)",
+    "Grep of RSC/JSON response for an anonymous kudo contains no sender id/name/email/avatar",
+    "list({senderId: other}) never returns other's anonymous kudos; list({senderId: self}) does",
+    "Author opening own spam kudo sees spam view; any other user gets 404",
+    "includeOwnSpam ignored unless senderId === viewerId (integration test with two users)",
+    "Live board renders with empty slots and no layout break with < 3 highlight cards",
+    "uniform 404 is a soft 404 on production (identical not-found content, status 200) per decision-log 2026-11-16",
+    "Markdown body renders only the phase-04 whitelist: no HTML, image syntax literal, only http(s) links without credentials",
+    "forged or out-of-range cursor returns 400, not 500",
+    "owner edit pen hidden after EVENT_END_AT and for spam; detail page has no pen",
+    "filter dropdown and load-more are keyboard and screen-reader accessible"
+  ],
+  "touchpoints": [
+    "db/migrations/0009_kudos_feed_indexes.sql",
+    "shared/db/schema/kudos.ts",
+    "features/kudos-feed/",
+    "app/api/kudos/route.ts",
+    "app/api/kudos/highlight/",
+    "app/(app)/kudos/",
+    "app/(app)/page.tsx",
+    "features/kudos-authoring/components/kudo-composer-launcher.tsx",
+    "messages/",
+    "public/images/kudos-feed/",
+    "tests/"
+  ],
+  "blastRadius": [
+    "phase 04 composer launcher moved to /kudos and the /?editKudo deep link removed",
+    "phase 06/09 rewrite heart and hero seams",
+    "phase 10/11 fill the rewards and spotlight slots",
+    "phase 12 consumes KudoPublicQuery.list with recipient/sender filters"
+  ],
+  "contracts": [
+    "GET /api/kudos (cursor, hashtag, department, q) and GET /api/kudos/highlight: 401 JSON without session, 400 on bad params, no-store",
+    "KudoCardView sender is {anonymous:false,id,name,avatarUrl,department,tier} or {anonymous:true,nickname}",
+    "detail lookup returns the same null for bad uuid, missing id and foreign spam"
+  ]
+}

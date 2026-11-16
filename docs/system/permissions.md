@@ -56,7 +56,7 @@ lang: vi
 - *Không tự gửi Kudo cho chính mình*: chặn ở server (`SELF_SEND` 422) và ở DB (CHECK `kudos_no_self_send`).
 
 **F004_KudosFeed**
-- *Chỉ Kudo `public` được hiển thị*: Highlight, All Kudos, chi tiết. Kudo spam và id lạ trả cùng 404 (cả với chủ bài ở màn chi tiết).
+- *Chỉ Kudo `public` được hiển thị*: Highlight, All Kudos, chi tiết. Ngoại lệ duy nhất: Kudo spam mở được ở màn chi tiết `/kudos/{id}` cho chính người gửi, chỉ đọc (`isSpam: true`, không tim, không Copy Link, không nút sửa). Id sai dạng, id lạ và spam của người khác trả cùng một kết quả `notFound()`, không phân biệt được.
 - *Kudo ẩn danh không lộ người gửi* (xem mục Quyền riêng tư Kudo ẩn danh bên dưới).
 - *Sao chép liên kết* chỉ là thao tác ở trình duyệt; người mở liên kết vẫn phải đăng nhập.
 
@@ -137,8 +137,8 @@ lang: vi
 
 ### Quy tắc hiển thị Kudo spam
 
-- Kudo `spam` biến mất khỏi mọi nơi công khai: Highlight, All Kudos, chi tiết (404 cho mọi người, kể cả chủ bài), Spotlight, profile "Đã nhận", mọi số đếm (tim, Hero, tổng Kudo, thống kê Admin).
-- Chủ bài thấy Kudo spam của chính mình (một thẻ "Spam" ở "Đã gửi" trên profile, và lớp cảnh báo "Cảnh báo vi phạm tiêu chuẩn cộng đồng"); người khác không bao giờ thấy, kể cả khi biết id.
+- Kudo `spam` biến mất khỏi mọi nơi công khai: Highlight, All Kudos, chi tiết (404 cho mọi người trừ chủ bài, xem dòng sau), Spotlight, profile "Đã nhận", mọi số đếm (tim, Hero, tổng Kudo, thống kê Admin).
+- Chủ bài thấy Kudo spam của chính mình (một thẻ "Spam" ở "Đã gửi" trên profile, trang chi tiết `/kudos/{id}` ở dạng chỉ đọc kèm thẻ "Spam", và lớp cảnh báo "Cảnh báo vi phạm tiêu chuẩn cộng đồng"); người khác không bao giờ thấy, kể cả khi biết id.
 - Admin thấy cả hai trạng thái trong bảng Review với huy hiệu `Public`/`Spam`.
 - Chỉ Admin đổi được trạng thái; chủ bài nhận thông báo "Kudo bị tạm ẩn".
 

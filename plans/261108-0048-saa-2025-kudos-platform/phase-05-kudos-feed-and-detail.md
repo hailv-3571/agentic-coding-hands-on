@@ -2,7 +2,7 @@
 phase: 05
 feature: F004
 priority: P1
-status: pending
+status: completed
 depends_on: [04]
 file_ownership:
   - app/(app)/kudos/page.tsx
@@ -22,13 +22,13 @@ resolves: [C-05, C-13 (public side), C-17 (detail view), C-19 (seam), C-06 (cons
 ## Context Links
 - Spec: `spec/kudos-feed/functional-spec.md`, `spec/kudos-feed/technical-spec.md`
 - Screens: `spec/kudos-feed/screens/SCR-kudos-live-board-feed/spec.md` (Figma Live board `2940:13431`), `spec/kudos-feed/screens/SCR-kudo-detail/spec.md` (Figma View Kudo `520:18779`)
-- Decisions: `spec/decision-log.md` (anonymous, spam, hashtags 1–3, edit rules)
+- Decisions: `spec/decision-log.md` (anonymous, spam, hashtags 1–5 per 2026-11-15 — supersedes the 2026-11-08 "1–3" — edit rules)
 - Conflicts: `spec/system/architecture.md` § Consistency Check C-05, C-13, C-17, C-19, C-06
 - Figma study: `plans/reports/261108-0035-saa-2025-figma-screen-analysis.md` § 3.3
 - Upstream: phase-01 (config, Drizzle, RLS), phase-02 (session proxy, `profiles`), phase-04 (`kudos` incl. `status kudo_status DEFAULT 'public'`, `kudo_hashtags`, `kudo_images`, `KudoComposerModal`, `GET /api/sunners/search`)
 
 ## Overview
-- Priority: P1 · Status: pending
+- Priority: P1 · Status: completed (2026-11-16, see Delivery notes)
 - Read-only Live board: Highlight carousel (Hashtag + Phòng ban filters), All Kudos feed with cursor "Tải thêm", Kudo card (anonymous variant), detail page with fixed URL `/kudos/{id}`, Copy Link, Sunner profile search.
 - **Owns the Live board page** and exposes layout slots: Spotlight (phase 11), composer entry (phase 04 modal), rewards column (phase 10).
 - Owns `KudoPublicQuery` — the ONE public read path for kudos (feed, detail, profile in phase 12).
@@ -111,17 +111,17 @@ Modify: none outside ownership (messages keys namespaced). Delete: none.
 14. Tests (see Scope Contract), then reviewer.
 
 ## Todo List
-- [ ] Read Next.js 16 docs (route handlers, notFound, async params)
-- [ ] Index migration + EXPLAIN check
-- [ ] Schemas + cursor util (+unit)
-- [ ] KudoPublicQuery list/findForViewer with C-05 filters + anonymous sender guard
-- [ ] Row mask (+unit)
-- [ ] Heart/hero seams + enrichment + highlight query
-- [ ] Route handlers `/api/kudos`, `/api/kudos/highlight`
-- [ ] KudoCard family, carousel, filters, feed, search, copy link
-- [ ] Live board page with slots; detail page + not-found
-- [ ] i18n keys
-- [ ] Integration + e2e tests green
+- [x] Read Next.js 16 docs (route handlers, notFound, async params) — backend report, "Next.js 16 docs"
+- [x] Index migration + EXPLAIN check — migration 0009; EXPLAIN ANALYZE, 10k kudos (backend report): Q1–Q5 all index scans, ≤ 0.32 ms
+- [x] Schemas + cursor util (+unit) — `kudo-feed-params-schema.ts`, `kudo-feed-cursor.ts`, `kudo-feed-cursor.test.ts`
+- [x] KudoPublicQuery list/findForViewer with C-05 filters + anonymous sender guard — `kudo-public-query.ts:47`
+- [x] Row mask (+unit) — `kudo-row-mask.ts`, `kudo-row-mask.test.ts`
+- [x] Heart/hero seams + enrichment + highlight query — seams ship defaults only (0 / false, null, recency); phases 06 and 09 rewrite them
+- [x] Route handlers `/api/kudos`, `/api/kudos/highlight`
+- [x] KudoCard family, carousel, filters, feed, search, copy link
+- [x] Live board page with slots; detail page + not-found — both slots render `null` until phases 10/11 rewrite them
+- [x] i18n keys — `kudosFeed.*` in `messages/vi.json` and `messages/en.json`
+- [x] Integration + e2e tests green — tester run 2026-11-16: integration 203/203, e2e 59/59 ×2
 
 ## Success Criteria
 - SC-001..SC-006 from technical spec pass (spam absent; anonymous payload has no sender identifiers; highlight top N after AND filters; cursor pages 10/10/5 with no dup/gap; uniform 404; no session → redirect/401).
@@ -159,3 +159,37 @@ Rollback: revert phase files + drop indexes migration (down script); no data wri
 - Phase 06 rewrites `enrich-heart-summary.ts` + `kudo-card-heart-slot.tsx` (counts, heartedByMe, highlight ranking, heart button).
 - Phase 09 rewrites `enrich-hero-tier.ts` + `kudo-card-hero-badge-slot.tsx`. Seam files: phase 05 creates, the named later phase owns afterwards; 06 ∥ 09 touch disjoint seams. Phase 10 rewrites `live-board-rewards-column-slot.tsx`, phase 11 rewrites `live-board-spotlight-slot.tsx` — separate files so 10 ∥ 11 never collide.
 - Phase 12 consumes `KudoPublicQuery.list({recipientId|senderId})`.
+
+## Delivery notes
+
+Completed 2026-11-16. Review SEALED (score 9/10, 0 critical, 5 suggestions: 1 already fixed in code, 4 deferred). Risk signed off by user 2026-11-16 (`evidence/phase-05/inspection-verdict.json`, `riskGate.humanSignedOff: true`).
+
+### Decisions that overrode the phase text
+- `list` and `findForViewer` take a `locale` (`list({ viewerId, locale, … })`, `findForViewer(id, viewerId, locale)`); hashtag labels are localized server-side.
+- Sender shape: `{ anonymous: false, id, name, avatarUrl, department, tier }` | `{ anonymous: true, nickname }`. Department is `{ id, code }`. No email is ever selected. The nickname follows decision-log 2026-11-15.
+- Highlight `total` = number of cards returned (≤ 5), which drives the "n/N" pager.
+- A present-but-empty query param (`?hashtag=`, `?cursor=`) is 400 `VALIDATION`, the same rule as `/api/sunners/search`.
+- Not-found on `/kudos/[id]` is a soft 404: a bad uuid, an unknown id and someone else's spam render the same page, with status 200 on production. User decision, decision-log 2026-11-16. No test asserts the status.
+- The launcher moved from `/` to `/kudos`. The `/?editKudo` deep link (`kudo-edit-deep-link.tsx`) and `ic-pencil.svg` were removed.
+- Hashtags are 1–5 (decision-log 2026-11-15). The "1–3" in Context Links is superseded.
+- The edit pen is hidden after `EVENT_END_AT` and on spam (`kudoCardCanEdit`). The detail page has no pen (Figma 520:18779).
+- The Sunner search debounce is 250 ms, from the shared combobox in phase 04, not 300 ms (decision-log 2026-11-16).
+- Extra server files beyond the plan list: `kudo-public-filters.ts`, `kudo-card-relations.ts`, `build-kudo-card-views.ts`, `kudo-image-read-urls.ts`, `kudo-card-can-edit.ts`. The parser is split into four files under `markdown/`. `kudo-card-actions.tsx` was not created; `kudo-owner-edit-button.tsx` and `kudo-card-parts.tsx` cover that role. All files are under 200 lines.
+
+### Deferrals and follow-ups
+- Phase 10/12 need a `recipientId` / `senderId` filter on `publicKudoIdsSubquery`. It currently takes only hashtag and department. Any sender filter must carry the viewer guard from `list` (`is_anonymous = false OR sender_id = viewer`).
+- No automated "writing closed → no pen" wiring test. Coverage is the 9-row unit truth table (`kudo-card-can-edit.test.ts`) plus a one-off two-server check (16/16).
+- No `year 0000` row in the route 400 table (`kudos-feed-routes.test.ts`). The decoder unit test and route composition cover it.
+- The escaped `\![x](url)` renders `!` plus a link with a visible label (CommonMark-consistent). "Image syntax literal" holds only for unescaped `![x](url)`.
+- No test seeds exactly 1 or 2 Highlight cards. The "<3 cards, no layout break" criterion is checked by code reading plus the overflow e2e.
+- The owner-pen and writing-closed screenshots (`*-04-owner-card-with-pen`, `*-08-writing-closed-owner-card-no-pen`) are from an earlier run.
+- No coverage script (`test:coverage`); coverage is not measured.
+- The copy-link live region is one per card.
+- Revisit `includeOwnSpam` in phase 12.
+- The `sender_id` / `recipient_id` indexes have no consumer until phase 12 (write cost only until then).
+- Seams `enrich-heart-summary.ts` and `enrich-hero-tier.ts` still ship defaults (0 / false, recency ranking, null) until phases 06 and 09 rewrite them.
+- Announcement count in `all-kudos-feed.tsx` can be off by a few during a `router.refresh` mid-fetch (harmless).
+
+### Test results
+- Unit 376/376 (29 files), integration 203/203 (27 files), e2e 59/59 on two consecutive runs with no flakes, `build`, `test:prod` 13/13, `lint`, and `typecheck` all exit 0 (tester run 2026-11-16).
+- Source: `plans/reports/tester-261116-phase-05-full-run.md`; review: `plans/reports/reviewer-261116-phase-05-final.md`.

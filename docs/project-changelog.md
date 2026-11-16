@@ -6,6 +6,42 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-16 — Phase 05 (F004 Kudos feed & detail)
+
+Added
+- Trang Live board `/kudos` (RSC): Highlight carousel (tối đa 5 thẻ, lọc theo Hashtag và Phòng ban), All Kudos feed với "Tải thêm" theo cursor (10 thẻ/trang, mới nhất trước), thẻ Kudo (có biến thể ẩn danh), Copy Link, tìm Sunner.
+- Trang chi tiết `/kudos/{id}` (Figma 520:18779) có Copy Link và trang "không tìm thấy" dùng chung.
+- `features/kudos-feed/`: `KudoPublicQuery` (`list`, `findForViewer`, `publicKudoIdsSubquery`) là đường đọc công khai duy nhất; `maskKudoRow` che người gửi ẩn danh; cursor `(created_at, id)`; parser Markdown rút gọn có whitelist (không HTML, không ảnh Markdown, chỉ link http(s) không kèm thông tin đăng nhập).
+- Route handler `GET /api/kudos` (cursor) và `GET /api/kudos/highlight` (hashtag, department).
+- Migration `0009_kudos_feed_indexes.sql`: ba index `(status | recipient_id | sender_id, created_at DESC, id DESC)`. EXPLAIN trên 10.000 Kudo: mọi truy vấn đều dùng index, dưới 0,35 ms.
+- Seam `enrich-heart-summary.ts` (phase 06 sẽ thay) và `enrich-hero-tier.ts` (phase 09 sẽ thay); hiện trả giá trị mặc định (0 tim, không có tier, xếp hạng theo thời gian).
+- i18n `kudosFeed.*` (vi, en).
+
+Changed
+- Nút mở composer chuyển từ `/` sang `/kudos`; xóa deep link `/?editKudo` và `ic-pencil.svg`.
+
+Decisions
+- Hashtag 1–5 (decision-log 2026-11-15).
+- Người gửi ẩn danh chỉ có `{ anonymous: true, nickname }`.
+- `/kudos/{id}`: id sai, không tồn tại, hoặc spam của người khác đều ra cùng một trang "không tìm thấy". Đây là soft 404 (status 200 trên production), theo quyết định người dùng 2026-11-16.
+- Bút sửa ẩn sau `EVENT_END_AT` và trên Kudo spam; trang chi tiết không có bút sửa.
+- Ô tìm Sunner debounce 250 ms (combobox dùng chung với phase 04).
+
+Security
+- Người gửi ẩn danh không tới trình duyệt: JSON và RSC payload không có id, tên, email hay avatar (test quét HTML thô của `/kudos` và `/kudos/{id}`).
+- Bộ lọc `senderId` không lộ Kudo ẩn danh của người khác; `includeOwnSpam` chỉ có hiệu lực khi `senderId` là chính người xem.
+- Route dữ liệu trả 401 JSON khi không có session; response không cache.
+
+Fixed (trong vòng review, chưa ship; các mục đều là Warning)
+- Bút sửa còn hiện sau `EVENT_END_AT`; dropdown lọc và "Tải thêm" chưa đạt yêu cầu bàn phím và trình đọc màn hình; cursor năm 0000 chưa bị từ chối (nay 400); link Markdown có username/password và ảnh Markdown chưa được xử lý đúng.
+
+Deferred
+- Test "đóng cửa ghi → không có bút" chưa có wiring tự động; test layout với 1–2 thẻ Highlight; row 400 cho cursor năm 0000 trong route test; coverage chưa đo (chưa có script).
+- Bộ lọc `senderId` và `recipientId` trên `publicKudoIdsSubquery` cho phase 10/12 (phải kèm guard người xem).
+
+Docs
+- `docs/system/architecture.md` chưa có mục đọc Kudo (F004); `docs/features/F004_KudosFeed/*` chưa cập nhật tay.
+
 ## 2026-11-16 — Phase 04 (F003 Kudos authoring)
 
 Added
