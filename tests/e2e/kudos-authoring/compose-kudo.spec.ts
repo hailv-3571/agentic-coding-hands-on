@@ -13,7 +13,7 @@ import {
 /**
  * F003 composer, create mode (phase 04 e2e scope): full compose with every optional part,
  * DEC-001, the anonymous nickname rule, double-submit safety and the dirty-form Esc guard.
- * The placeholder home hosts the launcher until phase 05 moves it to the Live board.
+ * The launcher pill lives on the Live board (`/kudos`) since phase 05.
  */
 
 test.describe("Kudo composer — create", () => {

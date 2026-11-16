@@ -5,8 +5,9 @@ import { expect, type KudoPair } from "./kudo-e2e-fixtures";
 export const LAUNCHER = "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?";
 export const DEC_001 = "Bạn cần điền đủ Người nhận, Lời nhắn gửi và Hashtag để gửi Kudos!";
 
+/** Opens the create modal from the launcher pill on the Live board (moved there in phase 05). */
 export async function openComposer(page: Page): Promise<Locator> {
-  await page.goto("/");
+  await page.goto("/kudos");
   await page.getByRole("button", { name: LAUNCHER }).click();
   const dialog = page.getByRole("dialog", { name: "Gửi lời cám ơn và ghi nhận đến đồng đội" });
   await expect(dialog).toBeVisible();

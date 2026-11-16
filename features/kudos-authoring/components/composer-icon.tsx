@@ -15,7 +15,6 @@ const ICONS = {
   "image-remove": [17.1429, 17.1429],
   save: [18, 18],
   "check-circle": [15, 15],
-  pencil: [18, 18],
 } as const;
 
 export type ComposerIconName = keyof typeof ICONS;

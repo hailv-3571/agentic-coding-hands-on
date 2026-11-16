@@ -224,5 +224,75 @@
     "failed": "Search failed. Please try again.",
     "sessionExpired": "Your session has expired. Please sign in again.",
     "resultCount": "{count, plural, =0 {No results} one {# result} other {# results}}"
+  },
+  "kudosFeed": {
+    "metaTitle": "Sun* Kudos",
+    "sectionCaption": "Sun* Annual Awards 2025",
+    "kv": {
+      "title": "Recognition and thank-you system",
+      "logoAlt": "KUDOS"
+    },
+    "search": {
+      "label": "Search Sunner profiles",
+      "placeholder": "Search Sunner profiles"
+    },
+    "highlight": {
+      "title": "HIGHLIGHT KUDOS",
+      "carouselLabel": "Highlight Kudos",
+      "slideLabel": "{index} / {total}",
+      "previous": "Previous Kudo",
+      "next": "Next Kudo",
+      "pagerPrevious": "Previous page",
+      "pagerNext": "Next page"
+    },
+    "filters": {
+      "hashtag": "Hashtag",
+      "department": "Department",
+      "all": "All",
+      "hashtagList": "Filter by hashtag",
+      "departmentList": "Filter by department"
+    },
+    "allKudos": {
+      "title": "ALL KUDOS",
+      "loadMore": "Load more",
+      "loaded": "{count, plural, one {Loaded # more Kudo} other {Loaded # more Kudos}}"
+    },
+    "status": {
+      "empty": "No matching Kudos yet.",
+      "loading": "Loading Kudos…",
+      "loadFailed": "Could not load Kudos. Please try again.",
+      "sessionExpired": "Your session has expired. Please sign in again.",
+      "signIn": "Sign in again",
+      "retry": "Try again"
+    },
+    "card": {
+      "anonymousSubtitle": "Anonymous sender",
+      "sentTo": "sent to",
+      "edit": "Edit Kudo",
+      "viewDetail": "View details",
+      "heartsLabel": "hearts",
+      "imageAlt": "Attached image {index}",
+      "imageUnavailable": "Attached image {index} could not be loaded",
+      "openImage": "Open attached image {index} in a new tab",
+      "spamTag": "Spam",
+      "spamLocked": "This Kudo was marked as spam and can no longer be edited."
+    },
+    "copyLink": {
+      "label": "Copy Link",
+      "copied": "Link copied",
+      "failed": "Could not copy the link. Please try again.",
+      "manualLabel": "Kudo link to copy manually",
+      "dismiss": "Close"
+    },
+    "detail": {
+      "metaTitle": "Kudo details",
+      "heading": "Kudo details",
+      "close": "Close",
+      "loadFailed": "Could not load this Kudo. Please try again."
+    },
+    "notFound": {
+      "message": "This Kudo does not exist or has been removed.",
+      "back": "Back to the Live board"
+    }
   }
 }

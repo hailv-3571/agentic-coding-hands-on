@@ -1,10 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ComposerIcon } from "./composer-icon";
 import { focusRing } from "./composer-styles";
 import { KudoComposerModal } from "./kudo-composer-modal";
+
+/** Figma pill 2940:13449: h72, rounded 68, secondary fill, 1 px #998C5F border, px16. */
+const pill = "min-h-18 w-full rounded-[68px] border border-border bg-secondary";
 
 type KudoComposerLauncherProps = {
   /** From `isKudoWritingOpen()` in a server component; false after EVENT_END_AT. */
@@ -12,9 +15,10 @@ type KudoComposerLauncherProps = {
 };
 
 /**
- * "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?" prompt (FR-101; Figma Live board
- * `mms_A.1_Button ghi nhận` 2940:13449: pill, h72, 1 px #998C5F border, secondary fill, white
- * pencil). Opens the composer in create mode; disabled with the closed notice once writing ends.
+ * "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?" prompt (FR-101) on the Live board
+ * (Figma `mms_A.1_Button ghi nhận` 2940:13449: w738 pill, ic-pen-light 24 + gap 16, Bold 16/24
+ * white, tracking .15). Opens the composer in create mode; disabled with the closed notice once
+ * writing ends.
  */
 export function KudoComposerLauncher({ writingOpen }: KudoComposerLauncherProps) {
   const t = useTranslations("kudosComposer");
@@ -28,11 +32,9 @@ export function KudoComposerLauncher({ writingOpen }: KudoComposerLauncherProps)
         disabled={!writingOpen}
         aria-describedby={writingOpen ? undefined : noticeId}
         onClick={() => setOpen(true)}
-        className={`flex min-h-18 w-full items-center gap-5 rounded-full border border-border bg-secondary px-4 py-3 text-left text-title-medium font-bold text-text transition-colors hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-secondary ${focusRing}`}
+        className={`${pill} flex items-center gap-4 px-4 py-3 text-left text-title-medium font-bold text-text transition-colors hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-secondary ${focusRing}`}
       >
-        <span className="flex size-6 shrink-0 items-center justify-center">
-          <ComposerIcon name="pencil" />
-        </span>
+        <Image src="/images/kudos-feed/ic-pen-light.svg" width={24} height={24} alt="" aria-hidden draggable={false} className="shrink-0" />
         {t("launcher.prompt")}
       </button>
       {!writingOpen && (
@@ -47,5 +49,5 @@ export function KudoComposerLauncher({ writingOpen }: KudoComposerLauncherProps)
 
 /** Same-size stand-in while the writing window is read at request time (no layout shift). */
 export function KudoComposerLauncherPlaceholder() {
-  return <div aria-hidden className="min-h-18 w-full rounded-full border border-border bg-secondary" />;
+  return <div aria-hidden className={pill} />;
 }

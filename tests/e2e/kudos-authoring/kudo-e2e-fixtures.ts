@@ -79,8 +79,22 @@ export async function kudosSentBy(senderId: string): Promise<StoredKudo[]> {
   ) as StoredKudo[];
 }
 
+/**
+ * A `created_at` in a random far-future window, so a seeded kudo sorts above every real one and
+ * lands on the first Live board page even while parallel workers seed theirs. `top` windows
+ * (years 5000–7899) always sort above `low` ones (2100–4999); each call picks its own window.
+ */
+export function feedWindow(kind: "top" | "low" = "top"): (offsetMinutes?: number) => string {
+  const year = (kind === "top" ? 5000 : 2100) + Math.floor(Math.random() * 2900);
+  const base = Date.UTC(year, 0, 1) + Math.floor(Math.random() * 360) * 86_400_000;
+  return (offsetMinutes = 0) => new Date(base + offsetMinutes * 60_000).toISOString();
+}
+
 /** Inserts a kudo directly (service role) so the edit flow has something to open. */
-export async function seedKudo(pair: KudoPair, values: { title: string | null; body: string; hashtagCount: number }) {
+export async function seedKudo(
+  pair: KudoPair,
+  values: { title: string | null; body: string; hashtagCount: number; createdAt?: string },
+) {
   const tags = check(
     await serviceClient
       .from("hashtags")
@@ -92,7 +106,13 @@ export async function seedKudo(pair: KudoPair, values: { title: string | null; b
   const kudo = check(
     await serviceClient
       .from("kudos")
-      .insert({ sender_id: pair.sender.id, recipient_id: pair.recipient.id, title: values.title, body: values.body })
+      .insert({
+        sender_id: pair.sender.id,
+        recipient_id: pair.recipient.id,
+        title: values.title,
+        body: values.body,
+        ...(values.createdAt ? { created_at: values.createdAt } : {}),
+      })
       .select("id")
       .single(),
   ) as { id: string };

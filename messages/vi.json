@@ -224,5 +224,75 @@
     "failed": "Không tìm được, vui lòng thử lại.",
     "sessionExpired": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
     "resultCount": "{count, plural, =0 {Không có kết quả} other {# kết quả}}"
+  },
+  "kudosFeed": {
+    "metaTitle": "Sun* Kudos",
+    "sectionCaption": "Sun* Annual Awards 2025",
+    "kv": {
+      "title": "Hệ thống ghi nhận và cảm ơn",
+      "logoAlt": "KUDOS"
+    },
+    "search": {
+      "label": "Tìm kiếm profile Sunner",
+      "placeholder": "Tìm kiếm profile Sunner"
+    },
+    "highlight": {
+      "title": "HIGHLIGHT KUDOS",
+      "carouselLabel": "Highlight Kudos",
+      "slideLabel": "{index} / {total}",
+      "previous": "Xem Kudo trước",
+      "next": "Xem Kudo sau",
+      "pagerPrevious": "Trang trước",
+      "pagerNext": "Trang sau"
+    },
+    "filters": {
+      "hashtag": "Hashtag",
+      "department": "Phòng ban",
+      "all": "Tất cả",
+      "hashtagList": "Lọc theo hashtag",
+      "departmentList": "Lọc theo phòng ban"
+    },
+    "allKudos": {
+      "title": "ALL KUDOS",
+      "loadMore": "Tải thêm",
+      "loaded": "Đã tải thêm {count} Kudo"
+    },
+    "status": {
+      "empty": "Chưa có Kudo nào phù hợp.",
+      "loading": "Đang tải Kudos…",
+      "loadFailed": "Không tải được Kudos. Vui lòng thử lại.",
+      "sessionExpired": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
+      "signIn": "Đăng nhập lại",
+      "retry": "Thử lại"
+    },
+    "card": {
+      "anonymousSubtitle": "Người gửi ẩn danh",
+      "sentTo": "gửi đến",
+      "edit": "Chỉnh sửa Kudo",
+      "viewDetail": "Xem chi tiết",
+      "heartsLabel": "lượt thả tim",
+      "imageAlt": "Ảnh đính kèm {index}",
+      "imageUnavailable": "Ảnh đính kèm {index} không tải được",
+      "openImage": "Mở ảnh đính kèm {index} trong thẻ mới",
+      "spamTag": "Spam",
+      "spamLocked": "Kudo này đã bị đánh dấu spam nên không thể sửa."
+    },
+    "copyLink": {
+      "label": "Copy Link",
+      "copied": "Đã sao chép liên kết",
+      "failed": "Không sao chép được liên kết, vui lòng thử lại.",
+      "manualLabel": "Liên kết của Kudo để sao chép thủ công",
+      "dismiss": "Đóng"
+    },
+    "detail": {
+      "metaTitle": "Chi tiết Kudo",
+      "heading": "Chi tiết Kudo",
+      "close": "Đóng",
+      "loadFailed": "Không tải được Kudo. Vui lòng thử lại."
+    },
+    "notFound": {
+      "message": "Kudo này không tồn tại hoặc đã bị gỡ.",
+      "back": "Quay lại Live board"
+    }
   }
 }
