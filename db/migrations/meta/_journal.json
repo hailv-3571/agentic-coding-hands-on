@@ -43,6 +43,27 @@
       "when": 1794730812020,
       "tag": "0005_auth_user_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794760857402,
+      "tag": "0006_kudos",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794760864692,
+      "tag": "0007_kudos_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794765623711,
+      "tag": "0008_kudos_review_fixes",
+      "breakpoints": true
     }
   ]
 }

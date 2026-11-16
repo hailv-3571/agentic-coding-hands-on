@@ -3,3 +3,4 @@
 export * from "./reference-data";
 export * from "./domain-event-outbox";
 export * from "./profiles";
+export * from "./kudos";
