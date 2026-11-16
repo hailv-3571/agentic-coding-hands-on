@@ -10,7 +10,7 @@ import * as seed from "./kudo-feed-fixtures";
  * Cursor stability (SC-004, BR-005): `(created_at DESC, id DESC)` with the tuple predicate never
  * repeats or skips a row — not with 25 identical timestamps, not with rows a microsecond apart
  * (a millisecond cursor would re-serve them). Also: the unfiltered Live board path, a bad cursor,
- * and a constant statement count per page (hashtags + images are batch-loaded, no N+1).
+ * and a constant statement count per page (hashtags + images + heart summary are batch-loaded, no N+1).
  */
 let sender: Sunner;
 let sameInstant: Sunner;
@@ -97,10 +97,10 @@ describe("KudoPublicQuery statement count (no N+1)", () => {
     }
   }
 
-  it("issues the same three statements for a page of 10 (tags) and a page of 6 (images)", async () => {
+  it("issues the same four statements (rows, tags, images, hearts) for a page of 10 and a page of 6", async () => {
     const tenWithTags = await statementsFor(() => KudoPublicQuery.list({ viewerId: sender.id, locale: "vi", recipientId: sameInstant.id }));
     const sixWithImages = await statementsFor(() => KudoPublicQuery.list({ viewerId: sender.id, locale: "vi", recipientId: microApart.id }));
-    expect([tenWithTags, sixWithImages]).toEqual([3, 3]);
+    expect([tenWithTags, sixWithImages]).toEqual([4, 4]);
   });
 
   it("issues one statement for an empty page", async () => {

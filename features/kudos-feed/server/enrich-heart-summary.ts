@@ -1,30 +1,30 @@
 import "server-only";
-import { desc } from "drizzle-orm";
-import { db } from "@/shared/db/client";
+import { HeartRankingQuery } from "@/features/kudos-hearts/server/heart-ranking-query";
+import { KudoHeartQuery } from "@/features/kudos-hearts/server/kudo-heart-query";
 import type { KudoCardCore, KudoCardView } from "../schemas/kudo-card-view";
 import type { PublicKudoIdsSubquery } from "./kudo-public-filters";
 
 /**
- * SEAM — created by phase 05, OWNED BY PHASE 06 from here on (C-19). Phase 06 rewrites this whole
- * file with real heart counts (`summaryForKudos`) and `HeartRankingQuery.rankKudoIds`, keeping the
- * two exported signatures below. Phase 05 never reads `kudo_hearts`.
- * Phase 05 defaults: every card has 0 hearts and none by the viewer; Highlight ranks by recency.
+ * SEAM — created by phase 05, owned by phase 06 (C-19). The two exported signatures are phase
+ * 05's contract; the bodies are F005's real implementations:
+ * - cards get the RAW heart count and the viewer's own heart (`KudoHeartQuery.summaryForKudos`,
+ *   one grouped query per page; runs after masking, so it never sees an anonymous sender);
+ * - the Highlight ranks by `HeartRankingQuery` (raw hearts DESC, created_at DESC, id DESC).
  */
 
 /** Adds `heartCount` / `heartedByMe` for `viewerId` to a page of masked cards (one batch, no N+1). */
 export type EnrichHeartSummary = (cards: KudoCardCore[], viewerId: string) => Promise<KudoCardView[]>;
 
-/** Ids of the top `limit` candidates, best first (phase 06: raw hearts DESC, created_at DESC, id DESC). */
+/** Ids of the top `limit` candidates, best first (raw hearts DESC, created_at DESC, id DESC). */
 export type RankKudoIdsForHighlight = (candidates: PublicKudoIdsSubquery, limit: number) => Promise<string[]>;
 
-export const enrichHeartSummary: EnrichHeartSummary = async (cards) =>
-  cards.map((card) => ({ ...card, heartCount: 0, heartedByMe: false }));
-
-export const rankKudoIdsForHighlight: RankKudoIdsForHighlight = async (candidates, limit) => {
-  const rows = await db
-    .select({ id: candidates.id })
-    .from(candidates)
-    .orderBy(desc(candidates.createdAt), desc(candidates.id))
-    .limit(limit);
-  return rows.map((row) => row.id);
+export const enrichHeartSummary: EnrichHeartSummary = async (cards, viewerId) => {
+  const summaries = await KudoHeartQuery.summaryForKudos(
+    cards.map((card) => card.id),
+    viewerId,
+  );
+  return cards.map((card) => ({ ...card, ...(summaries.get(card.id) ?? { heartCount: 0, heartedByMe: false }) }));
 };
+
+export const rankKudoIdsForHighlight: RankKudoIdsForHighlight = (candidates, limit) =>
+  HeartRankingQuery.rankKudoIds(candidates, limit);
