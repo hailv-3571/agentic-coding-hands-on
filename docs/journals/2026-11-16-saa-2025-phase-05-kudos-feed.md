@@ -53,4 +53,4 @@ Chỗ gai thứ hai là secret scan. Pattern bắt đầu bằng `-----BEGIN`, `
 - Rebuild spec F003, F004, SCR007, SCR008; spec còn ghi "404 thật". Chưa gán người.
 - Chụp lại bốn ảnh cũ (`*-04-owner-card-with-pen`, `*-08-writing-closed-*`) trong run có `EVENT_END_AT` kiểm soát. Người làm: tester.
 - Thêm script `test:coverage` (Vitest v8). Người làm: main agent.
-- Human sign-off: `riskGate.humanSignedOff` còn `false`, gate cứng phase 05 đang BLOCKED. User ký, rồi chạy lại gate trên `evidence/phase-05`.
+- Human sign-off: user đã ký duyệt rủi ro ngày 2026-11-16; `riskGate.humanSignedOff` = `true`, gate cứng trên `evidence/phase-05` SEALED (exit 0).
