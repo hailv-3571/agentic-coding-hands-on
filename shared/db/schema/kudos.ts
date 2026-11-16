@@ -24,26 +24,44 @@ import { hashtags } from "./reference-data";
 /** DISC (C-08, owned by F007): moderation state. New Kudos are always `public` (BR-005). */
 export const kudoStatus = pgEnum("kudo_status", ["public", "spam"]);
 
-export const kudos = pgTable("kudos", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  senderId: uuid("sender_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "restrict" }),
-  /** Immutable after create (decision-log: edit every field except the recipient). */
-  recipientId: uuid("recipient_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "restrict" }),
-  /** Danh hiệu, optional (D006). */
-  title: varchar("title", { length: 50 }),
-  /** Raw restricted Markdown, never HTML (decision-log 2026-11-15). */
-  body: text("body").notNull(),
-  isAnonymous: boolean("is_anonymous").notNull().default(false),
-  /** Shown instead of the sender's name; set exactly when `is_anonymous` (CHECK). */
-  anonymousNickname: varchar("anonymous_nickname", { length: 30 }),
-  status: kudoStatus("status").notNull().default("public"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}).enableRLS();
+export const kudos = pgTable(
+  "kudos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    /** Immutable after create (decision-log: edit every field except the recipient). */
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    /** Danh hiệu, optional (D006). */
+    title: varchar("title", { length: 50 }),
+    /** Raw restricted Markdown, never HTML (decision-log 2026-11-15). */
+    body: text("body").notNull(),
+    isAnonymous: boolean("is_anonymous").notNull().default(false),
+    /** Shown instead of the sender's name; set exactly when `is_anonymous` (CHECK). */
+    anonymousNickname: varchar("anonymous_nickname", { length: 30 }),
+    status: kudoStatus("status").notNull().default("public"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  /**
+   * Feed order `(created_at DESC, id DESC)` per filter (phase 05, migration *_kudos_feed_indexes).
+   * `.nullsFirst()` makes drizzle emit Postgres' plain `DESC` (= NULLS FIRST), the order the feed's
+   * `ORDER BY … DESC` asks for; drizzle's own default would be `DESC NULLS LAST`, which no
+   * forward or backward scan can serve for that ORDER BY.
+   */
+  (table) => {
+    // A fresh pair per index: drizzle resets a column's sort config once `.on()` has read it.
+    const feedOrder = () => [table.createdAt.desc().nullsFirst(), table.id.desc().nullsFirst()] as const;
+    return [
+      index("kudos_status_created_at_id_idx").on(table.status, ...feedOrder()),
+      index("kudos_recipient_id_created_at_id_idx").on(table.recipientId, ...feedOrder()),
+      index("kudos_sender_id_created_at_id_idx").on(table.senderId, ...feedOrder()),
+    ];
+  },
+).enableRLS();
 
 /** 1–5 active hashtags per Kudo (cross-row rule enforced in the write transaction). */
 export const kudoHashtags = pgTable(

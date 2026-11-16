@@ -64,6 +64,13 @@
       "when": 1794765623711,
       "tag": "0008_kudos_review_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794794947001,
+      "tag": "0009_kudos_feed_indexes",
+      "breakpoints": true
     }
   ]
 }
