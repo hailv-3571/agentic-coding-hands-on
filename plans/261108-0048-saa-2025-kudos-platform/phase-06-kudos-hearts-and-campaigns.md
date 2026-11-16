@@ -2,7 +2,7 @@
 phase: 06
 feature: F005, F011
 priority: P1
-status: pending
+status: completed
 depends_on: [05]
 file_ownership:
   - features/kudos-hearts/**
@@ -30,7 +30,7 @@ resolves: [C-01 (HeartAdded), C-02, C-11, C-19, C-14 (consumer), C-18, C-20 (kud
 - Upstream: phase-01 (`EVENT_END_AT`, `HEART_CAMPAIGN_MULTIPLIER`, `ADMIN_TIMEZONE`, outbox, shared/admin tz utils), phase-02 (`AdminGuard#requireAdmin`), phase-04 (`kudos`), phase-05 (`KudoPublicQuery.publicKudoIdsSubquery`, seams)
 
 ## Overview
-- Priority: P1 · Status: pending
+- Priority: P1 · Status: completed (2026-11-17, see Delivery notes)
 - F005: heart/unheart a public kudo (idempotent, no self-heart, multiplier snapshotted), batch heart summary for cards, heart stats for senders, the single heart ranking query.
 - F011: admin CRUD of non-overlapping x2 campaigns on Admin › Settings; real `ActiveCampaignReader`.
 - Built together: F011 is the only implementation of the reader F005 needs → no null-default reader (YAGNI).
@@ -102,17 +102,17 @@ Delete: none.
 15. i18n; tests per Scope Contract; reviewer.
 
 ## Todo List
-- [ ] Next.js 16 server action / optimistic docs read
-- [ ] `kudo_hearts` + `campaigns` schema, migrations, hand-written EXCLUDE, RLS no-policy
-- [ ] Campaign phase + input schema (+unit)
-- [ ] ActiveCampaignReader impl + HeartMultiplierResolver (+unit)
-- [ ] KudoHeartService add/remove with outbox + event lock
-- [ ] Heart server actions
-- [ ] KudoHeartQuery, HeartStatsQuery (asOf, batch), HeartRankingQuery
-- [ ] KudoHeartButton + seam rewrites (phase 05 files)
-- [ ] Admin Settings page, table, menu, form modal, delete dialog, actions
-- [ ] Concurrency + EXCLUDE race integration tests
-- [ ] e2e heart toggle + settings CRUD
+- [x] Next.js 16 server action / optimistic docs read — backend report (`revalidatePath`, Server Functions), UI report (`useOptimistic`)
+- [x] `kudo_hearts` + `campaigns` schema, migrations, hand-written EXCLUDE, RLS no-policy — `0010`, `0011`, `0012` + `.down.sql`
+- [x] Campaign phase + input schema (+unit) — `campaign-phase.test.ts`, `campaign-input-schema.test.ts`
+- [x] ActiveCampaignReader impl + HeartMultiplierResolver (+unit) — `heart-multiplier-resolver.test.ts`
+- [x] KudoHeartService add/remove with outbox + event lock — `kudo-heart-service.ts`
+- [x] Heart server actions — `kudo-heart-actions.ts`
+- [x] KudoHeartQuery, HeartStatsQuery (asOf, batch), HeartRankingQuery — `heart-stats-query.test.ts`, `heart-ranking-query.test.ts`
+- [x] KudoHeartButton + seam rewrites (phase 05 files) — `enrich-heart-summary.ts`, `kudo-card-heart-slot.tsx`
+- [x] Admin Settings page, table, menu, form modal, delete dialog, actions — `app/admin/settings/page.tsx`, `features/admin-campaigns/**`
+- [x] Concurrency + EXCLUDE race integration tests — `kudo-heart-concurrency.test.ts`, `campaign-exclude-race.test.ts`
+- [x] e2e heart toggle + settings CRUD — `heart-toggle.spec.ts`, `settings-crud.spec.ts` (71/71 twice)
 
 ## Success Criteria
 - 20 parallel `add` for one (kudo,user) → exactly 1 row, 1 `HeartAdded` outbox row, all succeed (SC-001).
@@ -152,5 +152,41 @@ Rollback: down migrations drop `campaigns` then `kudo_hearts` (no FK from hearts
 ## Next Steps
 - Phase 10 consumes `HeartStatsQuery` (weightedTotal, asOf), `HeartRankingQuery`, `HeartAdded`, `ActiveCampaignReader` (x2 tooltip).
 - Phase 13 consumes `HeartAdded`; phase 14 uses `rawTotal` for "Total Heart".
-- Phase 06 rewrites phase 08 seam `admin-kudo-heart-counts.ts` to raw heart counts consistent with `HeartStatsQuery` (no x2).
+- Phase 06 does NOT create the phase 08 seam `admin-kudo-heart-counts.ts` (decision-log 2026-11-16). Phase 08 uses `heartCountsSubquery` directly for raw heart counts (no x2). Phase 08's plan text still says otherwise and needs updating by its owner.
 - Sanctioned serial edit by phase 10: optional `tieBreak: 'newest' | 'oldest'` param on `heart-ranking-query.ts` (default unchanged) for Kudos Quốc Dân.
+
+## Delivery notes
+
+Completed 2026-11-17. Review SEALED (score 9/10, 0 critical, 0 warning; 6 suggestions, all deferred or closed). Risk signed off by user 2026-11-17 (`evidence/phase-06/inspection-verdict.json`, `riskGate.humanSignedOff: true`). The gate covers migrations 0010–0012, hearts and outbox writes, and admin permissions.
+
+### Decisions that overrode the phase text
+- `campaigns.id` is `bigint` identity, not uuid. Tech spec §4.2 and the Figma short numeric IDs drove this.
+- `HeartAdded` payload is `{ kudoId, heartUserId }`. No `multiplier`: it matches the phase 01 contract in `architecture.md` and nothing reads it (YAGNI).
+- Down migrations are separate `*.down.sql` files beside `0010`, `0011` and `0012`.
+- `zonedDateTimeToUtc(localDateTime, tz)` was added to `shared/admin/timezone.ts` for `datetime-local` input. Year handling was fixed in the shared `utcMs` helper: `setUTCFullYear` keeps years 0–99 (they were mapped to 1900s) and BC era maps to ISO year. Phase 01 `startOfDayInZone` and `parseCalendarDate` use the same helper; date-range-filter tests stay green.
+- `heartCountsSubquery(kudoIds, asOf?)` takes a required kudo id set, not `(asOf?)`. This avoids a full-table heart aggregate. Its only caller is `rankKudoIds`.
+- Phase 08 seam `features/admin-moderation/server/admin-kudo-heart-counts.ts` was NOT created (decision-log 2026-11-16). Phase 08 calls `heartCountsSubquery` directly. See Next steps for the stale plan text.
+- Date fields use the native `<input type="datetime-local">` styled to Figma, not a custom calendar and time picker (decision-log 2026-11-16). Values are read in `ADMIN_TIMEZONE`. Firefox shows a double calendar icon; accepted.
+- Unhearted heart is a 2 px `#D4271D` outline with a hollow fill; hearted is filled (decision-log 2026-11-16). Figma draws only the filled state.
+- The detail page passes `writingOpen` (from `isKudoWritingOpen()`) into `KudoHeartButton`, the same as the feed. The plan did not name this prop.
+- Playwright `workers` is capped at 3 locally; CI keeps the default (decision-log 2026-11-17). Timeouts are unchanged. At 6 workers the full suite was 65/68 red under contention with `next dev`; after a dev restart at 3 workers it was 71/71 twice.
+
+### Deferrals and follow-ups
+- US003 heart soft-error: a failed heart query fails the whole page, not just the heart zone. A flag on `KudoCardView` is needed if this is wanted (decision-log 2026-11-16).
+- Migration `0012` comment says the GiST index also serves `CampaignActiveReader`. It does not; the reader filters plain columns. Fix at the next migration touch; applied migrations are not edited.
+- Year floor for phase 01 `adminDateRangeSchema`, which still accepts years 0000–1999. Phase 01 owner's call.
+- `heart-summary-store.ts` is never reset on sign-out. A stale entry shows only if the next user's server props equal its base. The sign-out code is outside phase 06 ownership.
+- No e2e at a closed window. The blocked state is covered by code reading (`kudo-heart-button.tsx:61`) and the server `EVENT_ENDED` integration test.
+- `useHydrated` is duplicated in `kudo-heart-error-toast.tsx` and in `features/kudos-feed`. Share it later.
+- `heartCountsSubquery` timing at about 50k hearts was not measured. The plan risk says add a count column only if p95 > 300 ms.
+- No coverage script; coverage is not measured.
+
+### Not verified
+- D003 mutation check: the ranking test passes, but no run has shown it fails under the multiplier-sum bug. This needs a scratch change to implementation code.
+- `/admin/settings` is not in `test:prod`. The proxy gate covers it; a direct non-admin check is cheap.
+- Figma match is qualitative only; no pixel diff was run.
+- Integration (269) and `test:prod` (13/13) ran before the UI fix round. That round changed no server code, per its report, and did not re-run them.
+
+### Test results
+- `db:reset`, `typecheck`, `lint`, `build` exit 0. Unit 438/438 (36 files). Integration 269/269 (35 files). E2E 71/71 on two consecutive runs. `test:prod` 13/13.
+- Sources: `plans/reports/tester-261117-phase-06-full-run.md` (its BLOCKED status is superseded by the UI fix round); `plans/reports/general-purpose-261117-phase-06-ui-fix-report.md`; `plans/reports/reviewer-261117-phase-06-final.md`.

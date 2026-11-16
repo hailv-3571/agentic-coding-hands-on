@@ -1,0 +1,82 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "20 parallel add for one (kudo,user) → exactly 1 row, 1 HeartAdded outbox row, all succeed (SC-001): by test, kudo-heart-concurrency.test.ts '20 parallel adds by one Sunner all succeed and leave exactly 1 row and 1 HeartAdded row' (tester run: integration 269/269 exit 0); I read the single-statement guarded INSERT..ON CONFLICT with the outbox written on RETURNING only, I did not re-run integration",
+    "Self-heart → 403, spam → 404, after EVENT_END_AT → 409; zero rows/events written (SC-002): by test, kudo-heart-actions.test.ts 'rejects the sender hearting %s (SELF_HEART) and writes nothing', the spam row of the same table, and 'rejects hearting from EVENT_END_AT (EVENT_ENDED) and writes nothing'; the actions return the codes SELF_HEART / KUDO_UNAVAILABLE / EVENT_ENDED rather than HTTP statuses, which is the contract written in study-context",
+    "Multiplier 2 inside active campaign, stays 2 after campaign deleted/ended; 1 without campaign or on reader error (SC-003): by test, kudo-heart-actions.test.ts 'snapshots multiplier 2 inside an active campaign and keeps it after the campaign is deleted'; unit tests 'returns 1 when no campaign is active', 'returns 1 and logs a warning when the reader fails, instead of throwing', 'returns 1 when the reader throws synchronously'",
+    "receivedByUsers equals Σmultiplier / count over public kudos SENT by user, excludes spam and hearts after asOf (SC-004); anonymous kudos included: by test, heart-stats-query.test.ts 'sums multipliers over the public kudos each user sent (anonymous included), zero-filling the rest', 'ignores hearts created after asOf (inclusive cut)', 'stops counting a kudo marked spam and counts it again after Un Spam'; integration only, not re-run by me",
+    "Card shows raw count; Highlight order matches HeartRankingQuery: by test, heart-ranking-query.test.ts 'orders by raw count DESC, then created_at DESC, then id DESC', 'puts two x1 hearts above one x2 heart: the raw count ranks, not the multiplier sum (D003)', 'ranks the Highlight by hearts and shows the raw count and the viewer'; e2e heart-highlight-ranking-and-sync.spec.ts 'the Highlight ranks by hearts and breaks a tie with the newest Kudo' (UI fix round 71/71 twice); I read the bounded heartCountsSubquery, the fixer checked the rendered SQL",
+    "Two concurrent overlapping campaign creates → one succeeds, other gets overlap error (23P01 mapped); [a,b) then [b,c) both accepted: by test, campaign-exclude-race.test.ts 'lets exactly one of five concurrent overlapping creates win', 'maps a 23P01 that slipped past the pre-check to OVERLAP, naming the committed campaign', 'accepts two concurrent adjacent windows [a, b) followed by [b, c)'; campaign-admin-actions.test.ts 'accepts [a, b) followed by [b, c)'",
+    "Ended campaign cannot be edited/deleted even via direct action call; active campaign startsAt change rejected: by test, campaign-admin-actions.test.ts 'refuses to edit an ended campaign (ENDED) and leaves it as it was', 'refuses to delete an ended campaign and answers NOT_FOUND for a missing one', 'rejects moving the start of an active campaign, even by a direct call'; by code reading, the phase is recomputed from the server clock under FOR UPDATE in campaign-admin-actions.ts:62-75",
+    "Non-admin calling any campaign action → 403, no write: by test, campaign-admin-actions.test.ts 'answers 403 to a non-admin on every action and writes nothing', campaign-admin-query.test.ts 'answers 403 to a non-admin before reading anything', e2e settings-crud.spec.ts 'a non-admin gets the 403 page without any campaign markup'; by code reading, requireAdmin() is the first statement of createCampaign, updateCampaign, removeCampaign and CampaignAdminQuery.list",
+    "heart button: optimistic toggle with revert on error, disabled with reason for own kudo and after EVENT_END_AT, unhearted shown as red outline: by test, e2e heart-toggle.spec.ts 'hearting and unhearting update the count at once and persist, on the card and the detail panel', 'a refused or failed toggle reverts the heart and shows why', 'the sender's own Kudo (anonymous too) shows a disabled heart with the reason and sends nothing'; the after-EVENT_END_AT disabled state is by code reading (blockedBy in kudo-heart-button.tsx:62) plus the server EVENT_ENDED integration test, no e2e at a closed window; red outline rests on the user decision in decision-log and the phase-06 screenshots, I did not view pixels",
+    "Admin Settings table, row menu, add/edit modal and delete dialog match Figma with native datetime-local inputs; keyboard and Escape work: by test, e2e settings-crud.spec.ts 'an admin adds a campaign (field errors first), edits it and deletes it', 'an ended row has no actions; the row menu works from the keyboard', settings-dialog-escape.spec.ts 'Esc closes the Add dialog after a failed save and focus returns to Add Campaign' and its Delete twin; Figma match rests on the phase-06 screenshots and the earlier UI review spot check, no pixel comparison by me; the Firefox double calendar icon is a known accepted deviation"
+  ],
+  "regressionChecked": [
+    "scoped heartCountsSubquery(kudoIds, asOf?): required id-set parameter; the only caller is rankKudoIds (heart-ranking-query.ts:40), which passes db.select({id}).from(candidates); enrich-heart-summary and kudo-highlight-query go through rankKudoIds unchanged; the integration test passes an id list with no outer filter; tester run 269/269",
+    "shared/admin/timezone.ts utcMs and era: setUTCFullYear keeps years 0-99, era 'short' maps BC to 1-year (ISO year 0); startOfDayInZone and parseCalendarDate use it, so the phase 01 admin date-range filter gets identical results for ordinary years (date-range-filter.test.ts green inside unit 438/438, my own run); 25 new zoned-date-time-to-utc cases incl. DST gap/overlap and years 0000/0050/0099",
+    "aria-disabled click guards: form submit guarded by pending (use-campaign-form.ts:104), delete confirm guarded (campaign-delete-dialog.tsx:36), Cancel and Esc ignored while busy; aria-disabled keeps focus on the button so Escape and the focus trap stay valid; the Esc e2e tests were RED on the old code",
+    "document-level Escape listener in campaign-dialog-frame.tsx:46-53: add and remove in the same effect, deps [busy, onClose] re-subscribe, the defaultPrevented skip stops a second layer from also closing; only one campaign dialog can be open at a time; the heart tooltip listener mounts only while the heart is blocked and only sets local state",
+    "heart-summary-store merge: an entry applies only while the card's server props equal the entry's base, so fresh props win; residual ABA and the two-copies-with-different-props inconsistency were already noted by the UI review as harmless; the module state is never reset on sign-out (accepted, skipped by the fixer)",
+    "seedActive fixture: deletes only rows whose name starts with 'E2E-' and are older than 10 minutes; any other overlapping campaign makes it throw with the name; teardown deletes only its own token prefix; serviceClient refuses to load unless the Supabase URL is localhost (local-sunner-accounts.ts:12), so real data is untouched",
+    "playwright.config.ts: workers: CI ? undefined : 3 with one comment line, matches the orchestrator decision; e2e 71/71 twice on final code",
+    "permissions and leaks: requireAdmin first in every campaign action and list, app/admin/layout guard on top; heart actions take the user from requireSunner only; results carry heartCount/heartedByMe or an error code; heartUserId lives only in the HeartAdded outbox payload (D009, contract doc updated); ranking candidates carry no sender column, anonymous kudos stay masked before enrichment",
+    "migrations 0010-0012: RLS on, no client privileges, down scripts present and exercised ('roll down (0012 → 0010) and back up cleanly'), journal monotonic; touches a sensitive area so the risk gate is set",
+    "files under 200 lines (no touched phase 06 file over 190), no secret-like strings in phase 06 sources; my run: npx tsc --noEmit -p . exit 0, npm run test:unit 438/438; integration, e2e and db:reset not re-run by me by instruction, taken from the tester run and UI fix round"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Suggestion",
+      "category": "Maintainability",
+      "location": "db/migrations/0012_campaigns_no_overlap_exclude.sql:7",
+      "summary": "migration comment still claims the GiST index also serves CampaignActiveReader; the reader filters plain columns (the reader's own comment is now correct). Do not edit an applied migration; fix at the next migration touch",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Validation",
+      "location": "shared/admin/timezone.ts:77",
+      "summary": "phase 01 adminDateRangeSchema still accepts years 0000-1999; conversion is now correct so this is no longer a bug, a floor is the phase 01 owner's call",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Maintainability",
+      "location": "features/kudos-hearts/components/heart-summary-store.ts:17",
+      "summary": "module-level store is never reset on sign-out; a stale entry shows only if the next user's server props equal its base",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Tests",
+      "location": "features/kudos-hearts/components/kudo-heart-button.tsx:62",
+      "summary": "the writingOpen=false disabled state is covered by code reading and the server EVENT_ENDED test, not by an e2e at a closed window",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Maintainability",
+      "location": "features/kudos-hearts/components/kudo-heart-error-toast.tsx:1",
+      "summary": "private useHydrated duplicates the one in features/kudos-feed; share it when a file owner is free",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Documentation",
+      "location": "plans/261108-0048-saa-2025-kudos-platform/spec/decision-log.md:1",
+      "summary": "UI fix report asks the owner for decision-log and changelog lines (blocked-heart toast, Esc tooltip, aria-disabled dialog buttons, reserved Highlight hashtags, worker cap); not blocking",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

@@ -129,7 +129,7 @@
 ## SCR019_AdminCampaignSettings
 
 **Feature:** F011 — AdminCampaigns
-**Route:** TBD (draft) — trang "Settings" dưới khu Admin (đường dẫn do F002 chốt)
+**Route:** `/admin/settings` (`app/admin/settings/page.tsx`)
 **Description:** Admin xem mọi campaign "x2 heart" trong một bảng, mở menu từng dòng để sửa hoặc xoá, và bấm Add Campaign để tạo mới.
 **States:** loading, empty, error, saving, success, error-delete
 

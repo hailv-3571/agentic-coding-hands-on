@@ -1,0 +1,44 @@
+{
+  "task": "Phase 06 (F005 hearts + F011 x2 campaigns): kudo_hearts and campaigns tables with EXCLUDE no-overlap, atomic heart add/remove with HeartAdded outbox and event lock, heart summary/stats/ranking queries, real heart seam and Highlight ranking, heart button with optimistic toggle, Admin Settings campaign CRUD for the SAA 2025 Kudos platform",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "20 parallel add for one (kudo,user) → exactly 1 row, 1 HeartAdded outbox row, all succeed (SC-001)",
+    "Self-heart → 403, spam → 404, after EVENT_END_AT → 409; zero rows/events written (SC-002)",
+    "Multiplier 2 inside active campaign, stays 2 after campaign deleted/ended; 1 without campaign or on reader error (SC-003)",
+    "receivedByUsers equals Σmultiplier / count over public kudos SENT by user, excludes spam and hearts after asOf (SC-004); anonymous kudos included",
+    "Card shows raw count; Highlight order matches HeartRankingQuery",
+    "Two concurrent overlapping campaign creates → one succeeds, other gets overlap error (23P01 mapped); [a,b) then [b,c) both accepted",
+    "Ended campaign cannot be edited/deleted even via direct action call; active campaign startsAt change rejected",
+    "Non-admin calling any campaign action → 403, no write",
+    "heart button: optimistic toggle with revert on error, disabled with reason for own kudo and after EVENT_END_AT, unhearted shown as red outline",
+    "Admin Settings table, row menu, add/edit modal and delete dialog match Figma with native datetime-local inputs; keyboard and Escape work"
+  ],
+  "touchpoints": [
+    "shared/db/schema/kudo-hearts.ts",
+    "shared/db/schema/campaigns.ts",
+    "db/migrations/0010*-0012*",
+    "features/kudos-hearts/",
+    "features/admin-campaigns/",
+    "shared/admin/timezone.ts",
+    "features/kudos-feed/server/enrich-heart-summary.ts",
+    "features/kudos-feed/server/kudo-highlight-query.ts",
+    "features/kudos-feed/components/kudo-card-heart-slot.tsx",
+    "app/admin/settings/",
+    "app/(app)/kudos/[id]/page.tsx",
+    "messages/",
+    "playwright.config.ts",
+    "tests/"
+  ],
+  "blastRadius": [
+    "phase 05 feed cards and Highlight ordering",
+    "phase 01 admin date-range filter via shared/admin/timezone.ts",
+    "domain_event_outbox consumers (phase 13)",
+    "phase 08/10/12/14 reuse heartCountsSubquery, HeartStatsQuery, HeartRankingQuery, ActiveCampaignReader"
+  ],
+  "contracts": [
+    "addHeartAction/removeHeartAction → {ok,heartCount,heartedByMe}|{ok:false,error: SELF_HEART|KUDO_UNAVAILABLE|EVENT_ENDED|UNEXPECTED}",
+    "HeartAdded payload {kudoId, heartUserId}",
+    "heartCountsSubquery(kudoIds, asOf?) raw count; rankKudoIds raw DESC, created_at DESC, id DESC",
+    "createCampaign/updateCampaign/removeCampaign require admin; overlap → OVERLAP"
+  ]
+}

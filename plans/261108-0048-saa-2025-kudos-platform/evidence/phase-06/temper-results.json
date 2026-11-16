@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations 0000-0012 applied; seeds departments=6 hashtags=8 (tester run after backend fixes)",
+      "ts": "2026-11-17T02:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "35 files, 269/269 passed incl. D003 ranking and scoped heartCountsSubquery (tester run; no server code changed afterwards)",
+      "ts": "2026-11-17T02:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "13/13 production status checks (tester run)",
+      "ts": "2026-11-17T02:00:00.000Z"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final UI-fix run)",
+      "ts": "2026-11-17T04:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "0 problems (final UI-fix run)",
+      "ts": "2026-11-17T04:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "438 passed (final UI-fix run)",
+      "ts": "2026-11-17T04:00:00.000Z"
+    },
+    {
+      "command": "npx playwright test",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "71/71 passed at 3 workers, run 1 (final code, fresh dev server)",
+      "ts": "2026-11-17T04:00:00.000Z"
+    },
+    {
+      "command": "npx playwright test",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "71/71 passed at 3 workers, run 2 flake check",
+      "ts": "2026-11-17T04:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled, no warnings (final UI-fix run)",
+      "ts": "2026-11-17T04:00:00.000Z"
+    }
+  ]
+}

@@ -11,7 +11,7 @@ lang: vi
 **Screen**: SCR019_AdminCampaignSettings: Admin Setting (Campaign)
 **Feature**: F011_AdminCampaigns
 **Type**: composite
-**Route**: TBD (draft) — trang "Settings" dưới khu Admin (đường dẫn do F002 chốt)
+**Route**: `/admin/settings` (`app/admin/settings/page.tsx`)
 **Generated**: 2026-11-08
 
 ## 1. Overview

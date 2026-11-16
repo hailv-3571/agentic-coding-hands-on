@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-shell,kudos-authoring,kudos-feed,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,auth,app-shell,kudos-authoring,kudos-feed,kudos-hearts,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -65,7 +65,16 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{auth,app-
 - Phân trang theo cursor mờ đục, giữ micro giây của `timestamptz`, giải mã nghiêm ngặt (`kudo-feed-cursor.ts`); route đọc trả 400 trước khi truy vấn.
 - Page gọi `notFound()` ngoài try/catch, cùng một kết quả cho mọi trường hợp "không thấy được"; trên production đây là soft 404.
 - Hiển thị Markdown của người dùng chỉ qua `features/kudos-feed/markdown/` (whitelist, `http(s)` không kèm credentials, ảnh là chữ, trần 5.000 đơn vị UTF-16).
-- Chỗ giao cho phase sau để lại thành file "seam" với chữ ký cố định (`enrich-heart-summary.ts`, `enrich-hero-tier.ts`); phase sở hữu viết lại cả file, không rải logic ở nơi gọi.
+- Chỗ giao cho phase sau để lại thành file "seam" với chữ ký cố định (`enrich-heart-summary.ts` đã viết lại ở phase 06; `enrich-hero-tier.ts` chờ phase 09); phase sở hữu viết lại cả file, không rải logic ở nơi gọi.
+
+## Ghi qua server action và Campaign (phase 06)
+
+- Server action ghi dữ liệu admin gọi `requireAdmin()` đầu tiên, trước khi đọc hay ghi; trả kết quả có mã lỗi trong thân (`{ ok: false, error | code }`), không ném cho lỗi nghiệp vụ.
+- Component client chỉ import hai module `"use server"` và module `schemas/`; không import file `server/*` khác.
+- Quy tắc phụ thuộc thời gian (giai đoạn Campaign, khoá sự kiện) tính lại ở server trong transaction ghi, không tin trạng thái trình duyệt đã thấy.
+- Ràng buộc không chồng giờ do Postgres giữ (`EXCLUDE`, migration viết tay); app kiểm trước để có thông báo rõ và ánh xạ SQLSTATE `23P01` khi đua nhau.
+- Giờ `datetime-local` của Admin đổi sang UTC bằng `zonedDateTimeToUtc` (`shared/admin/timezone.ts`).
+- Migration phase 06 (`0010`–`0012`) có file `.down.sql` để rollback; migration trước đó không có.
 
 ## Domain event outbox
 
@@ -96,7 +105,7 @@ CSV serializer (BOM + chặn formula injection), lọc theo khoảng ngày, help
 |-----|------|---------|
 | Unit | `npm run test:unit` | `tests/unit/**`, Node thuần |
 | Integration | `npm run test:integration` | `tests/integration/**`, cần Supabase local, chạy tuần tự |
-| E2E | `npm run test:e2e` | Playwright, `tests/e2e/`, chạy trên `next dev` |
+| E2E | `npm run test:e2e` | Playwright, `tests/e2e/`, chạy trên `next dev`; cục bộ tối đa 3 worker (`playwright.config.ts`), vì chung một `next dev` biên dịch route theo yêu cầu |
 | Status production | `npm run build` rồi `npm run test:prod` | `tests/prod/production-admin-403-status.ts`: bật `next start` ở cổng trống, kiểm status HTTP thật. Cần Supabase local |
 
 `test:prod` dành cho thứ chỉ lộ ở bản production, như status 403 của `/admin/*`: e2e chạy trên `next dev` nên không thấy được.

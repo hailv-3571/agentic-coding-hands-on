@@ -6,6 +6,52 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-17 — Phase 06 (F005 Thả tim & F011 Campaign x2)
+
+Added
+- Thả tim và bỏ tim Kudo công khai (F005): idempotent, cấm tự tim Kudo của mình, Kudo spam không nhận tim mới. Hệ số x2 lấy từ campaign đang chạy tại thời điểm tim và được lưu cùng dòng tim.
+- `KudoHeartService`: câu lệnh `INSERT … SELECT … ON CONFLICT DO NOTHING` vừa kiểm tra vừa ghi, nên 20 lần tim đồng thời chỉ tạo 1 dòng và 1 sự kiện `HeartAdded` trong outbox, cùng transaction.
+- Truy vấn tim: tóm tắt tim theo lô cho thẻ (`KudoHeartQuery`); `HeartStatsQuery.receivedByUsers(ids, asOf)` cộng hệ số và đếm thô trên Kudo người đó đã gửi, bỏ Kudo spam và tim sau `asOf`; `HeartRankingQuery.rankKudoIds` xếp Highlight theo số tim thô, rồi tới thời điểm mới nhất, rồi id.
+- Admin › Settings (`/admin/settings`): danh sách, thêm, sửa, xóa campaign x2. Campaign không được chồng lấp, ràng buộc EXCLUDE trong DB chặn cả khi hai admin tạo cùng lúc. Giờ nhập theo `ADMIN_TIMEZONE`.
+- Migration `0010_kudo_hearts`, `0011_campaigns`, `0012_campaigns_no_overlap_exclude`, mỗi file có `.down.sql`. RLS bật, không policy cho client.
+- Thay hai seam của phase 05: `enrich-heart-summary.ts` và `kudo-card-heart-slot.tsx`. Thẻ hiện số tim thật; Highlight xếp theo tim thật.
+- `zonedDateTimeToUtc` trong `shared/admin/timezone.ts`.
+- i18n `kudosHearts.*` và `adminCampaigns.*` (vi, en).
+
+Changed
+- `heartCountsSubquery(kudoIds, asOf?)` nhận tập kudo id bắt buộc, không quét toàn bảng tim.
+- Trang chi tiết `/kudos/{id}` truyền trạng thái mở ghi vào nút tim, giống feed.
+- Playwright giới hạn 3 worker khi chạy local (CI giữ mặc định); timeout không đổi.
+
+Decisions
+- Thẻ Kudo hiện số tim thô, không nhân x2; x2 chỉ nhân tiến độ Secret Box (phase 10).
+- Sau `EVENT_END_AT`: khóa thả tim và bỏ tim; campaign đã kết thúc không sửa, không xóa.
+- Phase 08 không có seam `admin-kudo-heart-counts.ts`; dùng thẳng `heartCountsSubquery`.
+- Chưa thả tim hiện viền đỏ; ô ngày giờ dùng `datetime-local` của trình duyệt, style theo Figma.
+- `campaigns.id` là bigint identity; payload `HeartAdded` không có hệ số.
+
+Security
+- `userId` lấy từ session, không từ input. Kết quả tim chỉ trả số đếm và trạng thái của người xem; không lộ ai đã tim.
+- Mọi action và truy vấn của Admin › Settings gọi `requireAdmin()` trước; test xác nhận người không phải admin nhận 403 và không có dữ liệu bị ghi.
+- Payload outbox chỉ có id, không có nội dung lời nhắn.
+
+Fixed (trong vòng review, chưa ship; đều là Warning)
+- Năm 0–99 bị đổi thành 1900s khi đổi múi giờ; sửa ở hàm dùng chung, nên bộ lọc khoảng ngày của phase 01 cũng đúng.
+- Esc không đóng hộp thoại sau khi lưu lỗi (focus rơi xuống body); nay Esc hoạt động, focus giữ trên nút.
+- Bấm tim bị khóa trên màn cảm ứng không có phản hồi; nay hiện toast lý do.
+- Test Highlight bị chen khỏi top 5 và test seed campaign dễ flake; nay dành hashtag riêng và seed dựa trên ràng buộc EXCLUDE.
+
+Deferred
+- Lỗi truy vấn tim làm lỗi cả trang (chưa có soft-error như US003).
+- Chưa đo `heartCountsSubquery` với khoảng 50.000 tim; chưa có script coverage.
+- Chưa reset store tim khi đăng xuất; `useHydrated` còn trùng; comment migration `0012` nhắc sai index GiST (sửa ở lần chạm migration sau).
+- Chưa có e2e cho trạng thái khóa sau khi sự kiện kết thúc.
+- Năm tối thiểu cho `adminDateRangeSchema` của phase 01 (đang nhận năm 0000–1999) do chủ phase 01 quyết.
+
+Docs
+- Quyết định ghi trong `spec/decision-log.md` (phiên 2026-11-16 và 2026-11-17).
+- `docs/system/architecture.md` có mục "Thả tim và Campaign x2". `docs/features/F005_KudosHearts/*` và `F011_AdminCampaigns/*` chưa cập nhật tay.
+
 ## 2026-11-16 — Phase 05 (F004 Kudos feed & detail)
 
 Added

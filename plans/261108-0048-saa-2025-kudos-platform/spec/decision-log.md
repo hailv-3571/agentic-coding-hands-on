@@ -106,3 +106,16 @@ Danh sách đầy đủ ở `system/architecture.md` § Consistency Check (C-01�
 - (vòng sửa 2026-11-16) `/kudos/[id]` khi không có quyền xem (không tồn tại / id sai / spam của người khác) là **404 mềm**: trang "không tìm thấy" giống hệt nhau, status 200 trên production (Cache Components đã gửi shell trước khi `notFound()` chạy; Next tự thêm `noindex`). **User chọn 2026-11-16**, không kiểm tra ở proxy. E2E kiểm tra nội dung trang, không kiểm tra status.
 - (vòng sửa 2026-11-16) Giữ nhánh FORBIDDEN trong hộp sửa Kudo (tab cũ còn nút bút sau khi đổi tài khoản ở tab khác) — có e2e phủ. Giữ `KudoComposerLauncherPlaceholder` (skeleton Live board đang dùng).
 - (vòng sửa 2026-11-16) Markdown: `![x](url)` hiện nguyên văn (không link); URL có username/password bị bỏ; thân bài cắt 5.000 đơn vị UTF-16 trước khi parse (giới hạn ghi 1.000 code point nên không thân bài lưu nào bị cắt).
+
+## Session 2026-11-16 — Phase 06 Figma vs plan (orchestrator)
+- Q: Ô chọn ngày giờ chiến dịch x2 (Figma 1413:9045 vẽ lịch + cột giờ riêng)? → A: **Dùng `<input type="datetime-local">` của trình duyệt**, ô style theo Figma (user chọn 2026-11-16). Giá trị hiểu theo `ADMIN_TIMEZONE`.
+- Q: Figma chỉ vẽ tim đã thả (đỏ đặc)? → A: **Chưa thả = cùng hình tim, viền đỏ `#D4271D`, ruột rỗng** (user chọn 2026-11-16).
+- Seam phase 08 `features/admin-moderation/server/admin-kudo-heart-counts.ts` chưa tồn tại (phase 08 chưa làm) → phase 06 không tạo; phase 08 dùng thẳng `heartCountsSubquery` khi tới lượt.
+- Trang Settings dùng khung admin có sẵn (AdminTopBar), không dựng lại header Figma; nền xám `#999` của Figma là canvas giả, giữ nền khung admin.
+- (backend 2026-11-16) `campaigns.id` là `bigint identity` (tech spec §4.2, cột ID Figma hiện số ngắn), không phải uuid.
+- (backend 2026-11-16) Payload `HeartAdded` giữ `{kudoId, heartUserId}` theo hợp đồng phase 01 trong architecture.md; không thêm `multiplier` (chưa ai đọc — YAGNI).
+- (backend 2026-11-16) Hoãn kịch bản US003 "dữ liệu tim lỗi thì thẻ vẫn hiện, vùng tim báo lỗi nhẹ": lỗi truy vấn tim làm lỗi trang như mọi truy vấn feed khác. Cần thêm cờ vào `KudoCardView` nếu muốn làm sau.
+- (test 2026-11-17) E2E toàn bộ đỏ 65/68 ở 6 worker do tranh tài nguyên với một `next dev` (lỗi timeout 5 s, mỗi lần một bộ khác nhau, chạy riêng đều qua; 3 worker thì 68/68). Chọn **giới hạn `workers` của Playwright ở 3 khi chạy local** (CI giữ mặc định) và khởi động lại dev trước khi chạy; không tăng timeout.
+- (review UI 2026-11-17) Giữ hành vi theo spec: Esc/Hủy trên form chiến dịch đang nhập dở đóng luôn, không hỏi lại; toast lỗi tim tự tắt sau 5 giây.
+- (vòng sửa UI 2026-11-17) Bấm tim bị khoá (Kudo của mình / hết hạn) hiện toast lý do, không gọi máy chủ; Esc ẩn tooltip tim; nút trong hộp thoại chiến dịch dùng `aria-disabled` để giữ focus; e2e dành riêng hashtag `think-outside-the-box` và `get-risky` cho test Highlight.
+- (2026-11-17) User ký duyệt rủi ro phase 06 (migration, ghi dữ liệu, phân quyền admin).
