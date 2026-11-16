@@ -85,5 +85,144 @@
       "ctaHome": "Về trang chủ",
       "ctaLogin": "Đăng nhập"
     }
+  },
+  "kudosComposer": {
+    "createTitle": "Gửi lời cám ơn và ghi nhận đến đồng đội",
+    "editTitle": "Chỉnh sửa bài viết của bạn",
+    "launcher": {
+      "prompt": "Hôm nay, bạn muốn gửi lời cảm ơn và ghi nhận đến ai?"
+    },
+    "recipient": {
+      "label": "Người nhận",
+      "placeholder": "Tìm kiếm",
+      "lockedHint": "Người nhận đã được chọn sẵn, không thể đổi."
+    },
+    "title": {
+      "label": "Danh hiệu",
+      "placeholder": "Dành tặng một danh hiệu cho đồng đội",
+      "helperExample": "Ví dụ: Người truyền động lực cho tôi.",
+      "helperUsage": "Danh hiệu sẽ hiển thị làm tiêu đề Kudos của bạn."
+    },
+    "message": {
+      "label": "Lời nhắn",
+      "placeholder": "Hãy gửi lời cảm ơn và ghi nhận đến đồng đội tại đây nhé!\nVD: Cảm ơn bạn vì tinh thần dẫn dắt và khả năng \"giữ nhịp\" cực kỳ tốt trong giai đoạn nước rút của dự án...",
+      "mentionHint": "Bạn có thể “@ + tên” để nhắc tới đồng nghiệp khác",
+      "mentionListLabel": "Gợi ý đồng nghiệp",
+      "communityStandards": "Tiêu chuẩn cộng đồng",
+      "linkTooLong": "Không chèn được đường dẫn vì lời nhắn sẽ vượt 1.000 ký tự.",
+      "toolbar": {
+        "label": "Định dạng lời nhắn",
+        "bold": "In đậm",
+        "italic": "In nghiêng",
+        "strikethrough": "Gạch ngang",
+        "numbered": "Danh sách đánh số",
+        "link": "Chèn đường dẫn",
+        "quote": "Trích dẫn"
+      }
+    },
+    "addLink": {
+      "title": "Thêm đường dẫn",
+      "text": "Nội dung",
+      "url": "URL",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "urlInvalid": "URL phải bắt đầu bằng http:// hoặc https://."
+    },
+    "hashtag": {
+      "label": "Hashtag",
+      "add": "Hashtag",
+      "max": "Tối đa {max}",
+      "listLabel": "Chọn hashtag",
+      "remove": "Bỏ {label}",
+      "loading": "Đang tải hashtag…",
+      "loadFailed": "Không tải được danh sách hashtag.",
+      "sessionExpired": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
+      "retry": "Thử lại"
+    },
+    "image": {
+      "label": "Image",
+      "add": "Image",
+      "max": "Tối đa {max}",
+      "remove": "Gỡ ảnh {index}",
+      "retry": "Thử lại",
+      "uploading": "Đang tải ảnh {index} lên…",
+      "thumbnailAlt": "Ảnh đính kèm {index}",
+      "invalidShort": "Ảnh không hợp lệ",
+      "failedShort": "Tải lỗi",
+      "uploadFailed": "Tải ảnh lên thất bại, vui lòng thử lại.",
+      "waitForUploads": "Vui lòng chờ ảnh tải lên xong.",
+      "removeFailed": "Có ảnh chưa tải lên được. Hãy thử lại hoặc gỡ ảnh đó."
+    },
+    "anonymous": {
+      "label": "Gửi lời cám ơn và ghi nhận ẩn danh",
+      "nickname": "Nickname ẩn danh"
+    },
+    "actions": {
+      "cancel": "Hủy",
+      "send": "Gửi",
+      "save": "Lưu",
+      "sending": "Đang gửi…",
+      "saving": "Đang lưu…",
+      "close": "Đóng"
+    },
+    "confirmDiscard": {
+      "title": "Bỏ nội dung đang soạn?",
+      "description": "Nội dung bạn đã nhập sẽ không được lưu.",
+      "keep": "Tiếp tục soạn",
+      "discard": "Bỏ nội dung"
+    },
+    "edit": {
+      "loading": "Đang tải bài viết…"
+    },
+    "toast": {
+      "created": "Đã gửi Kudo thành công!",
+      "updated": "Đã lưu thay đổi."
+    },
+    "errors": {
+      "MISSING_REQUIRED": "Bạn cần điền đủ Người nhận, Lời nhắn gửi và Hashtag để gửi Kudos!",
+      "VALIDATION": "Vui lòng kiểm tra lại các trường được đánh dấu.",
+      "UNAUTHENTICATED": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
+      "ONBOARDING_REQUIRED": "Vui lòng chọn phòng ban trước khi tiếp tục.",
+      "FORBIDDEN": "Bạn không có quyền sửa Kudo này.",
+      "WRITING_CLOSED": "Sự kiện đã kết thúc, không thể gửi hoặc sửa Kudo nữa.",
+      "NOT_FOUND": "Không tìm thấy Kudo này.",
+      "PAYLOAD_TOO_LARGE": "Yêu cầu quá lớn, vui lòng thử lại.",
+      "SELF_SEND": "Bạn không thể gửi Kudo cho chính mình.",
+      "RECIPIENT_INVALID": "Người nhận không hợp lệ, vui lòng chọn lại.",
+      "HASHTAG_INVALID": "Hashtag không hợp lệ, vui lòng chọn lại.",
+      "IMAGE_INVALID": "Ảnh không hợp lệ. Vui lòng chọn ảnh đúng định dạng và dung lượng cho phép.",
+      "SPAM_LOCKED": "Kudo này đã bị đánh dấu spam nên không thể sửa.",
+      "UPLOAD_LIMIT": "Bạn đã tải lên quá nhiều ảnh trong thời gian ngắn. Vui lòng thử lại sau.",
+      "UNEXPECTED": "Đã có lỗi xảy ra, vui lòng thử lại.",
+      "fields": {
+        "required": "Trường này là bắt buộc.",
+        "invalid": "Giá trị không hợp lệ.",
+        "bodyTooLong": "Lời nhắn tối đa 1.000 ký tự.",
+        "titleTooLong": "Danh hiệu tối đa 50 ký tự.",
+        "linkScheme": "Liên kết chỉ được bắt đầu bằng http:// hoặc https://.",
+        "imageNotAllowed": "Không chèn ảnh vào lời nhắn. Hãy đính kèm ảnh ở mục Image.",
+        "nicknameRequired": "Vui lòng nhập nickname ẩn danh.",
+        "nicknameTooLong": "Nickname ẩn danh tối đa 30 ký tự.",
+        "nicknameWithoutAnonymous": "Chỉ điền nickname khi gửi ẩn danh.",
+        "hashtagsTooMany": "Chọn tối đa 5 hashtag.",
+        "hashtagsDuplicate": "Mỗi hashtag chỉ chọn một lần.",
+        "hashtagInactive": "Hashtag không còn được sử dụng, vui lòng chọn lại.",
+        "imagesTooMany": "Đính tối đa 5 ảnh.",
+        "imagesDuplicate": "Mỗi ảnh chỉ đính một lần.",
+        "imagePathInvalid": "Ảnh không hợp lệ, vui lòng tải lại.",
+        "imageNotOwned": "Ảnh không hợp lệ, vui lòng tải lại.",
+        "recipientImmutable": "Không thể đổi người nhận khi sửa Kudo.",
+        "recipientInvalid": "Người nhận không hợp lệ, vui lòng chọn lại.",
+        "selfSend": "Bạn không thể gửi Kudo cho chính mình."
+      }
+    }
+  },
+  "sunnerSearch": {
+    "listLabel": "Kết quả tìm Sunner",
+    "loading": "Đang tìm…",
+    "noResults": "Không tìm thấy Sunner phù hợp.",
+    "failed": "Không tìm được, vui lòng thử lại.",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
+    "resultCount": "{count, plural, =0 {Không có kết quả} other {# kết quả}}"
   }
 }
