@@ -686,5 +686,30 @@
     "retry": "Thử lại",
     "loadFailed": "Không tải được Spotlight Board. Vui lòng thử lại.",
     "loading": "Đang tải…"
+  },
+  "profile": {
+    "metaTitle": "Profile",
+    "iconCollectionOwn": "Bộ sưu tập icon của tôi",
+    "iconCollectionOther": "Bộ sưu tập icon",
+    "sendKudo": "Gửi lời cảm ơn và ghi nhận tới {name}",
+    "kudos": {
+      "title": "KUDOS",
+      "sent": "Đã gửi ({count})",
+      "received": "Đã nhận ({count})",
+      "receivedTotal": "Đã nhận: {count} Kudos",
+      "filterList": "Chọn danh sách Kudo",
+      "empty": "Chưa có Kudo nào."
+    },
+    "card": {
+      "label": "Thông tin {name}",
+      "department": "Tên đơn vị: {name}",
+      "kudosReceived": "Số Kudos nhận được:",
+      "kudosSent": "Số Kudos đã gửi:",
+      "sendKudo": "Gửi KUDO"
+    },
+    "notFound": {
+      "message": "Không tìm thấy Sunner này.",
+      "back": "Quay lại Live board"
+    }
   }
 }

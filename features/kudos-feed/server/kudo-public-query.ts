@@ -1,6 +1,7 @@
 import "server-only";
 import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "@/shared/db/client";
 import { kudos } from "@/shared/db/schema";
 import type { Locale } from "@/shared/i18n/locales";
 import type { KudoCardView } from "../schemas/kudo-card-view";
@@ -35,6 +36,9 @@ export type KudoListOptions = {
 
 export type KudoListPage = { items: KudoCardView[]; nextCursor?: string };
 
+/** The row filters of `list` (no paging, no locale): what `count` takes. */
+export type KudoListFilters = Omit<KudoListOptions, "locale" | "cursor" | "limit">;
+
 const ListOptionsSchema = z.object({
   viewerId: z.uuid(),
   recipientId: z.uuid().optional(),
@@ -44,7 +48,7 @@ const ListOptionsSchema = z.object({
   limit: z.number().int().min(1).max(FEED_PAGE_SIZE_MAX).optional(),
 });
 
-function listConditions(options: KudoListOptions, cursor: KudoFeedCursor | null): SQL | undefined {
+function listConditions(options: KudoListFilters, cursor: KudoFeedCursor | null): SQL | undefined {
   const { viewerId, senderId, recipientId } = options;
   const ownSentList = senderId !== undefined && senderId === viewerId;
   return and(
@@ -90,4 +94,16 @@ async function findForViewer(id: string, viewerId: string, locale: Locale): Prom
   return view ?? null;
 }
 
-export const KudoPublicQuery = { list, findForViewer, publicKudoIdsSubquery } as const;
+/**
+ * How many rows `list` serves across all its pages for the same filters (phase 12 BR-006: the
+ * profile's "Đã gửi (n)" / "Đã nhận (n)" equal what paginating shows). Same `listConditions`, so the
+ * C-05 sender guard and `includeOwnSpam` apply identically; `kudos.sender_id`/`recipient_id` are
+ * NOT NULL foreign keys, so the joins of `list` never drop a row this count includes.
+ */
+async function count(filters: KudoListFilters): Promise<number> {
+  if (!ListOptionsSchema.safeParse(filters).success) throw new RangeError("invalid KudoPublicQuery.count filters");
+  const [row] = await db.select({ total: sql<number>`count(*)::int` }).from(kudos).where(listConditions(filters, null));
+  return row?.total ?? 0;
+}
+
+export const KudoPublicQuery = { list, count, findForViewer, publicKudoIdsSubquery } as const;

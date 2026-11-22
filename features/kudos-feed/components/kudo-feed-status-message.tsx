@@ -6,17 +6,22 @@ import { filterButton, statusText } from "./kudo-feed-styles";
 
 export type KudoLoadFailure = "error" | "unauthorized";
 
-/** Sign-in again, then back to the Live board (the only page with these regions). */
-const signInHref = `${APP_ROUTES.login}?next=${encodeURIComponent(APP_ROUTES.kudos)}`;
+type KudoFeedStatusMessageProps = {
+  state: "empty" | "loading" | KudoLoadFailure;
+  onRetry?: () => void;
+  /** Where sign-in returns after a 401 (default the Live board; the profile passes its own path). */
+  returnTo?: string;
+};
 
 /**
- * Inline status of one Live board region (spec § 5): empty, loading, or an error that names only
- * its region and offers "Thử lại"; an expired session (any 401) asks to sign in again and links
- * to the login page, which returns to `/kudos`. A full navigation (plain link), so the session
- * proxy decides with fresh cookies. Errors are alerts and the other states polite.
+ * Inline status of one Kudo list region (spec § 5; Live board, profile KUDOS): empty, loading, or
+ * an error that names only its region and offers "Thử lại"; an expired session (any 401) asks to
+ * sign in again and links to the login page, which returns to `returnTo`. A full navigation (plain
+ * link), so the session proxy decides with fresh cookies. Errors are alerts and the other states polite.
  */
-export function KudoFeedStatusMessage({ state, onRetry }: { state: "empty" | "loading" | KudoLoadFailure; onRetry?: () => void }) {
+export function KudoFeedStatusMessage({ state, onRetry, returnTo = APP_ROUTES.kudos }: KudoFeedStatusMessageProps) {
   const t = useTranslations("kudosFeed.status");
+  const signInHref = `${APP_ROUTES.login}?next=${encodeURIComponent(returnTo)}`;
   if (state === "empty" || state === "loading") {
     return (
       <p aria-live="polite" className={`${statusText} py-6 text-center`}>

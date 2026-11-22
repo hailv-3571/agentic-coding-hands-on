@@ -10,8 +10,11 @@ const TAG_IMAGE: Record<HeroTier, { width: number; height: number }> = {
   legend: { width: 255, height: 47 },
 };
 
-/** Drawn width per place (height follows the image): Kudo card 109×19, tooltip 218×38, Thể lệ ≈126×22. */
-const SIZE_CLASS = { card: "h-auto w-[109px]", tooltip: "h-auto w-[218px]", rules: "h-auto w-[126px]" } as const;
+/**
+ * Drawn width per place (height follows the image): Kudo card 109×19, tooltip 218×38, Thể lệ ≈126×22,
+ * profile hover card ≈164×28 (phase 12, Figma 2268:35101).
+ */
+const SIZE_CLASS = { card: "h-auto w-[109px]", tooltip: "h-auto w-[218px]", rules: "h-auto w-[126px]", hoverCard: "h-auto w-[164px]" } as const;
 
 export type HeroBadgeSize = keyof typeof SIZE_CLASS;
 

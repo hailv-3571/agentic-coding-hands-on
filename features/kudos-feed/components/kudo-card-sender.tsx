@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { UserAvatar } from "@/features/app-shell/components/user-avatar";
+import { AvatarHoverCard, HOVER_CARD_NAME_ATTRIBUTE } from "@/features/profile/components/avatar-hover-card";
 import { APP_ROUTES } from "@/shared/ui/app-routes";
 import type { KudoAnonymousSenderView, KudoPersonView, KudoSenderView } from "../schemas/kudo-card-view";
 import { KudoCardHeroBadgeSlot } from "./kudo-card-hero-badge-slot";
@@ -18,17 +18,20 @@ const textBlock = "@container flex w-full max-w-[235px] flex-col items-center ga
 /** 64 px circular avatar with a white ring; a missing photo falls back to the initial. */
 const avatarFrame = "flex size-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-text-muted/30 text-on-primary";
 
+/**
+ * A named person (recipient, or a non-anonymous sender). The avatar repeats the name link for
+ * pointer users only (one tab stop per person) and carries the phase 12 hover card: mouse on the
+ * avatar or keyboard focus on the name. Under the owner's spam overlay (`tabbable={false}`) the card
+ * is off. Anonymous senders never get here (AnonymousSender has no link and no card, DEC-003).
+ */
 function NamedPerson({ person, tabbable }: { person: KudoPersonView; tabbable: boolean }) {
   const href = `${APP_ROUTES.profile}/${person.id}`;
   return (
-    <div className={column}>
-      {/* The avatar repeats the name link for pointer users only (one tab stop per person). */}
-      <Link href={href} tabIndex={-1} aria-hidden className={avatarFrame}>
-        <UserAvatar name={person.name} avatarUrl={person.avatarUrl} />
-      </Link>
+    <AvatarHoverCard person={person} className={column} avatarClassName={avatarFrame} enabled={tabbable}>
       <div className={textBlock}>
         <Link
           href={href}
+          {...{ [HOVER_CARD_NAME_ATTRIBUTE]: "" }}
           tabIndex={tabbable ? undefined : -1}
           className={`max-w-full rounded text-title-medium font-bold wrap-anywhere text-on-primary hover:underline ${focusRing}`}
         >
@@ -41,7 +44,7 @@ function NamedPerson({ person, tabbable }: { person: KudoPersonView; tabbable: b
           </p>
         )}
       </div>
-    </div>
+    </AvatarHoverCard>
   );
 }
 

@@ -686,5 +686,30 @@
     "retry": "Try again",
     "loadFailed": "Could not load the Spotlight Board. Please try again.",
     "loading": "Loading…"
+  },
+  "profile": {
+    "metaTitle": "Profile",
+    "iconCollectionOwn": "My icon collection",
+    "iconCollectionOther": "Icon collection",
+    "sendKudo": "Send thanks and recognition to {name}",
+    "kudos": {
+      "title": "KUDOS",
+      "sent": "Sent ({count})",
+      "received": "Received ({count})",
+      "receivedTotal": "Received: {count} Kudos",
+      "filterList": "Choose a Kudos list",
+      "empty": "No Kudos yet."
+    },
+    "card": {
+      "label": "About {name}",
+      "department": "Unit: {name}",
+      "kudosReceived": "Kudos received:",
+      "kudosSent": "Kudos sent:",
+      "sendKudo": "Send KUDO"
+    },
+    "notFound": {
+      "message": "This Sunner could not be found.",
+      "back": "Back to the Live board"
+    }
   }
 }
