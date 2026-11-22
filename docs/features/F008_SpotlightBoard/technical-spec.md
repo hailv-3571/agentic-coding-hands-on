@@ -51,7 +51,7 @@ Spotlight Board là một VÙNG (region) nhúng trong trang Live board của F00
 - **BR-001 — Chỉ Kudo Public được đếm và hiện.** *(§ 4.4)*
 - **BR-002 — Cỡ tên theo số Kudo Public người đó nhận, chia theo `SIZE_TIERS` bậc.** *(§ 4.4)*
 - **BR-003 — Không dữ liệu nào gửi trình duyệt có định danh người gửi.** *(§ 4.4)*
-**Result** · read-only — không ghi DB. Trả `{ total, names[{recipientId, name, count}], recent[{kudoId, recipientId, name, occurredAt}] }`; `recent` xếp mới nhất trước. Vùng dựng đám mây theo ALG-001 (tính cỡ và vị trí ổn định, § 4.5).
+**Result** · read-only — không ghi DB. Trả `{ total, names[{recipientId, name, count}], recent[{kudoId, recipientId, name, occurredAt}] }`; `recent` xếp **cũ nhất trước** (hợp đồng `spotlight-views.ts`, phase 11). Vùng dựng đám mây theo ALG-001 (tính cỡ và vị trí ổn định, § 4.5).
 **Source:** TBD (draft)
 
 <!-- Không có diagram: dưới ngưỡng (chỉ đọc, đồng bộ, không ghi bảng nào). -->
@@ -306,7 +306,7 @@ SIZE_TIERS = 4                    # số bậc cỡ chữ của tên (A1, A3) �
 TICKER_VISIBLE_LINES = 5          # số dòng sự kiện hiện cùng lúc (A3) — mặc định đề xuất, D006
 TICKER_HISTORY_ON_LOAD = 5        # số dòng lấy từ lịch sử khi mở trang (A1) — mặc định đề xuất, D006
 SEARCH_MAX_LENGTH = 50            # độ dài tối đa ô tìm (A4)
-SPOTLIGHT_TOPIC = "spotlight"     # tên kênh Broadcast riêng tư (A2, A3) — TBD (draft) chốt khi triển khai
+SPOTLIGHT_TOPIC = "spotlight"     # tên kênh Broadcast riêng tư (A2, A3) — đã chốt ở phase 11 (event "kudo", `features/spotlight-board/spotlight-config.ts`)
 RECONNECT_MAX_ATTEMPTS = 5        # số lần nối lại trước khi báo lỗi (A3, SM-001)
 ```
 
@@ -373,7 +373,7 @@ RECONNECT_MAX_ATTEMPTS = 5        # số lần nối lại trước khi báo l�
 ### 5.3 Unresolved Questions
 
 1. **Next.js 16** *(A1)*: Route Handler hay đọc thẳng trong Server Component cho ảnh chụp? Phải đối chiếu `node_modules/next/dist/docs/` khi triển khai vì phiên bản này có thay đổi so với kiến thức cũ; tên và path ở đây chỉ là dự kiến.
-2. **`realtime.send` hay `realtime.broadcast_changes`** *(A2)*: tài liệu Supabase nhấn mạnh `broadcast_changes` (gửi cả dòng cũ/mới nên sẽ lộ `sender_id`); bản này chọn `realtime.send` với payload tự dựng. Cần thử trên môi trường thật xem `realtime.send` có hành vi đúng trong cùng giao dịch ghi Kudo (không phát khi rollback) không — [UNVERIFIED].
+2. **`realtime.send` hay `realtime.broadcast_changes`** *(A2)*: tài liệu Supabase nhấn mạnh `broadcast_changes` (gửi cả dòng cũ/mới nên sẽ lộ `sender_id`); bản này chọn `realtime.send` với payload tự dựng. Cần thử trên môi trường thật xem `realtime.send` có hành vi đúng trong cùng giao dịch ghi Kudo (không phát khi rollback) không. **Đã kiểm trên Supabase local ở phase 11: không phát khi rollback; `realtime.send` đúng chữ ký, thêm khoá `id` vào payload.** Chưa kiểm trên hosted.
 3. **Khôi phục sau đứt kết nối dài** *(A3)*: ngoài nạp lại khi nối lại, có cần làm tươi định kỳ để chống lệch số do sự kiện lỡ? Mặc định không, xem lại nếu đo thấy lệch.
 4. **Xoá cứng Kudo** *(A2)*: nếu sau này có xoá thật (không chỉ Spam) thì cần thêm nhánh `removed` ở trigger DELETE; hiện chưa có luồng xoá.
 5. **Đồng hồ hiển thị** *(A3)*: dùng giờ cục bộ của trình duyệt, định dạng theo ngôn ngữ (next-intl); múi giờ chuẩn của sự kiện lễ trao giải chưa nêu.

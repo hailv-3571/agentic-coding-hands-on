@@ -1,0 +1,16 @@
+{
+  "task": "Phase 11 (F008 Spotlight Board realtime): Postgres trigger on kudos publishing private Broadcast events (added/removed/restored) with a 5-key payload, realtime.messages read policy, snapshot query + GET /api/spotlight, Live board Spotlight region (counter, name cloud, ticker, search, fullscreen, reconnect)",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "Trigger: new public kudo -> added, new spam -> nothing, public->spam -> removed, spam->public -> restored, body edit / no status change -> nothing",
+    "Every spotlight message carries exactly the 5 contract keys (plus Realtime's own id) and never sender id, sender name, isAnonymous or body, including for anonymous kudos",
+    "A failing realtime.send never aborts the kudo insert or status update",
+    "realtime.messages policy: authenticated may read topic spotlight only; anon denied; authenticated INSERT denied; other topics unaffected",
+    "Snapshot counts exclude spam, names are top N by count then id, recent is ordered, no sender column; GET /api/spotlight answers 401 without session and no-store",
+    "Two browsers see a new kudo within 5 s without reload; Mark Spam then Un Spam returns the counter with no extra ticker line; reconnect refetches without double counting",
+    "Region shows counter, 4-tier name cloud linking to profiles, 5-line fading ticker in locale time, diacritic-insensitive search dimming non-matches, fullscreen toggle, empty and error states, connection status"
+  ],
+  "touchpoints": ["db/migrations/0017*", "features/spotlight-board/", "app/api/spotlight/", "features/kudos-feed/components/live-board-spotlight-slot.tsx", "messages/", "tests/"],
+  "blastRadius": ["every kudos INSERT and status UPDATE (phases 04, 08)", "Realtime authorization for other topics (phase 13)", "Live board page render"],
+  "contracts": ["features/spotlight-board/schemas/spotlight-views.ts", "SpotlightEvent payload on private topic spotlight / event kudo", "GET /api/spotlight"]
+}

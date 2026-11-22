@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,admin-moderation,app-shell,auth,awards-portal,hero-badges,kudos-authoring,kudos-feed,kudos-hearts,secret-box-rewards,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,admin-moderation,app-shell,auth,awards-portal,hero-badges,kudos-authoring,kudos-feed,kudos-hearts,secret-box-rewards,spotlight-board,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -137,3 +137,10 @@ Bộ `npm run test:e2e` có `globalSetup` (`tests/e2e/global-setup-require-launc
 Test tạo user phải gọi `assertLocalSupabaseUrl(url)` (`tests/setup/assert-local-supabase-url.ts`) trước khi tạo, để không tạo tài khoản trên Supabase thật. Helper sẵn có: `tests/setup/local-sunner-accounts.ts`.
 
 Test ở lớp thấp nhất còn bắt được lỗi thật. Test `server-only` chạy được nhờ alias sang `tests/setup/server-only-stub.ts`.
+
+## Realtime (Broadcast riêng tư)
+
+- Phát sự kiện từ trigger Postgres bằng `realtime.send(payload, event, topic, true)`, không dùng `realtime.broadcast_changes` (chuyển cả dòng, lộ `sender_id`). Hàm trigger `SECURITY DEFINER`, `SET search_path = ''`, tên đối tượng ghi đầy đủ schema, `REVOKE EXECUTE` khỏi `PUBLIC`/`anon`/`authenticated`, bắt mọi lỗi và `RAISE LOG` để không huỷ giao dịch ghi dữ liệu (mẫu: `0017_spotlight_realtime.sql`).
+- Payload là danh sách trường dựng tay bằng `jsonb_build_object` (whitelist), không chuyển cả dòng; client kiểm lại bằng Zod không strict (khoá thừa như `id` do `realtime.send` thêm sẽ bị bỏ).
+- Policy trên `realtime.messages` kèm điều kiện topic của dòng (`topic = '<tên>'`) cùng `realtime.topic()` và `extension = 'broadcast'`; chỉ SELECT cho `authenticated`, không có policy ghi. Không bao giờ mở schema `realtime` qua Data API.
+- Client: sau mỗi lần vào kênh và sau mỗi sự kiện làm thay đổi số đếm, lấy lại snapshot và THAY state (không cộng dồn); hằng số thời gian để trong file config, logic hẹn giờ là hàm thuần có test với fake timers (`spotlight-resync-scheduler.ts`).

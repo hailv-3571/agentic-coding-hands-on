@@ -6,6 +6,31 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-23 — Phase 11 (F008 Spotlight Board)
+
+Added
+- Trigger `spotlight_publish_kudo_event` trên `kudos` (AFTER INSERT OR UPDATE OF `status`; SECURITY DEFINER, `search_path = ''`, EXECUTE bị thu hồi khỏi PUBLIC/anon/authenticated). INSERT public → `added`; `public→spam` → `removed`; `spam→public` → `restored`; còn lại không phát gì (Kudo spam mới cũng không). Payload dựng từng trường: `{type, kudoId, recipientId, recipientName, occurredAt}`, không có `sender_id`, `is_anonymous`, `body`. Gọi `realtime.send(payload, 'kudo', 'spotlight', true)`; lỗi bị bắt (`RAISE LOG`) nên không bao giờ huỷ việc ghi Kudo. Migration `0017_spotlight_realtime` (có `.down.sql`).
+- Policy `spotlight_authenticated_read` trên `realtime.messages`: chỉ SELECT cho `authenticated`, điều kiện `realtime.topic() = 'spotlight' AND topic = 'spotlight' AND extension = 'broadcast'`. Không có policy INSERT/UPDATE/DELETE nên client không giả được sự kiện.
+- `GET /api/spotlight`: 401 `{code:"unauthorized"}` trước mọi truy vấn, 500 `{code:"unexpected"}`, `Cache-Control: private, no-store`. Trả `{total, names[], recent[]}` bằng 2 câu SQL chạy song song (top tên kèm tổng bằng `sum(count(*)) over ()`; 5 dòng mới nhất). `recent` xếp **cũ nhất trước**. Không chọn cột người gửi.
+- Module `features/spotlight-board/` (bảng Spotlight trong slot R4 của Live board): bộ đếm "{n} KUDOS", đám mây tên 4 bậc cỡ (mỗi tên là link `/profile/{id}`), ticker 5 dòng mờ dần theo giờ ngôn ngữ, ô tìm không phân biệt dấu (debounce 200 ms, tối đa 50 ký tự), phóng to toàn màn hình, nhãn kết nối (SM-001) kèm nút thử lại, trạng thái trống, lỗi và skeleton. Khoá `spotlight.*` (17 khoá, vi và en).
+- Client: reducer DEC-001 (chống trùng theo `kudoId`, không âm, tên về 0 thì bỏ, `restored` không thêm dòng ticker); vị trí tên cố định theo băm `recipientId`; điện thoại tối đa 24 tên, tên không còn chỗ thì bỏ; lớp network kéo 106 %.
+- Lấy lại snapshot (REPLACE): sau `removed`/`restored` đợi 2000 + 0–999 ms kể từ sự kiện cuối của loạt; sau mỗi lần vào kênh đợi ngẫu nhiên 0–1999 ms; tab hiện lại thì lấy ngay. Reducer giữ `restoredIds` qua REPLACE để dòng ticker của Kudo vừa Un Spam không quay lại.
+- Checklist triển khai Realtime ở `docs/system/architecture.md` → Deployment View (tắt "Allow public access", không mở schema `realtime` qua Data API, kiểm kênh riêng tư trên staging).
+
+Changed
+- `live-board-spotlight-slot.tsx` (seam phase 05): dựng `SpotlightBoardRegion` với snapshot từ `loadSpotlightSnapshot()` (sau `requireSunner()`), fallback Suspense là `SpotlightBoardSkeleton`.
+
+Decisions
+- `realtime.send` đã kiểm trên local (Realtime v2.154.0): chữ ký đúng như kế hoạch, thêm khoá `id` vào payload (client nhận 6 khoá, Zod bỏ `id`); ghi Kudo bị rollback thì không phát.
+- Policy phải kèm điều kiện topic của chính dòng: chỉ `realtime.topic()` thì `authenticated` đọc được mọi topic khác (policy cộng bằng OR), lộ `notifications:*` của phase 13.
+- Bậc cỡ tên tính theo hạng trên các số Kudo khác nhau: `tier = 4 − floor(rank·4/k)`. Hạng theo vị trí sẽ đẩy cả đuôi dài tên 1 Kudo lên bậc lớn nhất.
+- `recent` cũ nhất trước theo hợp đồng `spotlight-views.ts` (spec cũ ghi mới nhất trước).
+- Chưa có cache cho snapshot; xem xét TTL 1–2 s khi Kudo lên cỡ 100k+.
+
+Chưa làm
+- Kiểm kênh riêng tư trên Supabase hosted (staging) chưa chạy; local vẫn để `private_only = false`.
+- e2e Spotlight có thể chập chờn khi 2 worker chạy song song (dọn dữ liệu bằng xoá cứng không phát event). Chưa có test cho nút "Thử lại" ở trạng thái lỗi (unit không có DOM).
+
 ## 2026-11-22 — Phase 10 (F010 Secret Box)
 
 Added

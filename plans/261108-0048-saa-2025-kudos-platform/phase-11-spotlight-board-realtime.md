@@ -2,7 +2,7 @@
 phase: 11
 feature: F008
 priority: P2
-status: pending
+status: completed
 depends_on: [05, 08]
 file_ownership:
   - features/spotlight-board/**
@@ -23,7 +23,7 @@ file_ownership:
 - Upstream phases: 05 (Live board page + Spotlight slot), 08 (`kudos.status` public/spam, Mark/Un Spam write path), 04 (`kudos` insert path)
 
 ## Overview
-- Priority: P2 · Status: pending
+- Priority: P2 · Status: completed
 - Spotlight region on Live board: name cloud of recipients (size by public kudo count), total "{n} KUDOS", 5-line live ticker, in-board search, fullscreen. Snapshot via server query; live updates via **private Broadcast emitted by a Postgres trigger** (`realtime.send`) with RLS on `realtime.messages`.
 
 ## Key Insights
@@ -103,23 +103,53 @@ Delete: none.
 12. Tests (see Scope Contract), then run phase 04 kudo-create and phase 08 moderation integration suites unchanged.
 
 ## Todo List
-- [ ] Read Next 16 docs (route handlers, caching)
-- [ ] Verify `realtime.send` + private channel policy on local Supabase
-- [ ] Migration: function, trigger, policy, revoke, down script
-- [ ] Disable public Realtime channels (env checklist)
-- [ ] Config + Zod schemas
-- [ ] SpotlightSnapshotQuery + GET /api/spotlight
-- [ ] Reducer, cloud layout, search normalizer
-- [ ] Channel hook with SM-001 + reconnect refetch
-- [ ] Region components + i18n keys + mount in Live board slot
-- [ ] Unit, integration, e2e tests; re-run phase 04/08 write-path suites
+- [ ] Read Next 16 docs (route handlers, caching) — no record in the implementer reports; the handler sets `Cache-Control: private, no-store` and `next build` is clean
+- [x] Verify `realtime.send` + private channel policy on local Supabase (spike, see Delivery Notes)
+- [x] Migration: function, trigger, policy, revoke, down script (`0017_spotlight_realtime`, journal idx 17)
+- [x] Disable public Realtime channels — written into the release checklist (`docs/system/architecture.md` → Deployment View); the switch itself is per environment and is NOT flipped locally (`private_only=false`)
+- [x] Config + Zod schemas
+- [x] SpotlightSnapshotQuery + GET /api/spotlight
+- [x] Reducer, cloud layout, search normalizer
+- [x] Channel hook with SM-001 + reconnect refetch (SM-001 logic extracted to `lib/spotlight-channel-state.ts`)
+- [x] Region components + i18n keys (`spotlight`, 17 keys vi/en) + mount in Live board slot
+- [x] Unit, integration, e2e tests; re-run phase 04/08 write-path suites (22 files / 141 tests, unchanged, green)
 
 ## Success Criteria
-- SC-001..SC-007 from technical spec pass.
-- Integration: every `realtime.messages` row on topic `spotlight` has exactly the 5 payload keys; anonymous kudo payload contains no sender data.
-- Kudo insert/status update succeeds when `realtime.send` raises (fault-injected).
-- Two Playwright contexts: new kudo visible in both ≤ 5 s without reload; Mark Spam then Un Spam returns counter to original, ticker gains no line.
-- Unauthenticated: `/api/spotlight` 401; anon cannot join channel; authenticated client cannot INSERT into `realtime.messages` on `spotlight`.
+- [x] **SC-001 trigger branches:** new public → `added`; new spam → nothing; public→spam → `removed`; spam→public → `restored`; body edit / no status change → nothing. Evidence: integration `spotlight-trigger`.
+- [x] **Payload privacy:** exactly the 5 contract keys; no sender id / name / `isAnonymous` / body, also for an anonymous kudo. The browser sees a 6th key, `id`, added by `realtime.send`; `SpotlightEventSchema` strips it. Evidence: integration `spotlight-trigger` ("payload privacy"), `spotlight-realtime-delivery`; unit `spotlight-event-schema`.
+- [x] **Never aborts the write:** a failing `realtime.send` does not stop the kudo INSERT or the Mark Spam UPDATE; 0 messages, 2 catch-all LOG lines. Evidence: integration `spotlight-trigger-fault-injection`. Proxy only: `realtime.send` cannot be replaced by `postgres`, so the trigger function is re-owned by a role without USAGE on `realtime` inside a rolled-back transaction; a real Realtime outage was not simulated.
+- [x] **Policy:** authenticated reads `spotlight` only, other topics unaffected, anon denied, INSERT refused for authenticated and anon, one scoped policy. Evidence: integration `spotlight-realtime-policy`; real websocket join in `spotlight-realtime-delivery` (anon refused; a public channel named `spotlight` joins but receives nothing).
+- [x] **Snapshot:** spam excluded; names top N by count desc then id asc; `recent` oldest first; no sender column; `GET /api/spotlight` 401 before any read, `no-store`, 500 carries only a code. Evidence: integration `spotlight-snapshot-query`, `spotlight-route`.
+- [x] **Live behaviour:** new kudo in two independent browsers ≤ 5 s without reload; Mark Spam then Un Spam returns the counter and adds no ticker line; offline → online resyncs without double count. Evidence: e2e `spotlight-board.spec.ts` (two browsers; Mark Spam / Un Spam), `spotlight-board-reconnect-and-search.spec.ts`; unit reducer.
+- [x] **Region UI:** counter, 4-tier cloud with `/profile/{id}` links, 5-line ticker with fade and locale time, diacritic-insensitive search, fullscreen, empty / error / skeleton states, connection label. Evidence: unit `spotlight-cloud-layout`, `normalize-search-text`, `spotlight-ticker-and-name-links-markup`, `spotlight-region-loading-and-error-states`, `spotlight-channel-state`; e2e search and empty state; screenshots in `evidence/screenshots/phase-11/` compared with Figma 2940:14170. **Not automated:** fullscreen (manual Chromium check; Esc exit cannot be driven headless) and the error-state retry click (the unit project has no DOM).
+- [x] Gates on the final code (after the review-fix round, as reported by the implementer): `tsc` 0 errors, lint 0, unit 785 (65 files), `db:reset` + integration 434 (68 files), e2e 118 passed / 5 skipped (prelaunch-only) / 0 failed, prelaunch e2e 5 passed / 1 skipped, build clean, `test:prod` 16/16. The tester's own full run (unit 755, integration 434, e2e 118 / 5 / 0, `test:prod` 16/16) was on the code before the review fixes and was not repeated by the tester afterwards.
+- [x] Reviewer: 0 critical / 0 high, 3 medium. M1 counter drift fixed (debounced resync + `restoredIds`); M3 deploy gate fixed (release checklist); M2 jitter done, TTL cache deliberately not (watch item, see Open items).
+- Risk sign-off: per the user's conditional pre-approval 2026-11-22, recorded at commit time.
+
+## Delivery Notes
+Drift from the plan text:
+- **`realtime.send` verified** (local Postgres 17.11, Realtime v2.154.0): signature `realtime.send(payload jsonb, event text, topic text, private boolean DEFAULT true)` as planned; not SECURITY DEFINER, EXECUTE to PUBLIC; swallows its own errors as `RAISE WARNING`. It **appends an `id` key (the message uuid)** to the payload, so clients receive 6 keys; the Zod schema is non-strict and drops it. A rolled-back kudo write is never broadcast (resolves technical-spec §5.3 Q2). Private-channel auth reads `realtime.messages` RLS: authenticated and anon were both refused before the migration, authenticated joins after it, anon stays refused.
+- **Policy tightened with the row topic:** `USING (realtime.topic() = 'spotlight' AND topic = 'spotlight' AND extension = 'broadcast')`. With only `realtime.topic()`, an authenticated role could set `realtime.topic = 'spotlight'` and read every other topic's rows (permissive policies OR together), which would have exposed phase 13 `notifications:*`. Found by the policy test.
+- **Snapshot is 2 statements, not 3:** top names with the all-time total as `sum(count(*)) over ()` (computed before LIMIT), and the latest 5. **`recent` is oldest first** (orchestrator contract in `spotlight-views.ts`); the technical-spec text says newest first, the contract wins. EXPLAIN at 10k kudos / 500 recipients: names 2.7 ms, recent 0.05 ms, no new index; trigger about 74 µs per row.
+- **Tier by distinct-count rank (BR-002 reading):** `tier = 4 − floor(rank·4/k)` over the distinct counts shown; top count → tier 4, equal counts share a tier, lowest → tier 1. Plain positional ranks would put the long tail of 1-Kudo names in the largest tier.
+- **Phone: cap 24 names (plan said 30); a name with no free spot is dropped (no overlap); board 460 px tall.** 30 did not fit without overlap.
+- **Network layer drawn at 106 % width:** Figma's 1100 px leaves a visible seam at about 95 % of the board.
+- **Resync timing:** after `removed` / `restored`, one refetch 2000 + 0–999 ms after the **last** event of a burst (trailing debounce, no max wait); after every (re)join, a refetch after a random 0–1999 ms; tab visible → refetch at once. `added` schedules nothing (deduped by kudo id). Constants in `lib/spotlight-ui-config.ts`, logic in `lib/spotlight-resync-scheduler.ts`. This fixes reviewer M1 (a late `removed` after a snapshot that already reflects it).
+- **`restoredIds` rule:** the snapshot's `recent` is the last 5 public kudos, so a REPLACE after `restored` would bring the restored line back. The reducer keeps `restoredIds` (kudos restored while the board is open) across `replace` and filters them out after slicing to 5 lines. A page reload still shows such a kudo at its original time.
+- **Skeleton:** `SpotlightBoardSkeleton` is the slot's Suspense fallback (was `null`); same section and frame classes as the loaded board, boxes measured identical.
+- **Browser Supabase client lives in the feature lib** (`lib/spotlight-browser-supabase.ts`, `@supabase/ssr`, `detectSessionInUrl: false`); `shared/` has no browser session client yet. **Move it to `shared/` when phase 13 needs one.**
+- **Config split:** server-shared constants (`NAME_CLOUD_MAX`, topic, event, history size) in `spotlight-config.ts`; browser-only tuning in `lib/spotlight-ui-config.ts`.
+- **API gate = session only** (`getSessionUser`, like the Secret Box endpoints); no department check, since the payload is a non-personal public aggregate.
+- **Migration** registered with `drizzle-kit generate --custom` (journal idx 17 + `meta/0017_snapshot.json`); `postgres` may `CREATE POLICY` on `realtime.messages`. The down file needs a manual `__drizzle_migrations` row delete.
+- **Deploy checklist:** `docs/system/architecture.md` → Deployment View → "Release checklist — Realtime (F008)": Allow public access off, `realtime` never in Data API exposed schemas, staging check of private channels.
+
+## Open items
+- **Staging check of private channels on hosted Supabase has not run anywhere** (checklist item 3); local Realtime still allows public channels (`private_only=false`). Record the result in `evidence/phase-11/` before the event opens.
+- **e2e flake from hard deletes:** another worker's `kudoUsers` teardown hard-deletes public kudos; DELETE emits no event, so a spotlight total-vs-DB check can drift (1/15 in a `--repeat-each=3 --workers=2` run; the full run was green). Options: one worker for the two spotlight files, or soft-delete in the shared fixture.
+- **Retry-click test needs a DOM environment:** the unit project has no jsdom/happy-dom and e2e cannot make the server loader return `null`; the rendered error state and the `GET /api/spotlight` contract are tested, the click wiring is not. Adding a DOM env is a dependency decision.
+- **Snapshot cache at 100k+ kudos:** the names aggregate is O(public kudos) per call, uncached by decision; add a 1–2 s TTL cache if kudos reach 100k+ (reviewer M2; only the jitter was done).
+- **`removed` events reveal moderation to signed-in clients:** kudoId + recipient of a moderated kudo reach every signed-in client. The kudo was public, so accepted.
+- Also open: `/profile/{id}` is a 404 until phase 12 (D004, accepted); the trailing debounce has no max wait (YAGNI); a recipient outside the top 60 joins with count 1 on a live event until the next resync; fullscreen has no automated test; `docs/features/F008_SpotlightBoard/` and `docs/screens/SCR016_SpotlightBoardRegion/` are still the greenfield draft ("planned", TBD), so sync them via `rebuild-spec --features F008`.
 
 ## Scope Contract — **full test set required** (DB migration/trigger on kudos write path, RLS policy, public API)
 - **Changed:** new migration (trigger on `kudos`, policy on `realtime.messages`), `GET /api/spotlight`, `features/spotlight-board/**`, Live board slot mount, i18n keys.

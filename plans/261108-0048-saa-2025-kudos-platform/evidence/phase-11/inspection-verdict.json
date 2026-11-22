@@ -1,0 +1,67 @@
+{
+  "score": 8,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "Trigger: new public kudo -> added, new spam -> nothing, public->spam -> removed, spam->public -> restored, body edit / no status change -> nothing",
+    "Every spotlight message carries exactly the 5 contract keys (plus Realtime's own id) and never sender id, sender name, isAnonymous or body, including for anonymous kudos",
+    "A failing realtime.send never aborts the kudo insert or status update",
+    "realtime.messages policy: authenticated may read topic spotlight only; anon denied; authenticated INSERT denied; other topics unaffected",
+    "Snapshot counts exclude spam, names are top N by count then id, recent is ordered, no sender column; GET /api/spotlight answers 401 without session and no-store",
+    "Two browsers see a new kudo within 5 s without reload; Mark Spam then Un Spam returns the counter with no extra ticker line; reconnect refetches without double counting",
+    "Region shows counter, 4-tier name cloud linking to profiles, 5-line fading ticker in locale time, diacritic-insensitive search dimming non-matches, fullscreen toggle, empty and error states, connection status"
+  ],
+  "regressionChecked": [
+    "kudos INSERT/status UPDATE write path: trigger branches before the exception block, WHEN OTHERS catch-all, query_cancel not trapped, fault-injection test exists; not re-run",
+    "Realtime authorization for other topics (phase 13): row topic check scopes the policy to spotlight",
+    "Live board page render: slot has own Suspense, loader returns null on failure into the region error state",
+    "migration journal idx 17 with increasing when, snapshot and down file present",
+    "new source files all under 200 lines (largest 141); en/vi spotlight keys equal"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Warning",
+      "category": "Concurrency",
+      "location": "features/spotlight-board/lib/spotlight-state-reducer.ts:31-38",
+      "summary": "replace keeps applied only for ticker ids, so a late removed/restored broadcast for a kudo outside the ticker double-applies after a snapshot that already reflects it; counter drifts until next resync. Schedule a debounced resync after removed/restored",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Warning",
+      "category": "Deployment",
+      "location": "db/migrations/0017_spotlight_realtime.sql:23",
+      "summary": "Realtime 'Allow public access' must be OFF per environment; only a SQL comment records it, no release checklist entry",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Performance",
+      "location": "features/spotlight-board/server/spotlight-snapshot-query.ts:33-45",
+      "summary": "uncached O(public kudos) aggregate per load, per SUBSCRIBED and per tab-visible; reconnect storms refetch together. Add jitter and a 1-2 s TTL if volume grows",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Data leakage",
+      "location": "db/migrations/0017_spotlight_realtime.sql:49-57",
+      "summary": "removed events expose a moderation action (kudoId + recipient) to every signed-in client; the kudo was public, acceptable",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Completeness",
+      "location": "features/spotlight-board/components/spotlight-name-cloud.tsx:48",
+      "summary": "links to /profile/{id}, route absent until phase 12",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}
