@@ -11,7 +11,7 @@ lang: vi
 **Screen**: SCR018_SecretBoxOpen: Khám phá Secret Box của bạn
 **Feature**: F010_SecretBoxRewards
 **Type**: atomic
-**Route**: TBD (draft) — mặc định là modal phủ lên Live board (kích thước tham chiếu 651×822 trong Figma), mở được bằng đường dẫn từ thông báo
+**Route**: modal phủ lên Live board (kích thước tham chiếu 651×822 trong Figma), mở bằng nút trên bảng thống kê hoặc đường dẫn `/kudos?secretBox=open` (đã implement ở phase 10; đóng thì bỏ tham số)
 **Generated**: 2026-11-08
 
 ## 1. Overview

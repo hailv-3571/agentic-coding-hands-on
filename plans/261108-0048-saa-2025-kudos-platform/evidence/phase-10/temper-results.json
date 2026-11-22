@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (after moving the render helper to .tsx) (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "56 files, 709 passed (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations 0000-0016 + seeds (9 prizes) (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "61 files, 406 passed incl. grant/open/stock/mystery/national races, duplicate flag, tick overlap+cap, cron guard, data loader auth (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npx playwright test --timeout 90000",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "113 passed, 5 skipped (prelaunch-only), 0 failed (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "all checks passed (final code, after review fixes)",
+      "ts": "2026-11-23T01:00:00.000Z"
+    }
+  ]
+}

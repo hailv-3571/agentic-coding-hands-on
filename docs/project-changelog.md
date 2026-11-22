@@ -6,6 +6,33 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-22 — Phase 10 (F010 Secret Box)
+
+Added
+- Cấp hộp: `SecretBoxGrantService.reconcileForSender`. `entitled = floor(weightedTotal / SECRET_BOX_HEARTS_PER_BOX)` với tổng tim đọc tại `min(now, EVENT_END_AT)` (x2 tính gấp đôi, Kudo ẩn danh tính, Kudo spam không). Chèn `seq = max+1 .. entitled` dưới khoá advisory theo người dùng; `BoxGranted{userId,count}` ghi cùng transaction và chỉ khi có dòng mới. Không bao giờ xoá hộp. Tim đọc trước khi lấy khoá (pool 10 kết nối).
+- Mở hộp: `SecretBoxOpenService.openNext`. Cùng khoá, tra lại kết quả theo `UNIQUE (user_id, open_request_id)`, mở hộp `seq` nhỏ nhất, bốc quà có trọng số bằng `crypto.randomInt`, trừ kho bằng `UPDATE ... WHERE stock_remaining > 0` (bốc lại tối đa `MAX_REDRAW = 3` lần rồi rơi về icon). Đủ 6 icon thì ghi `mystery_gift_awards` một lần và phát `SetCompleted{userId,giftName}`.
+- 5 bảng (RLS bật, không có policy): `secret_box_prizes`, `secret_boxes`, `user_icons`, `mystery_gift_awards`, `national_kudos`. Migration `0015_secret_box_rewards` và `0016_secret_box_tick_cron` (đều có `.down.sql`; gỡ 0016 trước).
+- Nạp kho quà `db/seeds/secret-box-prize-loader.ts` (hook trong `apply-all-seeds.ts`, báo cáo `secretBoxPrizes`): chạy lại seed giữ nguyên số đã phát.
+- API: `GET /api/secret-boxes/me`, `POST /api/secret-boxes/open` (header `Idempotency-Key` uuid v4; 401, 400 `invalid_idempotency_key`, 409 `no_box_left`), `POST /api/internal/secret-box/tick` (header `x-job-secret`; 503 `not_configured`, 401, 200, 500). Kết quả mở có cờ `duplicate` (icon đã có) và `replayed`.
+- Tick mỗi phút: quét người gửi có tim trong 10 phút (tối đa `SWEEP_MAX_SENDERS_PER_TICK = 500` mỗi lần, phần dư báo `sweep.deferred`), rồi chốt Kudos Quốc Dân. Cả tick chạy trong một transaction giữ `pg_try_advisory_xact_lock`; tick khác đang chạy thì trả `{skipped:true}`. Lên lịch bằng pg_cron + pg_net, secret và URL trong Vault; dự phòng cron máy chủ (xem `docs/system/architecture.md`).
+- Kudos Quốc Dân: 5 Kudo public nhiều tim thô nhất tại `NATIONAL_KUDOS_FINALIZE_AT` (hoà thì Kudo cũ hơn xếp trước), chốt đúng một lần, một sự kiện `NationalKudosFinalized`.
+- UI: cột phần thưởng của Live board (5 số liệu, huy hiệu x2 khi có Campaign, nút Mở Secret Box mờ khi hết hộp, 10 Sunner nhận quà mới nhất), modal mở hộp (SM-002, mở được bằng `/kudos?secretBox=open`), `IconCollection` (6 ô, cho phase 12). Khoá `secretBox.*` (vi, en).
+- Env `INTERNAL_JOB_SECRET` (tuỳ chọn, tối thiểu 32 ký tự).
+
+Changed
+- `PUBLIC_PATHS` thêm `SECRET_BOX_TICK_PATH` (đúng một đường; đường giống tên vẫn bị chặn).
+- `rankKudoIds(candidates, limit, { asOf?, tieBreak? })`: tham số thứ 3 từ `asOf` rời thành object; `tieBreak` mặc định `'newest'` nên thứ tự Highlight không đổi.
+- `live-board-rewards-column-slot.tsx` (seam phase 05) chỉ còn dựng giao diện; dữ liệu do `rewards-column-data-loader.ts` lấy sau `requireSunner()`.
+
+Decisions
+- Hộp vẫn mở được sau `EVENT_END_AT`; không có `SECRET_BOX_LOCK_AT`, khoá là `EVENT_END_AT`. Không có cổng `LAUNCH_AT` (trước giờ mở không có hộp nào).
+- Gift không dùng ảnh sản phẩm có thương hiệu bên thứ ba; hiện hộp mở phát sáng và tên quà.
+- Tick dùng khoá theo transaction, không dùng khoá session (không an toàn sau transaction pooler).
+- `NationalKudosFinalized` mang `senderId` thật của cả Kudo ẩn danh; phase 13 không được hiển thị nó (decision log).
+
+Known gaps
+- Tên quà bí ẩn, trọng số và tồn kho là giá trị tạm chờ BTC. Chưa có chỉ mục `kudo_hearts(created_at)` cho đợt quét. Đường pg_cron đến endpoint chưa chạy thử đầu-cuối.
+
 ## 2026-11-22 — Phase 09 (F009 Huy hiệu Hero)
 
 Added

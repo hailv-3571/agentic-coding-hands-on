@@ -159,3 +159,6 @@ Rollback: down migration unschedules cron, drops policy/trigger/table/enum; outb
 - BTC copy for `national_kudos` (D006) and final English strings.
 - Reuse the drain mechanism for phase 10 national-kudos job if it lacks one (single scheduler pattern).
 - C-ids resolved (consumer side): **C-01** (consume only from outbox, no in-process hooks), **C-03** (`SetCompleted.giftName` required in Zod; outbox `id/attempts/failed_at` used), **C-16** (consumer of phase 01 outbox), **C-04** (tier via phase 09 count + `tierFromCount`), C-12 (thăng hạng = Hero tier), C-18 (reads route handlers, read-state server actions), C-20, C-21 (`profiles`).
+
+## Constraint from phase 10 review (2026-11-22)
+- `NationalKudosFinalized.items[].senderId` is the REAL sender, anonymous kudos included. Phase 13 must never expose it — or anything derived from it (name, avatar, profile link) — in a recipient-visible notification, a public feed, or any API response to other users. Notify the kudo's recipient/sender by id internally only; render anonymous senders with the nickname rule of phase 05.

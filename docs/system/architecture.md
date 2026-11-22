@@ -126,7 +126,7 @@ Hợp đồng đầy đủ: `plans/261108-0048-saa-2025-kudos-platform/research/
 - **Cursor**: base64url của `{c, i}` (`created_at` giữ độ chính xác micro giây, và `id`), sắp `(created_at DESC, id DESC)`, trang sau là `(created_at, id) < (c, i)`. Giải mã nghiêm ngặt, dài tối đa 200 ký tự; cursor không do encoder sinh ra bị từ chối.
 - **Ảnh**: bucket `kudo-images` riêng tư, ký URL đọc 30 phút, một lần gọi Storage cho cả trang. Ký lỗi thì thẻ hiện placeholder, trang vẫn dựng.
 - **Renderer Markdown** (`features/kudos-feed/markdown/`): parser tự viết theo whitelist, không dùng thư viện, không bao giờ coi là HTML. Link chỉ nhận `http(s)` có host và không có `user:pass@` (cả `[chữ](url)` lẫn URL trần); cú pháp ảnh `![..](..)` giữ nguyên dạng chữ; chuỗi dài quá 5.000 đơn vị UTF-16 không được phân tích.
-- **Seam**: `enrich-heart-summary.ts` đã được phase 06 viết lại bằng dữ liệu thật (xem mục Thả tim); `enrich-hero-tier.ts` đã được phase 09 viết lại (xem mục Hero tier). Slot Spotlight và cột phần thưởng là chỗ giữ chỗ cho phase 10, 11.
+- **Seam**: `enrich-heart-summary.ts` đã được phase 06 viết lại bằng dữ liệu thật (xem mục Thả tim); `enrich-hero-tier.ts` đã được phase 09 viết lại (xem mục Hero tier). Cột phần thưởng đã được phase 10 viết lại (xem mục Secret Box); slot Spotlight còn là chỗ giữ chỗ cho phase 11.
 - **Ô viết Kudo** (`KudoComposerLauncher`) chuyển từ `/` sang `/kudos`; deep link tạm `/?editKudo` đã bỏ, sửa Kudo mở modal ngay trên thẻ bằng nút bút của chủ bài.
 
 ## Hero tier (F009, đã implement ở phase 09)
@@ -203,6 +203,57 @@ Quyết định: `plans/261108-0048-saa-2025-kudos-platform/spec/decision-log.md
 - **Chặn Export** (`EXPORT_MAX_ROWS`): đọc một lần tối đa `EXPORT_MAX_ROWS + 1` dòng rồi `assertWithinExportLimit(rows.length)`; có dòng thừa thì 422 và không tạo tệp, nên Kudo chèn thêm giữa chừng không đẩy tệp quá trần. Tệp đi qua serializer chung (BOM, chặn công thức).
 - **Chủ bài với Kudo spam của mình**: `KudoPublicQuery.findForViewer` trả `isSpam: true`; `KudoDetailView` và `KudoCard` đặt `SpamAlertOverlay` và `KudoSpamTag` (`features/admin-moderation/components/`). Chữ nằm trong DOM, mọi link dưới lớp phủ `tabIndex=-1`, chỉ "Đóng" nhận focus. Live board không liệt kê Kudo spam (`includeOwnSpam` chưa có nơi gọi); Profile "Đã gửi" của phase 12 sẽ dùng.
 
+## Secret Box (F010, đã implement ở phase 10)
+
+Module `features/secret-box-rewards/`; bảng ở `shared/db/schema/secret-box-rewards.ts` (migration `0015`): `secret_box_prizes`, `secret_boxes`, `user_icons`, `mystery_gift_awards`, `national_kudos`. RLS bật, không có policy (C-20); server dùng kết nối chủ nên không qua RLS. Mọi module server có `import "server-only"`.
+
+### Cấp, mở, bốc quà
+
+- **Cấp** (`secret-box-grant-service.ts`): `entitled = floor(weightedTotal / SECRET_BOX_HEARTS_PER_BOX)`, tổng đọc từ `HeartStatsQuery` (phase 06) tại `min(now, EVENT_END_AT)`; chèn `seq = max+1 .. entitled` với `ON CONFLICT DO NOTHING`; `BoxGranted{userId,count}` cùng transaction, chỉ khi có dòng mới. Tổng giảm thì không chèn và không xoá. Gọi lại khi đọc (cột phần thưởng, `GET /api/secret-boxes/me`, trước mỗi lần mở) và từ tick; module không đọc `consumed_at`, không tiêu thụ outbox.
+- **Thứ tự khoá**: tim đọc qua pool **trước** khi lấy `pg_advisory_xact_lock` theo người dùng, không đọc qua pool khi đang giữ khoá (pool 10 kết nối bị cạn khi 20 lần đua). Lệnh kiểm `max(seq)` rẻ bỏ qua khoá khi chưa đến hạn.
+- **Mở** (`secret-box-open-service.ts`): một transaction: khoá người dùng, tra kết quả cũ theo `(user_id, open_request_id)`, lấy hộp chưa mở có `seq` nhỏ nhất `FOR UPDATE`, bốc quà, đánh dấu đã mở, cộng icon, kiểm đủ bộ. Replay suy `setCompleted` từ `mystery_gift_awards.completed_at = secret_boxes.opened_at` và `duplicate` từ `user_icons.first_obtained_at <> secret_boxes.opened_at` (đều là `now()` của giao dịch mở), không cần cột thêm.
+- **Bốc quà** (`prize-weighted-pick.ts` thuần, `prize-draw-service.ts`): `crypto.randomInt` có trọng số trên prize đang bật còn hàng; quà trừ kho bằng `UPDATE ... WHERE stock_remaining > 0`; thua đua thì bốc lại tối đa `MAX_REDRAW` (3) lần, rồi chỉ còn icon (không giới hạn kho). Một transaction giữ tối đa một khoá dòng prize.
+- **Quà bí ẩn**: đủ 6 `user_icons` thì `INSERT mystery_gift_awards ... ON CONFLICT (user_id) DO NOTHING RETURNING`; chỉ khi chèn mới phát `SetCompleted{userId,giftName}` (`MYSTERY_GIFT_NAME`, giá trị tạm chờ BTC). Mở hộp vẫn được sau `EVENT_END_AT`.
+- **Nạp kho** (`db/seeds/secret-box-prize-loader.ts`, gọi từ `apply-all-seeds.ts`): upsert theo `code`; chạy lại giữ số đã phát (`stock_remaining` tính lại từ `stock_total` mới trừ số đã phát, không âm).
+
+### Route
+
+| Route | Guard | Trả |
+|-------|-------|-----|
+| `GET /api/secret-boxes/me` | `getSessionUser` (401 trước khi đọc DB) | `{ unopened }`, `private, no-store` |
+| `POST /api/secret-boxes/open` | session + header `Idempotency-Key` (uuid v4, 400 `invalid_idempotency_key`) | `OpenSecretBoxResult` (`kind`, `iconCode`, `name`, `setCompleted`, `giftName`, `unopenedLeft`, `replayed`, `duplicate`); 409 `no_box_left` |
+| `POST /api/internal/secret-box/tick` | header `x-job-secret` (không session) | xem dưới |
+
+`userId` chỉ lấy từ session; body lỗi chỉ `{ code }`.
+
+### Tick, cron và đường công khai
+
+- `SecretBoxTickJob.run` chạy trong một transaction giữ `pg_try_advisory_xact_lock(hashtext('secret_box_tick'))`: khoá đang bị giữ thì trả 200 `{ skipped: true }`. Có khoá thì chạy `SecretBoxSweepJob` (người gửi có tim trong `SWEEP_WINDOW_MIN` = 10 phút, chỉ người đến hạn, tối đa `SWEEP_MAX_SENDERS_PER_TICK` = 500 mỗi tick, phần dư vào `sweep.deferred`), rồi `NationalKudosFinalizeJob`; hai job lỗi độc lập. Trả 200 `{ sweep: { senders, granted, failed, deferred }, nationalKudos: { status, count } }`; 500 `unexpected` nếu một job lỗi. Tick giữ 1 trong 10 kết nối pool trong lúc chạy.
+- **Guard** (`internal-job-guard.ts`): `INTERNAL_JOB_SECRET` chưa đặt thì 503 `not_configured`; thiếu hoặc sai header thì 401; so sánh SHA-256 của hai giá trị bằng `timingSafeEqual`; không log secret. Mọi phản hồi `Cache-Control: no-store`.
+- **Đường công khai**: `SECRET_BOX_TICK_PATH` nằm trong `PUBLIC_PATHS` (`shared/auth/public-paths.ts`) vì cron không có cookie; khớp đúng một đường, `/api/internal/secret-box/tick/x` hay đường giống tên vẫn bị chặn. Cổng prelaunch cho đường công khai đi qua, nên trước `LAUNCH_AT` job chạy không làm gì.
+- **Lịch**: migration `0016_secret_box_tick_cron` tạo job pg_cron `saa-secret-box-tick` (`* * * * *`) gọi `net.http_post` (pg_net) với URL và secret đọc từ Vault, không gửi gì khi thiếu một trong hai. Migration tự bỏ qua kèm NOTICE khi thiếu `pg_cron`/`pg_net` (hoặc chưa preload) hay `vault.decrypted_secrets`; `.down.sql` chỉ gỡ lịch, giữ extension. Cài đặt theo môi trường: mục Deployment View.
+- **Chưa kiểm đầu-cuối**: pg_cron → pg_net → endpoint chưa chạy thật vì môi trường dev chưa đặt `INTERNAL_JOB_SECRET`; 200 và 401 của tick chỉ có test tích hợp với env ghi đè.
+
+### Kudos Quốc Dân
+
+`national-kudos-finalize-job.ts`: trước `NATIONAL_KUDOS_FINALIZE_AT` trả `not_due`. Sau đó `HeartRankingQuery.rankKudoIds(KudoPublicQuery.publicKudoIdsSubquery(), 5, { asOf, tieBreak: "oldest" })` ghép `heartCountsSubquery`, giữ Kudo có tim ≥ 1; khoá toàn cục, kiểm lại, chèn tối đa 5 dòng `national_kudos` (`UNIQUE (rank)`, `UNIQUE (kudo_id)`), một `NationalKudosFinalized{items[{kudoId,senderId,rank}]}`. Không Kudo public nào có tim thì không ghi gì. `senderId` là người gửi thật kể cả Kudo ẩn danh: outbox đóng RLS và chưa ai đọc; phase 13 không được hiển thị hay suy ra từ nó.
+
+### Sự kiện phát ra (outbox, ghi cùng transaction nghiệp vụ)
+
+| Sự kiện | Payload | Khi nào |
+|---------|---------|---------|
+| `BoxGranted` | `{ userId, count }` | Có dòng `secret_boxes` mới |
+| `SetCompleted` | `{ userId, giftName }` | Lần đầu đủ 6 icon |
+| `NationalKudosFinalized` | `{ items: [{ kudoId, senderId, rank }] }` | Lần chốt duy nhất |
+
+Phase 13 là consumer duy nhất của `consumed_at`; phase 10 chỉ INSERT.
+
+### Cột phần thưởng và modal
+
+- `rewards-column-data-loader.ts` gọi `requireSunner()` rồi `PersonalRewardStatsQuery.forUser` (cấp bù trước khi đọc) và `LatestGiftWinnersQuery.top10` (quà hiện vật, tên thật, chỉ người đã đăng nhập); mỗi panel lỗi riêng thành `null`. Seam `live-board-rewards-column-slot.tsx` chỉ dựng `RewardsColumn` dưới `<Suspense fallback={null}>` riêng. Host nào dựng `PersonalStatsPanel` cũng phải đặt trong `<Suspense>` (launcher đọc `useSearchParams`).
+- Modal `?secretBox=open`: bộ điều khiển SM-002 không phụ thuộc framework (`secret-box-opener.ts`). Mỗi lần bấm một khoá mới; giữ khoá khi kết quả chưa rõ (lỗi mạng, hết 15 giây, 5xx, 401, 200 không đọc được) để lần bấm sau replay; bỏ khoá khi có kết quả dứt khoát (200, 409, 400). Đóng modal khi đang mở bị khoá. `prefers-reduced-motion` tắt hoạt ảnh.
+- `IconCollection({ slots })` cho phase 12; `IconCollectionQuery.forUser(userId)` trả 6 ô theo thứ tự `SECRET_BOX_ICON_CODES`.
+
 ## Tech Stack
 
 | Layer | Technology | Version |
@@ -249,7 +300,29 @@ Luồng thả tim → hộp: server action `addHeartAction` ghi `kudo_hearts` (k
 
 N/A — no infrastructure-as-code found in repository.
 
-Chưa quyết định nơi chạy Next.js (nền tảng hosting) và cách kích hoạt cron/outbox: `TBD (draft)`. Supabase là dịch vụ managed ngoài (Auth, Postgres, Realtime, Storage); cấu hình provider Google, tắt kênh Realtime công khai, bật Broadcast riêng tư nằm ở dashboard Supabase, không lưu trong repo.
+Chưa quyết định nơi chạy Next.js (nền tảng hosting): `TBD (draft)`. Cron của F010 đã chọn (phase 10), xem bên dưới; cách kích hoạt job outbox của F013 vẫn `TBD (draft)`. Supabase là dịch vụ managed ngoài (Auth, Postgres, Realtime, Storage); cấu hình provider Google, tắt kênh Realtime công khai, bật Broadcast riêng tư nằm ở dashboard Supabase, không lưu trong repo.
+
+### Cài đặt tick Secret Box theo môi trường (F010)
+
+Tick là `POST /api/internal/secret-box/tick`, mỗi phút. Thiếu tick chỉ làm chậm thông báo `BoxGranted` (hộp vẫn được cấp mỗi lần Sunner mở trang hay mở hộp), nên dựng sau khi app chạy cũng được.
+
+1. Sinh secret (tối thiểu 32 ký tự) và đặt cùng một giá trị cho app và cho Vault:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+   App: biến môi trường `INTERNAL_JOB_SECRET` (tuỳ chọn; chưa đặt thì endpoint trả 503 `not_configured`; ngắn hơn 32 ký tự thì app không khởi động và thông báo lỗi không in giá trị).
+2. Cách chính, pg_cron + pg_net (Supabase). Chạy một lần trên DB của môi trường (SQL Editor hoặc `psql`), sau khi migration `0016` đã áp dụng:
+   ```sql
+   select vault.create_secret('<INTERNAL_JOB_SECRET>', 'saa_internal_job_secret');
+   select vault.create_secret('https://<app-origin>/api/internal/secret-box/tick', 'saa_secret_box_tick_url');
+   -- Supabase local chạy trong Docker: http://host.docker.internal:3000/api/internal/secret-box/tick
+   ```
+   Job `saa-secret-box-tick` không gửi gì cho tới khi cả hai secret cùng tồn tại. Kiểm: `select jobname, schedule from cron.job;`.
+3. Dự phòng, cron máy chủ (khi DB không có pg_cron/pg_net, migration 0016 sẽ bỏ qua kèm NOTICE): gọi mỗi phút từ máy chủ có mạng tới app:
+   ```bash
+   curl -fsS -X POST -H "x-job-secret: $INTERNAL_JOB_SECRET" https://<app-origin>/api/internal/secret-box/tick
+   ```
+4. Kiểm thủ công: không header hoặc sai secret → 401; đúng secret → 200 với `sweep` và `nationalKudos`. Bước này **chưa từng chạy thật** ở môi trường dev (secret chưa đặt, endpoint trả 503); làm một lần với header đúng và một lần với header sai trước khi mở sự kiện.
 
 ## Module Boundaries
 
@@ -345,9 +418,10 @@ Quy tắc chung: ràng buộc duy nhất / điều kiện `WHERE` trong câu ghi
 |-------|---------|--------|
 | Thả tim | F005 | `UNIQUE (kudo_id, user_id)`; chèn trùng không lỗi (idempotent); bỏ tim khi chưa có vẫn thành công; `multiplier` chốt lúc chèn |
 | Cấp Secret Box | F010 | `pg_advisory_xact_lock` theo `user_id`; `UNIQUE (user_id, seq)` + `ON CONFLICT DO NOTHING`; chạy lặp không đổi; không bao giờ xoá hộp |
-| Mở Secret Box | F010 | `Idempotency-Key` → `UNIQUE (user_id, open_request_id)`; chọn hộp `FOR UPDATE SKIP LOCKED`; trừ kho `UPDATE ... WHERE stock_remaining > 0`; bốc lại tối đa `MAX_REDRAW` lần rồi rơi về icon; cùng khoá trả cùng kết quả |
+| Mở Secret Box | F010 | Cùng khoá advisory theo `user_id`; `Idempotency-Key` → `UNIQUE (user_id, open_request_id)`; hộp chưa mở `seq` nhỏ nhất `FOR UPDATE`; trừ kho `UPDATE ... WHERE stock_remaining > 0`; bốc lại tối đa `MAX_REDRAW` lần rồi rơi về icon; cùng khoá trả cùng kết quả (`replayed: true`) |
 | Quà bí ẩn | F010 | `UNIQUE (user_id)` trên `mystery_gift_awards`, `ON CONFLICT DO NOTHING` |
 | Chốt Kudos Quốc Dân | F010 | Advisory lock toàn cục; bỏ qua nếu `national_kudos` đã có; `UNIQUE (kudo_id)`, `UNIQUE (rank)` |
+| Tick Secret Box | F010 | `pg_try_advisory_xact_lock(hashtext('secret_box_tick'))`: tick đến sau thấy khoá bị giữ thì trả `{ skipped: true }`; tối đa 500 người gửi mỗi tick |
 | Campaign không chồng giờ | F011 | `EXCLUDE USING gist (tstzrange(starts_at, ends_at, '[)') WITH &&)`; app kiểm trước, bắt `23P01` khi đua |
 | Mark Spam / Un Spam | F007 | `UPDATE kudos ... WHERE id AND status = :from`; lệnh trùng không lỗi, không ghi đè `moderated_*` |
 | Đổi role + chốt Admin cuối | F014 | Một giao dịch: `SELECT ... FOR UPDATE` mọi dòng Admin, rồi kiểm "không tự hạ" và "còn ≥ 1 Admin" trước khi ghi |
@@ -360,9 +434,9 @@ Danh sách để planner xử lý. Mức: **blocking** = phải chốt trước 
 
 | ID | Mức | Feature | Vấn đề | Đề xuất |
 |----|-----|---------|--------|---------|
-| C-01 | blocking | F003, F005, F007, F010, F013 | F013 INT-001 kỳ vọng `KudoCreated` (F003), `HeartAdded` (F005), `KudoMarkedSpam` (F007) ghi vào outbox, nhưng F003 §5.2 nói "không tự đẩy sự kiện", F005 không có sự kiện nào, F007 INT-001 chưa chọn cơ chế (trigger / Realtime / ghi thẳng). F010 A1 lại kỳ vọng `HeartAdded` trong tiến trình sau commit của F005 (không qua outbox) | Một cơ chế duy nhất: mọi feature nguồn gọi `DomainEventOutbox#add(tx, ...)` trong cùng giao dịch; F010 A1 tiêu thụ `HeartAdded` từ outbox (hoặc gọi sau commit nhưng không để F005 phụ thuộc ngược vào F010); bổ sung rung Writes `domain_event_outbox` vào F003 A4, F005 A1, F007 A2. **Phần producer F007 đã giải ở phase 08**: `KudoMarkedSpam` ghi cùng transaction |
-| C-02 | blocking | F005, F010 | F010 INT-001 cần `HeartStatsQuery#receivedByUser(userId, asOf)` trả `{weightedTotal, rawTotal, campaignActive}`; F005 A4 chưa có tham số `asOf` (cần để loại tim thả sau `SECRET_BOX_LOCK_AT`) và chưa nêu kiểu trả. F010 §5.3 còn phương án tự đếm lại từ `kudo_hearts` (nhân đôi trách nhiệm) | F005 bổ sung `asOf` + kiểu trả; F010 không tự đếm tim **Phase 06**: `HeartStatsQuery` đã có `asOf` và kiểu trả; F010 (phase 10) chưa dùng. |
-| C-03 | blocking | F010, F013 | Outbox: F010 phác `type, payload, created_at, consumed_at`; F013 cần `id`, `attempts`, `failed_at`. F010 INT-002 `SetCompleted {userId}` thiếu `giftName` mà F013 cần | Định nghĩa schema outbox một lần (cột đủ cho F013) và payload `SetCompleted {userId, giftName}`; cập nhật F010 INT-002 |
+| C-01 | blocking | F003, F005, F007, F010, F013 | F013 INT-001 kỳ vọng `KudoCreated` (F003), `HeartAdded` (F005), `KudoMarkedSpam` (F007) ghi vào outbox, nhưng F003 §5.2 nói "không tự đẩy sự kiện", F005 không có sự kiện nào, F007 INT-001 chưa chọn cơ chế (trigger / Realtime / ghi thẳng). F010 A1 lại kỳ vọng `HeartAdded` trong tiến trình sau commit của F005 (không qua outbox) | Một cơ chế duy nhất: mọi feature nguồn gọi `DomainEventOutbox#add(tx, ...)` trong cùng giao dịch; F010 A1 tiêu thụ `HeartAdded` từ outbox (hoặc gọi sau commit nhưng không để F005 phụ thuộc ngược vào F010); bổ sung rung Writes `domain_event_outbox` vào F003 A4, F005 A1, F007 A2. **Phần producer F007 đã giải ở phase 08**: `KudoMarkedSpam` ghi cùng transaction **Phần F010 đã giải ở phase 10: F010 không tiêu thụ `HeartAdded`; cấp hộp bằng đọc bù khi đọc và tick quét, chỉ ghi `BoxGranted`, `SetCompleted`, `NationalKudosFinalized`, không đụng `consumed_at`** |
+| C-02 | blocking | F005, F010 | F010 INT-001 cần `HeartStatsQuery#receivedByUser(userId, asOf)` trả `{weightedTotal, rawTotal, campaignActive}`; F005 A4 chưa có tham số `asOf` (cần để loại tim thả sau `SECRET_BOX_LOCK_AT`) và chưa nêu kiểu trả. F010 §5.3 còn phương án tự đếm lại từ `kudo_hearts` (nhân đôi trách nhiệm) | F005 bổ sung `asOf` + kiểu trả; F010 không tự đếm tim **Phase 06**: `HeartStatsQuery` đã có `asOf` và kiểu trả; **Phase 10: F010 dùng `HeartStatsQuery.receivedByUser(s)(…, asOf).weightedTotal`, không đếm `kudo_hearts`; `asOf = min(now, EVENT_END_AT)`** |
+| C-03 | blocking | F010, F013 | Outbox: F010 phác `type, payload, created_at, consumed_at`; F013 cần `id`, `attempts`, `failed_at`. F010 INT-002 `SetCompleted {userId}` thiếu `giftName` mà F013 cần | Định nghĩa schema outbox một lần (cột đủ cho F013) và payload `SetCompleted {userId, giftName}`; cập nhật F010 INT-002 **Phase 10: `SetCompleted{userId, giftName}` đã phát từ F010 (`giftName` lưu trong `mystery_gift_awards`); F013 chưa làm** |
 | C-04 | non-blocking | F009, F013 | F013 ALG-002 tự đếm người gửi khác nhau trước/sau một Kudo (cùng điều kiện `public`, `sender <> recipient` như F009) — trùng logic đếm của F009; chỉ chia sẻ `tierFromCount` | F009 công bố hàm đếm người gửi khác nhau theo vị trí `(created_at, id)`; F013 gọi lại, không tự viết truy vấn thứ hai **Phần F009 đã giải ở phase 09**: `getDistinctSenderCounts(ids, executor?)` nhận `Db | DbTx` để F013 đọc trước/sau trong transaction ghi Kudo (đếm theo trạng thái hiện tại, không theo vị trí `(created_at, id)`); F013 chưa làm |
 | C-05 | blocking | F004, F012 | F012 A3 cần `KudoPublicQuery` lọc theo người nhận (`received`) và người gửi (`sent`, gắn từ session, không từ client); F004 chỉ có lọc hashtag + phòng ban. Cursor `(created_at, id)` của F004 và khoá gộp ALG-001 của F012 phải trùng định nghĩa | F004 mở rộng `KudoPublicQuery` với `recipientId`, `senderId`, cursor chung; che ẩn danh vẫn chỉ ở một nơi |
 | C-06 | non-blocking | F003, F004, F007 | Hai handler cùng `GET /api/sunners/search`: F003 A1 (`SunnerSearch#search`, có thể loại chính mình) và F004 A5 (`SunnerSearchHandler#search`, ô tìm profile theo tên/email). F007 dùng lại bản F003 nhưng cần tìm được cả chính mình | Một handler duy nhất, một chủ (đề xuất F001, bảng `profiles`), tham số `excludeSelf`; F003/F004/F007 cùng gọi **Phase 04**: F003 đã công bố `excludeSelf`; handler F004 A5 chưa làm. |
@@ -374,12 +448,12 @@ Danh sách để planner xử lý. Mức: **blocking** = phải chốt trước 
 | C-12 | blocking | F009, F014 | F014 cột/bộ lọc Level qua `LevelQuery` chưa có cài đặt; Level chưa được định nghĩa; Hero tier của F009 là khái niệm phân cấp duy nhất hiện có | Chốt Level = Hero tier (dùng `HeroTierQuery`) hoặc bỏ cột Level khỏi phạm vi **Phase 09 đã chuẩn bị phía F009**: `getTiersByRecipientIds`, `distinctSenderCountSubquery`, `tierCountRange` sẵn cho `LevelQuery`; F014 chưa làm |
 | C-13 | blocking | F007, F014, F015, F010, F013 | Chính sách hiển thị người gửi Kudo ẩn danh với Admin chưa chốt (F007 D001/RISK-01, mặc định Admin thấy người gửi thật kèm nhãn "Ẩn danh" trong bảng, lọc và Export). Thông báo Kudos Quốc Dân (F010) mang `senderId` tới chính người gửi | Chốt một chính sách toàn hệ thống; `permissions.md` đang ghi mặc định `[INFERRED]`. **Đã giải ở phase 08 (phía F007)**: Admin thấy người gửi thật kèm nhãn "Ẩn danh" trong bảng, lọc và Export; `KudoAdminQuery` tách khỏi `KudoPublicQuery`. F014, F015, F010, F013 chưa làm |
 | C-14 | non-blocking | F007, F014, F015, F011, F006 | Tiện ích dùng chung chưa có chủ: `CsvSerializer` (F007 vs F014/F015), `AdminDateRangeFilter`, hàm đổi múi giờ, `ADMIN_TIMEZONE` (F007, F011, F014, F015) và `EVENT_TIMEZONE` (F006), `EXPORT_MAX_ROWS` (F007, F014) lặp hằng số | Một module quản trị dùng chung (chủ đề xuất: F007, build trước F014/F015) và một hằng số múi giờ |
-| C-15 | blocking | F001, F003, F010 | Dữ liệu không có chủ nạp: `departments` (F001 "nguồn TBD", F004/F014/F015 phụ thuộc, `department_id` null lúc tạo hồ sơ), `hashtags` (F003 chỉ đọc, F004 lọc), kho `secret_box_prizes` (F010 §5.3 mục 6), bucket Storage ảnh Kudo và việc dọn tệp mồ côi | Giao mỗi tập dữ liệu cho một feature kèm cách nạp (seed/migration/Admin); chốt ở planner **Phase 04**: bucket `kudo-images` và seed `hashtags` đã có (phase 01); job dọn ảnh mồ côi vẫn hoãn. |
-| C-16 | blocking | F010, F003, F005, F007, F013 | Thứ tự build: bảng `domain_event_outbox` đang do F010 (P2) giới thiệu, nhưng F003 (P0), F005, F007 (P1) phải ghi vào nó theo C-01 | Chuyển chủ sở hữu bảng + helper `DomainEventOutbox#add` về nền tảng (F001/migration nền) để có trước F003 |
+| C-15 | blocking | F001, F003, F010 | Dữ liệu không có chủ nạp: `departments` (F001 "nguồn TBD", F004/F014/F015 phụ thuộc, `department_id` null lúc tạo hồ sơ), `hashtags` (F003 chỉ đọc, F004 lọc), kho `secret_box_prizes` (F010 §5.3 mục 6), bucket Storage ảnh Kudo và việc dọn tệp mồ côi | Giao mỗi tập dữ liệu cho một feature kèm cách nạp (seed/migration/Admin); chốt ở planner **Phase 04**: bucket `kudo-images` và seed `hashtags` đã có (phase 01); job dọn ảnh mồ côi vẫn hoãn. **Phase 10: kho `secret_box_prizes` do F010 giữ, nạp bằng `db/seeds/secret-box-prize-loader.ts` (chạy lại giữ số đã phát); trọng số, tồn kho và tên quà bí ẩn là giá trị tạm chờ BTC** |
+| C-16 | blocking | F010, F003, F005, F007, F013 | Thứ tự build: bảng `domain_event_outbox` đang do F010 (P2) giới thiệu, nhưng F003 (P0), F005, F007 (P1) phải ghi vào nó theo C-01 | Chuyển chủ sở hữu bảng + helper `DomainEventOutbox#add` về nền tảng (F001/migration nền) để có trước F003 **Phase 10: F010 là producer của `BoxGranted`, `SetCompleted`, `NationalKudosFinalized` qua `DomainEventOutbox#add` trong transaction nghiệp vụ; không tiêu thụ outbox** |
 | C-17 | non-blocking | F003, F004, F007, F012 | Đường của chủ bài với Kudo spam: F004 A3 trả 404 cho spam (cả chủ bài); F007 A5 chỉ liệt kê; F003 A5/A6 (sửa) chưa nói chủ bài có sửa được Kudo spam hay không; thẻ spam bấm vào đâu chưa rõ | Chốt: chủ bài xem/sửa Kudo spam của mình hay chỉ xem cảnh báo; nếu sửa thì không đổi `status` (F003 BR-005) |
 | C-18 | non-blocking | F003, F005, F007, F010, F011, F013, F014 | Kiểu mutation không thống nhất: F005 (`PUT/DELETE` route handler), F010 (`POST` route handler + `Idempotency-Key`), F013 (`POST` route handler) so với F003/F007/F011/F014 (server action). Next.js 16 (đổi tên middleware → proxy, `forbidden()`, route chặn) chưa được xác nhận bằng tài liệu trong `node_modules/next/dist/docs/` ở bất kỳ spec nào | Quy ước: route handler cho đọc + endpoint cần header đặc thù (idempotency); server action cho form/mutation nội bộ; đọc tài liệu Next.js 16 trước khi code |
-| C-19 | non-blocking | F004, F005, F010 | Xếp hạng theo tim nằm rải rác: F004 A1 Highlight (tim thô, SQL), F010 A7 Kudos Quốc Dân (đếm `kudo_hearts` trực tiếp), F005 A3 (tổng hợp theo lô); F005 §5.3 mục 2 chưa chốt hiệu năng | Một truy vấn xếp hạng tim của F005, F004 và F010 cùng dùng **Phase 06**: `HeartRankingQuery` (`heartCountsSubquery`, `rankKudoIds`) đã có; F004 Highlight dùng; F010 (phase 10) chưa. |
-| C-20 | blocking | F001 và mọi feature | F001 FR-604 viết "mỗi bảng bật RLS yêu cầu đã đăng nhập" (gợi ý policy SELECT cho `authenticated`) — nếu có, người dùng gọi thẳng API Supabase bằng khoá công khai đọc được `kudos` (lộ `sender_id` Kudo ẩn danh, thấy Kudo spam). F005/F010/F013 viết policy `user_id = auth.uid()` làm lớp phụ | Quy ước hệ thống: RLS bật, **không** có policy SELECT/INSERT/UPDATE/DELETE cho `anon`/`authenticated` trên bảng nghiệp vụ; chỉ ngoại lệ policy theo chủ ở bảng riêng tư theo người dùng nếu thật sự có truy cập trực tiếp (hiện chưa có); sửa lại câu chữ FR-604 |
+| C-19 | non-blocking | F004, F005, F010 | Xếp hạng theo tim nằm rải rác: F004 A1 Highlight (tim thô, SQL), F010 A7 Kudos Quốc Dân (đếm `kudo_hearts` trực tiếp), F005 A3 (tổng hợp theo lô); F005 §5.3 mục 2 chưa chốt hiệu năng | Một truy vấn xếp hạng tim của F005, F004 và F010 cùng dùng **Phase 06**: `HeartRankingQuery` (`heartCountsSubquery`, `rankKudoIds`) đã có; F004 Highlight dùng. **Phase 10: Kudos Quốc Dân dùng `rankKudoIds(…, { asOf, tieBreak: 'oldest' })` và `heartCountsSubquery`; tham số thứ 3 của `rankKudoIds` là object, mặc định `'newest'` giữ nguyên Highlight** |
+| C-20 | blocking | F001 và mọi feature | F001 FR-604 viết "mỗi bảng bật RLS yêu cầu đã đăng nhập" (gợi ý policy SELECT cho `authenticated`) — nếu có, người dùng gọi thẳng API Supabase bằng khoá công khai đọc được `kudos` (lộ `sender_id` Kudo ẩn danh, thấy Kudo spam). F005/F010/F013 viết policy `user_id = auth.uid()` làm lớp phụ | Quy ước hệ thống: RLS bật, **không** có policy SELECT/INSERT/UPDATE/DELETE cho `anon`/`authenticated` trên bảng nghiệp vụ; chỉ ngoại lệ policy theo chủ ở bảng riêng tư theo người dùng nếu thật sự có truy cập trực tiếp (hiện chưa có); sửa lại câu chữ FR-604 **Phase 10: 5 bảng F010 bật RLS, không có policy; test RLS baseline vẫn xanh** |
 | C-21 | non-blocking | F003, F005, F013, các feature khác | Tên cùng một bảng `profiles` khác nhau: `SUNNER` (F003), `SUNNER_PROFILE` (F005, F010, F013), `PROFILE` (F001, F007, F014) | Dùng `Profile`/`profiles` (tên của F001) |
 
 ## Limits

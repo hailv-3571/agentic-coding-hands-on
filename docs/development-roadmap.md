@@ -17,12 +17,12 @@ Nguồn: `plans/261108-0048-saa-2025-kudos-platform/plan.md` (chi tiết từng 
 | 07 | Awards portal & prelaunch | F006 | P1 | 02, 03 | Hoàn thành (2026-11-22) |
 | 08 | Admin moderation | F007 | P1 | 04 | Hoàn thành (2026-11-22) |
 | 09 | Hero badges | F009 | P2 | 05 | Hoàn thành (2026-11-22) |
-| 10 | Secret Box rewards | F010 | P2 | 06 | Chưa làm |
+| 10 | Secret Box rewards | F010 | P2 | 06 | Hoàn thành (2026-11-22) |
 | 11 | Spotlight board (realtime) | F008 | P2 | 05, 08 | Chưa làm |
 | 12 | Profile | F012 | P2 | 09, 10 | Chưa làm |
 | 13 | Notifications | F013 | P2 | 06, 08, 09, 10 | Chưa làm |
 | 14 | Admin users & overview | F014, F015 | P2/P3 | 08, 09, 10 | Chưa làm |
 
-Tiến độ: 9/14 phase hoàn thành (01, 02, 03, 04, 05, 06, 07, 08, 09).
+Tiến độ: 10/14 phase hoàn thành (01, 02, 03, 04, 05, 06, 07, 08, 09, 10).
 
 Chạy song song được: 02 ∥ 03 · 07 ∥ 04 · 08 ∥ 05 (sau 04) · 09 ∥ 06. Phase 10 và 11 cùng sửa file chung của phase 01 nên chạy tuần tự.

@@ -1,0 +1,19 @@
+{
+  "task": "Phase 10 (F010 Secret Box rewards): grant boxes from weighted hearts (reconcile-on-read + sweep tick), server-side idempotent open with weighted CSPRNG draw and atomic gift stock, 6-icon collection with one-time mystery gift, Kudos Quốc Dân finalize job, internal secret-guarded tick, Live board rewards column (stats panel, latest gift winners) and the open modal",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "Grant never over-issues: 20 parallel reconciles with weightedTotal 23 give exactly boxes seq 1..4 and one BoxGranted{count:4}; a rerun inserts nothing and emits nothing",
+    "x2 hearts count double, anonymous kudo hearts count, spam lowers the total without removing boxes, hearts after EVENT_END_AT are ignored, a reconcile after the event still grants in-window boxes",
+    "Open is idempotent: 10 parallel POSTs with one key open one box with identical responses; different keys against 2 unopened boxes open exactly 2 and the rest get 409",
+    "Gift stock 1 opened by 30 users in parallel issues exactly one gift, stock never negative, the others get icons",
+    "Completing the 6-icon set awards the mystery gift once with one SetCompleted{userId, giftName}; duplicate icons only increment quantity",
+    "Kudos Quốc Dân: noop before NATIONAL_KUDOS_FINALIZE_AT; after it concurrent runs write 5 rows once with one outbox event, spam excluded, ties broken by the older kudo",
+    "APIs: no session 401, userId never from input; the tick without or with a wrong secret is refused (503 when not configured); the winners list is only for logged-in users",
+    "Rewards column shows the 5 stats with the x2 badge only during a campaign, the open button disabled at 0 with a tooltip, latest 10 gift winners with empty/error states",
+    "Modal walks idle -> opening -> result -> idle/empty per Figma, new Idempotency-Key per click reused on retry after a network error (replayed result), 409 -> empty, deep link /kudos?secretBox=open, focus trap and reduced motion",
+    "Prize re-seed keeps the issued count; migrations up/down work; RLS stays on with no client policies; phase 06 Highlight ranking order unchanged"
+  ],
+  "touchpoints": ["shared/db/schema/secret-box-rewards.ts", "db/migrations/0015*", "db/migrations/0016*", "db/seeds/", "features/secret-box-rewards/", "app/api/secret-boxes/", "app/api/internal/secret-box/", "features/kudos-hearts/server/heart-ranking-query.ts", "features/kudos-feed/components/live-board-rewards-column-slot.tsx", "shared/auth/public-paths.ts", "shared/config/", ".env.example", "messages/", "tests/"],
+  "blastRadius": ["Live board layout (right column)", "phase 06 ranking callers", "session proxy public paths", "env boot validation", "outbox consumers in phase 13", "phase 12/14 consumers"],
+  "contracts": ["features/secret-box-rewards/schemas/secret-box-views.ts", "GET /api/secret-boxes/me", "POST /api/secret-boxes/open (Idempotency-Key)", "POST /api/internal/secret-box/tick (x-job-secret)", "rankKudoIds(candidates, limit, {asOf?, tieBreak?})", "IconCollectionQuery.forUser(userId)"]
+}

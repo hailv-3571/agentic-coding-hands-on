@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,auth,app-shell,kudos-authoring,kudos-feed,kudos-hearts,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,admin-moderation,app-shell,auth,awards-portal,hero-badges,kudos-authoring,kudos-feed,kudos-hearts,secret-box-rewards,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -30,6 +30,7 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-cam
 
 - File chạm DB hoặc secret bắt đầu bằng `import "server-only"` (vd. `shared/db/client.ts`, `shared/events/domain-event-outbox.ts`).
 - Biến môi trường chỉ đọc qua `shared/config` (`env.ts` cho server, `public-env.ts` cho `NEXT_PUBLIC_*`), không dùng `process.env` rải rác. Schema ở `env-schema.ts`.
+- Secret tuỳ chọn (vd. `INTERNAL_JOB_SECRET`): khai `withDefault(z.string().min(32).optional())` trong `env-schema.ts`; dòng trống trong `.env.example` thành "chưa đặt", không chặn khởi động. Chưa đặt thì tính năng phụ thuộc tự tắt (endpoint trả 503), đặt sai (ngắn hơn 32 ký tự) thì app không khởi động và thông báo không in giá trị.
 - `next.config.ts` kiểm tra env khi `dev`/`build`/`start`. `SKIP_ENV_VALIDATION=1` chỉ dành cho `scripts/typecheck.mjs`; không đặt cho dev/build/start.
 - Drizzle kết nối bằng vai trò server nên bỏ qua RLS: mọi kiểm tra quyền nằm ở code server.
 - Chỉ dùng một pool: `db` từ `shared/db/client.ts`. Không tự `postgres(...)` ở nơi khác.
@@ -79,6 +80,23 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-cam
 ## Domain event outbox
 
 `DomainEventOutbox.add(tx, type, payload)` (`shared/events/domain-event-outbox.ts`) chỉ gọi bên trong transaction nghiệp vụ của caller. Hàm không tự mở transaction, nên event chỉ tồn tại nếu thay đổi nghiệp vụ commit. Payload được kiểm bằng Zod theo `domain-event-types.ts`; sai thì ném lỗi và rollback. Ví dụ: `createKudo` gọi `DomainEventOutbox.add(tx, "KudoCreated", { kudoId })` cùng transaction với `kudos`; sửa Kudo không phát event.
+
+## Endpoint nội bộ cho job (phase 10)
+
+Mẫu của `POST /api/internal/secret-box/tick`; dùng lại cho phase 13 hay job khác.
+
+- Liệt kê **đúng đường dẫn** trong `PUBLIC_PATHS` (`shared/auth/public-paths.ts`, hằng số riêng như `SECRET_BOX_TICK_PATH`). Không dùng luật tiền tố: đường giống tên và đường con vẫn phải bị session chặn. Cron không có cookie nên không qua được proxy nếu thiếu dòng này, và route phải tự kiểm quyền.
+- Guard bằng secret dùng chung trong header (`x-job-secret`): so sánh SHA-256 của hai giá trị bằng `timingSafeEqual` (độc lập độ dài), không log header hay secret (`features/secret-box-rewards/server/internal-job-guard.ts`).
+- Chưa đặt secret thì trả 503 `not_configured` (không phải 401, để phân biệt "chưa cấu hình" với "sai khoá"); thiếu hoặc sai thì 401. Body lỗi chỉ `{ code }`; mọi phản hồi `Cache-Control: no-store`.
+- Job lặp lại được (idempotent) vì lịch có thể gọi chồng; chống chạy chồng bằng `pg_try_advisory_xact_lock` (theo transaction, không dùng khoá session sau transaction pooler) và đặt trần công việc mỗi lần chạy.
+- Lịch: pg_cron + pg_net với URL và secret trong Vault; dự phòng cron máy chủ gọi `curl`. Cài đặt: `docs/system/architecture.md` → Deployment View.
+
+## Idempotency-Key (phase 10)
+
+- Endpoint ghi mà client có thể gửi lại sau lỗi mạng nhận header `Idempotency-Key` là uuid v4 (viết thường hoá; sai thì 400 `invalid_idempotency_key`, kiểm trước khi đụng DB). Parser dùng chung client + server: `parseIdempotencyKey` ở `features/secret-box-rewards/schemas/open-secret-box-schemas.ts`.
+- Server lưu khoá cùng kết quả bằng ràng buộc `UNIQUE (user_id, open_request_id)` và trả lại kết quả cũ (`replayed: true`); khoá thuộc về người dùng nên không replay hộp của người khác. Khoá của lần trả 409 không được lưu.
+- Client: mỗi lần bấm một khoá mới. Giữ khoá khi kết quả chưa rõ (lỗi mạng, hết giờ, 5xx, 401, 200 không đọc được) để lần bấm kế tiếp gửi lại cùng khoá; bỏ khoá khi có kết quả dứt khoát (200, 409, 400).
+- Giao dịch dùng khoá advisory: đọc qua pool `db` **trước** khi lấy khoá, không đọc qua pool khi đang giữ khoá (pool 10 kết nối bị cạn); ràng buộc UNIQUE vẫn là chốt cuối.
 
 ## Mutation (C-18)
 

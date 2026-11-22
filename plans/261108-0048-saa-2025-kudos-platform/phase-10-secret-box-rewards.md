@@ -2,7 +2,7 @@
 phase: 10
 feature: F010
 priority: P2
-status: pending
+status: completed
 depends_on: [06]
 file_ownership:
   - features/secret-box-rewards/**
@@ -34,7 +34,7 @@ resolves: [C-01 (F010 side), C-02 (consumer), C-03 (SetCompleted.giftName), C-15
 - Downstream: 12 (`PersonalStatsPanel`, `IconCollection`), 13 (`BoxGranted`, `SetCompleted`, `NationalKudosFinalized`; deep link), 14 (`mystery_gift_awards.completed_at` = "Time to get 6 Badges")
 
 ## Overview
-- Priority: P2 · Status: pending
+- Priority: P2 · Status: completed (2026-11-22)
 - Grant boxes from heart totals (reconcile, never recount), open boxes server-side with idempotency + atomic stock, 6-icon collection + one-time mystery gift, personal stats panel, latest-10 gift winners, Kudos Quốc Dân job. Physical gifts delivered offline by BTC — app records, never tracks delivery.
 
 ## Key Insights
@@ -115,28 +115,57 @@ Delete: none.
 12. Rewrite seam; i18n `secretBox.*`; tests per Scope Contract; reviewer.
 
 ## Todo List
-- [ ] Next docs + pg_cron/pg_net spike (record fallback)
-- [ ] Schema, migrations, CHECKs, RLS, cron migration
-- [ ] Prize loader + re-seed safety
-- [ ] Weighted pick (+unit)
-- [ ] Grant service + sweep job
-- [ ] Open service + draw + icon/mystery gift
-- [ ] Queries (state, icons, stats, winners)
-- [ ] Route handlers + internal tick guard
-- [ ] HeartRankingQuery tie-break param + National Kudos job
-- [ ] UI: RewardsColumn, PersonalStatsPanel, IconCollection, LatestGiftWinnersList, SecretBoxModal
-- [ ] Seam rewrite + i18n
-- [ ] Concurrency/idempotency integration tests + e2e
+- [x] Next docs + pg_cron/pg_net spike (record fallback)
+- [x] Schema, migrations, CHECKs, RLS, cron migration
+- [x] Prize loader + re-seed safety
+- [x] Weighted pick (+unit)
+- [x] Grant service + sweep job
+- [x] Open service + draw + icon/mystery gift
+- [x] Queries (state, icons, stats, winners)
+- [x] Route handlers + internal tick guard
+- [x] HeartRankingQuery tie-break param + National Kudos job
+- [x] UI: RewardsColumn, PersonalStatsPanel, IconCollection, LatestGiftWinnersList, SecretBoxModal
+- [x] Seam rewrite + i18n
+- [x] Concurrency/idempotency integration tests + e2e
+
+Evidence: `plans/reports/implementer-261122-phase-10-secret-box-{backend,ui,review-fixes}.md`, `tester-261122-phase-10-full-run.md`, `reviewer-261122-phase-10.md`; screenshots in `evidence/screenshots/phase-10/` (rewards column, modal idle/result/duplicate icon; desktop 1440x900 + mobile 375x812).
 
 ## Success Criteria
-- **Grant never over-issues:** 20 parallel `reconcileForSender` (mix of read path + sweep) with weightedTotal 23 → exactly 4 boxes (seq 1..4), exactly one `BoxGranted{count:4}` total across runs; rerun → 0 inserted, no event.
-- x2 heart counts 2 toward progress; anonymous kudo hearts count; spam kudo → total drops, existing boxes unchanged, no new grant until new threshold; hearts after `EVENT_END_AT` ignored; reconcile after event still grants in-window boxes.
-- **Open idempotent:** 10 parallel POST same key → one box opened, all 10 responses identical result; different keys in parallel with 2 unopened → exactly 2 opened, 3rd+ → 409; opened count never > granted.
-- **Stock race:** gift stock 1, 30 users open in parallel → exactly 1 gift issued, `stock_remaining = 0` never negative, others get icons.
-- **Mystery gift once:** parallel opens completing the 6th icon (and further duplicates) → one `mystery_gift_awards` row, one `SetCompleted{userId, giftName}`; duplicate icon only increments quantity.
-- National Kudos: before `FINALIZE_AT` noop; concurrent runs after → 5 rows once, one outbox event; spam kudo excluded; tie → older kudo ranked first; rerun unchanged.
-- No session → 401; user can only open own boxes (userId never from input); tick without/with wrong secret → 401; winners list hidden from anonymous visitors.
-- UI: button disabled when 0 unopened; modal states match Figma frames; deep link opens modal; IconCollection renders 6 slots in fixed order on own + other profile.
+- [x] **Grant never over-issues:** 20 parallel `reconcileForSender` (mix of read path + sweep) with weightedTotal 23 → exactly 4 boxes (seq 1..4), one `BoxGranted{count:4}`; rerun → 0 inserted, no event. Evidence: integration `secret-box-grant-concurrency`.
+- [x] x2 heart counts 2; anonymous counts; spam lowers the total, boxes stay, no grant until the next threshold; hearts after `EVENT_END_AT` ignored; late reconcile still grants in-window boxes. Evidence: integration `secret-box-grant-rules` (also outbox-failure rollback).
+- [x] **Open idempotent:** 10 parallel POST same key → one box opened, identical result; 2 unopened + different keys → exactly 2 opened, rest 409. Evidence: integration `secret-box-open-idempotency`. The replay differs only by `replayed: true`.
+- [x] **Stock race:** gift stock 1, 30 users → exactly 1 gift, `stock_remaining = 0`, 29 icons. Evidence: integration `prize-stock-race`.
+- [x] **Mystery gift once:** parallel opens completing the set → one `mystery_gift_awards` row, one `SetCompleted{userId, giftName}`; duplicates only add quantity. Evidence: integration `mystery-gift-once`.
+- [x] National Kudos: no-op before `FINALIZE_AT`; 5 concurrent runs → 5 rows and one event; spam excluded; older kudo first on ties. Evidence: integration `national-kudos-finalize`.
+- [x] No session → 401 (before any DB read); userId never from input; tick 503 when unset, 401 without/with wrong secret; winners hidden from guests. Evidence: integration `secret-box-api-auth`, `internal-tick-guard`, `rewards-column-data-loader`; e2e guest `GET /kudos` → 307 `/login`, no winners data. The tick's 200 path is verified only with an env override (integration), not on a live server.
+- [x] UI: button disabled at 0 boxes (tooltip), modal states match Figma frames, deep link opens the modal. Evidence: e2e `secret-box-open-flow`, `rewards-column`, `secret-box-modal-focus-and-motion`, `rewards-column-x2-campaign-badge`; screenshots. **Not covered:** `IconCollection` on own and other profile (no profile page until phase 12); unit/component tests only.
+- [x] Gates on the final code (after the review-fix round, as reported by the implementer): `tsc` 0 errors, lint 0, unit 709, integration 406, e2e 113 passed / 5 skipped (prelaunch-only, own config) / 0 failed, prelaunch e2e 5 passed / 1 skipped, build ok, `test:prod` all checks pass. The tester's own full run (unit 703, integration 393, e2e 108 + 5 skipped, `test:prod` 16/16) was on the code before the review fixes and was not repeated by the tester afterwards.
+- [x] Reviewer: SEALED, score 8, 0 critical / 0 high. The 0016 portability finding and the tick overlap/cap finding are fixed; the anonymous `senderId` finding is a phase 13 constraint (decision log).
+- Risk sign-off: per the user's conditional pre-approval 2026-11-22, recorded at commit time.
+
+## Delivery Notes
+Drift from the plan text:
+- **Reconcile reads hearts before the lock.** `HeartStatsQuery` goes through the 10-connection pool; reading it while holding the advisory lock starved the pool under a 20-way race. Totals are read first, a cheap `max(seq)` pre-check skips the lock when nothing is due, and the insert range `max(seq)+1 .. entitled` is computed under the lock, so a stale total can only grant boxes already earned.
+- **Replay derives `setCompleted` / `duplicate` from timestamps, no extra columns:** `mystery_gift_awards.completed_at = secret_boxes.opened_at`; `user_icons.first_obtained_at <> secret_boxes.opened_at` (all `now()` of the open transaction; `<>` not `<`, because a transaction that BEGINs first can take the user lock second).
+- **`rankKudoIds` 3rd argument is an options object** `{ asOf?, tieBreak?: 'newest' | 'oldest' }` (was a positional `asOf`). Default `'newest'`, Highlight order unchanged; the only other caller passes none.
+- **Public path for the tick:** `SECRET_BOX_TICK_PATH` added to `PUBLIC_PATHS` in `shared/auth/public-paths.ts` (outside the ownership list), exact match only. Cron sends no cookie; the handler guards itself with `x-job-secret`.
+- **`INTERNAL_JOB_SECRET` is optional** (min 32 chars when set; a blank `.env.example` line means unset). Unset: boot unaffected, tick answers 503 `not_configured`.
+- **0016 is guarded:** it skips with a NOTICE when `pg_cron` / `pg_net` is unavailable or not preloaded, or `vault.decrypted_secrets` is missing, so plain Postgres DBs no longer abort the migration chain. Down is a symmetric no-op guard. The plan listed a third custom migration for CHECKs and RLS; both live in 0015, so there are two migrations (0015, 0016).
+- **Tick overlap guard and cap:** the whole tick runs in one transaction holding `pg_try_advisory_xact_lock(hashtext('secret_box_tick'))` (transaction-scoped, not session-level: unsafe behind the transaction pooler and leaks if the process dies); lock held → 200 `{skipped:true}`. `SWEEP_MAX_SENDERS_PER_TICK = 500`; the sweep reads two batches (totals, `max(seq)` per user), reconciles only due senders and reports `sweep.deferred`. The tick holds 1 of 10 pool connections while it runs.
+- **Rewards column data loader:** `server/rewards-column-data-loader.ts` calls `requireSunner()` before any query; the seam `live-board-rewards-column-slot.tsx` is render-only. A guest is redirected to `/login` and no winners query runs.
+- **No branded gift photo** (decision log): gifts show a gold glow over the open box plus the prize name.
+- **`duplicate` flag added** to `OpenSecretBoxResult` (additive; DEC-002 E08 caption). The client treats a missing field as no caption.
+- Opening stays allowed after `EVENT_END_AT`; no `LAUNCH_AT` gate (no box can exist before launch); no `SECRET_BOX_LOCK_AT`.
+
+## Open items
+- BTC: `MYSTERY_GIFT_NAME` ("Quà bí ẩn từ BTC SAA 2025"), catalog weights and stock are placeholders; the set-complete line copy (E09) is inferred; prize names are vi only.
+- No index on `kudo_hearts.created_at` (phase 06 table): the sweep does a seq scan each minute. Add one if hearts grow large.
+- Re-seed with `stock_total` below the issued count stores total < issued, and later re-seeds under-count issued (BTC-driven edge).
+- `national_kudos.kudo_id` is `ON DELETE CASCADE`: if all five winners were hard-deleted, the next tick finalizes again (second event). Very unlikely.
+- **Phase 13 constraint:** `NationalKudosFinalized.items[].senderId` is the real sender, also for anonymous kudos. Never put it, or anything derived (name, avatar, profile link), in a recipient-visible notification, public feed or API response to other users. Logged in `spec/decision-log.md` and in `phase-13-notifications.md`.
+- Live cron path untested end to end: `INTERNAL_JOB_SECRET` is unset in the dev env, so pg_cron → pg_net → endpoint never ran, and the tick's 200/401 answers rest on integration with an env override. Do one live POST with a right and a wrong header before launch.
+- Reviewer's optional "replay lookup before reconcile" is not done (each retried open pays a heart read).
+- Spec text in `docs/features/F010_SecretBoxRewards/` still describes `SECRET_BOX_LOCK_AT`, `HeartAdded` consumption and `SKIP LOCKED`; sync via `rebuild-spec --features F010`.
 
 ## Scope Contract
 - **Changed:** F010 feature module, 5 tables + 3 migrations, prize loader, 3 route handlers, cron job, rewards-column seam, additive edits (env, seed runner, schema barrel, ranking tie-break, i18n).

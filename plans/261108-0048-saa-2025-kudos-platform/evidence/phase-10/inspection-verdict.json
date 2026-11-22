@@ -1,0 +1,78 @@
+{
+  "score": 8,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "Grant never over-issues: 20 parallel reconciles with weightedTotal 23 give exactly boxes seq 1..4 and one BoxGranted{count:4}; a rerun inserts nothing and emits nothing: secret-box-grant-service.ts: per-user advisory lock, then insert generate_series(max(seq)+1 .. entitled) ON CONFLICT DO NOTHING, BoxGranted only when rows came back; a stale total read outside the tx can only grant what was once earned (max(seq) re-read under the lock), so no over-grant; integration tests exist, not re-run",
+    "x2 hearts count double, anonymous kudo hearts count, spam lowers the total without removing boxes, hearts after EVENT_END_AT are ignored, a reconcile after the event still grants in-window boxes: grantAsOf clamps to min(now, EVENT_END_AT); HeartStatsQuery sums multiplier of hearts on public kudos only (spam out at read time, anonymous in); grant never deletes (BR-002); not re-run",
+    "Open is idempotent: 10 parallel POSTs with one key open one box with identical responses; different keys against 2 unopened boxes open exactly 2 and the rest get 409: open-service: lock -> storedResult by (user_id, open_request_id) UNIQUE -> lowest unopened FOR UPDATE; different keys open distinct boxes serially, the rest get NoBoxLeftError 409; replay equals the first result except the replayed flag (tests strip it); not re-run",
+    "Gift stock 1 opened by 30 users in parallel issues exactly one gift, stock never negative, the others get icons: prize-draw-service: conditional UPDATE stock_remaining-1 WHERE stock_remaining>0 inside the open tx (row lock serialises, CHECK 0..total backs it), redraw up to 3 then unlimited icon fallback, one prize row lock per tx so no deadlock; CSPRNG crypto.randomInt; not re-run",
+    "Completing the 6-icon set awards the mystery gift once with one SetCompleted{userId, giftName}; duplicate icons only increment quantity: icon-collection-service: userIcons upsert quantity+1, award INSERT ON CONFLICT DO NOTHING RETURNING, SetCompleted only when the row is new, replay reads completed_at = opened_at (same tx now()); not re-run",
+    "Kudos Quốc Dân: noop before NATIONAL_KUDOS_FINALIZE_AT; after it concurrent runs write 5 rows once with one outbox event, spam excluded, ties broken by the older kudo: national-kudos-finalize-job: not_due before FINALIZE_AT, ranking read before the tx at asOf=FINALIZE_AT with tieBreak oldest, lock + isFinalized re-check + UNIQUE(rank)/(kudo_id), one outbox event, public kudos only so spam is out; not re-run",
+    "APIs: no session 401, userId never from input; the tick without or with a wrong secret is refused (503 when not configured); the winners list is only for logged-in users: secret-box-api-session.ts requires getSessionUser first (401 before any DB), userId from session only, no body read; tick route: SHA-256 + timingSafeEqual, 503 when INTERNAL_JOB_SECRET unset, 401 otherwise; winners list only rendered under requireSunner; not re-run",
+    "Rewards column shows the 5 stats with the x2 badge only during a campaign, the open button disabled at 0 with a tooltip, latest 10 gift winners with empty/error states: rewards-column.tsx, personal-stats-panel.tsx, open-secret-box-button.tsx (aria-disabled + tooltip), latest-gift-winners-list.tsx with empty/error states; screenshots listed but not opened; i18n en/vi key parity checked by script (no diff)",
+    "Modal walks idle -> opening -> result -> idle/empty per Figma, new Idempotency-Key per click reused on retry after a network error (replayed result), 409 -> empty, deep link /kudos?secretBox=open, focus trap and reduced motion: secret-box-opener.ts (new key per click, pendingKey reused after an unknown outcome, 409 -> empty, 15s timeout, double click ignored since phase flips synchronously), secret-box-launcher.tsx deep link + replaceState cleanup, secret-box-modal.tsx focus trap and Esc locked while opening, motion hook honours reduced motion; by code reading, e2e exists, not re-run",
+    "Prize re-seed keeps the issued count; migrations up/down work; RLS stays on with no client policies; phase 06 Highlight ranking order unchanged: prize loader keeps the issued count via greatest(new_total - (old_total - old_remaining),0), removed prizes deactivated; 0015/0016 each have a .down.sql and a journal entry; ENABLE ROW LEVEL SECURITY on all 5 tables with no policy; rankKudoIds default tieBreak newest, only other caller enrich-heart-summary.ts passes no option, ordering unchanged; not re-run"
+  ],
+  "regressionChecked": [
+    "phase 06 Highlight ranking: rankKudoIds defaults produce the same ORDER BY; the only other caller enrich-heart-summary.ts is unchanged",
+    "session proxy: PUBLIC_PATHS gains one exact-match path (includes() on the exact string, sub-paths and look-alikes stay protected); prelaunch gate passes public paths, jobs are no-ops before launch",
+    "env boot: INTERNAL_JOB_SECRET optional via withDefault (empty string -> unset, so the blank .env.example line does not fail boot), min 32, no value in the message",
+    "outbox: only DomainEventOutbox.add (INSERT) is used, no consumed_at write anywhere in the diff, no second consumer",
+    "Live board slot: reads fail into per-panel null error states, own Suspense, requireSunner inside",
+    "new source files all under 200 lines (largest 158)"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Warning",
+      "category": "Migration",
+      "location": "db/migrations/0016_secret_box_tick_cron.sql:12-13",
+      "summary": "CREATE EXTENSION pg_cron / pg_net WITH SCHEMA extensions and vault.* assume a Supabase DB with pg_cron preloaded; on any DB without them the migration aborts and blocks every later migration. Guard with a DO block checking pg_available_extensions (skip + NOTICE) or move scheduling to an ops script",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Warning",
+      "category": "Data leakage",
+      "location": "features/secret-box-rewards/server/national-kudos-finalize-job.ts:58-60",
+      "summary": "NationalKudosFinalized payload carries the real senderId of anonymous kudos (phase 13 needs it to notify the sender); safe while the outbox stays RLS-closed, but phase 13 must never put it in a recipient-visible notification or the public feed; record it as a phase 13 constraint",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Performance",
+      "location": "app/api/internal/secret-box/tick/route.ts:30-33",
+      "summary": "No overlap guard or per-tick cap: sweep reconciles recently-hearted senders serially and unbounded, ticks fire every minute, so a slow tick overlaps the next and repeats work (idempotent, only wasteful). Add pg_try_advisory_lock around the tick and/or cap senders per tick",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Performance",
+      "location": "features/secret-box-rewards/server/secret-box-open-service.ts:67-69",
+      "summary": "openNext runs tryReconcile (heart read + possible grant tx) before the replay lookup, so every retried POST pays it; look up the stored result first and reconcile only when none",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Logic",
+      "location": "db/seeds/secret-box-prize-loader.ts:36-50",
+      "summary": "Lowering stock_total below the already issued count clamps remaining to 0 but stores total < issued, so the issued count is under-reported on later re-seeds; edge, BTC-driven",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Logic",
+      "location": "features/secret-box-rewards/server/national-kudos-finalize-job.ts:25-27",
+      "summary": "national_kudos.kudo_id has ON DELETE CASCADE; if every winning kudo is hard-deleted the table empties and the next tick finalizes again with a second event; very unlikely, note it or use RESTRICT",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}
