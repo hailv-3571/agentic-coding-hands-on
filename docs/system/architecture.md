@@ -300,7 +300,7 @@ Luồng thả tim → hộp: server action `addHeartAction` ghi `kudo_hearts` (k
 
 N/A — no infrastructure-as-code found in repository.
 
-Chưa quyết định nơi chạy Next.js (nền tảng hosting): `TBD (draft)`. Cron của F010 đã chọn (phase 10), xem bên dưới; cách kích hoạt job outbox của F013 vẫn `TBD (draft)`. Supabase là dịch vụ managed ngoài (Auth, Postgres, Realtime, Storage); cấu hình provider Google, tắt kênh Realtime công khai, bật Broadcast riêng tư nằm ở dashboard Supabase, không lưu trong repo.
+Chưa quyết định nơi chạy Next.js (nền tảng hosting): `TBD (draft)`. Cron của F010 đã chọn (phase 10), xem bên dưới; job outbox của F013 chạy bằng pg_cron mỗi 5 giây (phase 13), xem "Cài đặt drain outbox theo môi trường (F013)". Supabase là dịch vụ managed ngoài (Auth, Postgres, Realtime, Storage); cấu hình provider Google, tắt kênh Realtime công khai, bật Broadcast riêng tư nằm ở dashboard Supabase, không lưu trong repo.
 
 ### Cài đặt tick Secret Box theo môi trường (F010)
 
@@ -323,6 +323,30 @@ Tick là `POST /api/internal/secret-box/tick`, mỗi phút. Thiếu tick chỉ l
    curl -fsS -X POST -H "x-job-secret: $INTERNAL_JOB_SECRET" https://<app-origin>/api/internal/secret-box/tick
    ```
 4. Kiểm thủ công: không header hoặc sai secret → 401; đúng secret → 200 với `sweep` và `nationalKudos`. Bước này **chưa từng chạy thật** ở môi trường dev (secret chưa đặt, endpoint trả 503); làm một lần với header đúng và một lần với header sai trước khi mở sự kiện.
+
+### Cài đặt drain outbox theo môi trường (F013)
+
+Drain là `POST /api/internal/notifications/drain`, pg_cron gọi mỗi 5 giây. Thiếu drain thì sự kiện chờ trong `domain_event_outbox` và không có thông báo nào được tạo (không mất dữ liệu: bật lại là xử lý tiếp).
+
+1. Sinh secret (tối thiểu 32 ký tự) như ở mục Secret Box, đặt cùng một giá trị cho app (env `OUTBOX_DRAIN_SECRET`, tuỳ chọn; chưa đặt thì endpoint trả 503 `not_configured`) và cho Vault.
+2. Cách chính, pg_cron + pg_net + Vault, sau khi migration `0020` đã áp dụng:
+   ```sql
+   select vault.create_secret('<OUTBOX_DRAIN_SECRET>', 'saa_outbox_drain_secret');
+   select vault.create_secret('https://<app-origin>/api/internal/notifications/drain', 'saa_notifications_drain_url');
+   -- Supabase local chạy trong Docker: http://host.docker.internal:3000/api/internal/notifications/drain
+   ```
+   Job `saa-notifications-drain` (`'5 seconds'`) không gửi gì cho tới khi cả hai secret cùng tồn tại. Kiểm: `select jobname, schedule from cron.job;`. Thiếu `pg_cron`, `pg_net` (hoặc chưa preload) hay Vault thì migration chỉ `RAISE NOTICE` và không lên lịch; lịch `'5 seconds'` cần pg_cron từ 1.5 (migration chỉ kiểm có sẵn, không kiểm phiên bản).
+3. Dự phòng, cron máy chủ: POST cùng endpoint, ví dụ mỗi phút:
+   ```bash
+   curl -fsS -X POST -H "x-drain-secret: $OUTBOX_DRAIN_SECRET" https://<app-origin>/api/internal/notifications/drain
+   ```
+4. Phản hồi: không header hoặc sai secret → 401; chưa đặt env → 503; đúng → 200 `{ processed, malformed, retrying, failed }`. Đường này công khai trong `PUBLIC_PATHS` (cron không có cookie).
+5. **Vận hành, chưa có việc nào được lên lịch:**
+   - `cron.job_run_details` thêm khoảng 17 nghìn dòng mỗi ngày ở nhịp 5 giây: cần job dọn của pg_cron.
+   - Outbox chưa có việc dọn dòng đã tiêu thụ. Dọn không còn xoá thông báo vì `notifications.event_id` là `ON DELETE SET NULL`.
+   - `domain_event_outbox.last_error` có thể chứa văn bản lỗi của driver kèm tham số SQL (id); chỉ phía máy chủ (RLS, không quyền cho client), đừng đưa ra ngoài.
+   - Sự kiện lỗi thử lại theo backoff 1, 2, 4, 8 phút (`OUTBOX_RETRY_BASE_DELAY_SECONDS = 60`), tối đa 5 lần rồi đặt `failed_at`. Phát lại thủ công: SQL ở `docs/features/F013_Notifications/technical-spec.md` (INT-001).
+6. **Chưa kiểm đầu-cuối:** đường pg_cron → pg_net → endpoint chưa chạy thật ở dev (không có secret Vault); e2e gọi `drain()` trực tiếp, route kiểm trong tiến trình. Làm một lần trên staging với secret đúng và sai trước khi mở sự kiện.
 
 ### Release checklist — Realtime (F008)
 
@@ -378,7 +402,7 @@ Mỗi feature là một module; ranh giới = bảng nó ghi + hàm/component n�
 | F010_SecretBoxRewards | Cấp/mở hộp, kho quà, icon, Kudos Quốc Dân, panel thống kê | `secret_boxes`, `secret_box_prizes`, `user_icons`, `mystery_gift_awards`, `national_kudos`, `domain_event_outbox` (xem C-16) | `HeartStatsQuery` (F005), `kudo_hearts`, `kudos`, `profiles` | `IconCollection`, `PersonalStatsPanel`, `PersonalRewardStatsQuery`, `DomainEventOutbox#add` |
 | F011_AdminCampaigns | `features/admin-campaigns/` (`createCampaign`/`updateCampaign`/`removeCampaign`, `CampaignAdminQuery`, `campaignActiveReader`, trang `/admin/settings`) | `campaigns` | — | Bản cài đặt thật của `ActiveCampaignReader` |
 | F012_Profile | `features/profile/` (trang `/profile`, `/profile/[userId]`; `GET /api/profile/{userId}/kudos`; `GET /api/sunners/{userId}/card`; `AvatarHoverCard`; bộ nhớ đệm thẻ) — đã implement ở phase 12 | — | F004, F007, F009, F010, F003 (xem bảng hợp đồng) | `AvatarHoverCard` (dùng lại ở thẻ Kudo) |
-| F013_Notifications | `NotificationEventProcessor`, `notify_realtime`, `NotificationBell`, `NotificationQuery/Controller` | `notifications`, `domain_event_outbox.consumed_at` (+ `attempts`, `failed_at`) | `domain_event_outbox`, `kudos`, `profiles`, `tierFromCount` (F009) | Slot chuông lấp đầy |
+| F013_Notifications | `features/notifications/` (`NotificationEventProcessor.drain`, trigger `notifications_publish_signal`, `NotificationBell`, `NotificationQuery.list`, `getUnreadCount`, Server Action `markNotificationRead`/`markAllNotificationsRead`; trang `/notifications`; `GET /api/notifications[/unread-count]`; `POST /api/internal/notifications/drain`) — đã implement ở phase 13 | `notifications`, `domain_event_outbox.consumed_at` (+ `attempts`, `next_attempt_at`, `failed_at`, `last_error`) | `domain_event_outbox`, `kudos`, `profiles`, `HeroTierQuery`/`tierFromCount` (F009) | Slot chuông lấp đầy |
 | F014_AdminUserManagement | `AdminUserList/Role/Export`, `UserAdminQuery` | `profiles.role`, `profiles.role_updated_by`, `profiles.role_updated_at` | `profiles`, `departments`, `kudos`, `kudo_hearts`, `user_icons`, `mystery_gift_awards` | `LevelQuery` (chưa có cài đặt) |
 | F015_AdminOverview | `AdminOverviewPage/Export`, `UnitStatsQuery` | — | `departments`, `profiles`, `kudos`, `secret_boxes` | — |
 
@@ -400,10 +424,10 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | `kudo_hearts` (`kudo_id`, `user_id`, `multiplier`, `created_at`; `UNIQUE (kudo_id, user_id)`) | F005 | `multiplier` là ảnh chụp lúc thả |
 | `campaigns` (`name`, `starts_at`, `ends_at`; `EXCLUDE` gist) | F011 | Constraint `EXCLUDE` nằm trong migration SQL viết tay |
 | `secret_boxes`, `secret_box_prizes`, `user_icons`, `mystery_gift_awards`, `national_kudos` | F010 | Có các `UNIQUE` chống cấp/mở đôi |
-| `domain_event_outbox` | Hiện phác ở F010; đề xuất chuyển về nền tảng (C-16) | F013 cần thêm `id`, `attempts`, `failed_at` |
-| `notifications` | F013 | `UNIQUE (event_id, recipient_id, type)` + chỉ mục duy nhất từng phần cho tim chưa đọc và `hero_tier_up` |
+| `domain_event_outbox` | Hiện phác ở F010; đề xuất chuyển về nền tảng (C-16) | Đã có `id`, `attempts`, `failed_at`; phase 13 thêm `next_attempt_at` (backoff, migration `0021`) |
+| `notifications` | F013 | `UNIQUE (event_id, recipient_id, type)` + chỉ mục duy nhất từng phần cho tim chưa đọc và `hero_tier_up`; `event_id` nullable, FK `ON DELETE SET NULL` tới outbox (migration `0021`) |
 | Hàm + trigger Spotlight (`spotlight_publish_kudo_event`), policy `realtime.messages` (`spotlight_authenticated_read`, topic `spotlight`) | F008 | Đối tượng DB, không phải bảng; migration `0017` |
-| Hàm `notify_realtime`, policy `realtime.messages` (topic `notifications:{auth.uid()}`) | F013 | |
+| Hàm + trigger `notifications_publish_signal`, policy `realtime.messages` `notifications_recipient_read` (topic `notifications:{auth.uid()}`) | F013 | Đối tượng DB; migration `0019` |
 | Storage bucket ảnh Kudo `kudo-images` | F003 | Riêng tư, JPG/PNG/WEBP, 5 MB (migration 0003, phase 01). Ảnh mồ côi chưa có job dọn (hoãn) |
 | `awardsData` (hằng số có kiểu) | F006 | Không phải bảng |
 
@@ -438,7 +462,7 @@ Hai kênh Broadcast **riêng tư**, đều phát từ trigger Postgres bằng `r
 | Kênh | Chủ | Nguồn phát | Người nhận | Payload |
 |------|-----|-----------|------------|---------|
 | `spotlight` (`SPOTLIGHT_TOPIC`, event `kudo`) | F008 | Trigger `spotlight_publish_kudo_event` trên `kudos`: INSERT `public` → `added`; UPDATE `public→spam` → `removed`; `spam→public` → `restored` | Mọi Sunner đã xác thực (policy `spotlight_authenticated_read`: `realtime.topic() = 'spotlight'` và `topic = 'spotlight'` của dòng và `extension = broadcast`) | `{type, kudoId, recipientId, recipientName, occurredAt}`; không có `sender_id`, `is_anonymous`, `body`. `realtime.send` tự thêm khoá `id`; client bỏ qua khoá này (Zod không strict) |
-| `notifications:{recipient_id}` | F013 | Trigger `notify_realtime` trên `notifications` | Chỉ chủ: policy so topic với `'notifications:' \|\| auth.uid()` | `{notificationId, type, occurredAt}`; không có câu chữ, tên, tham số |
+| `notifications:{recipient_id}` | F013 | Trigger `notifications_publish_signal` trên `notifications` | Chỉ chủ: policy so topic với `'notifications:' \|\| auth.uid()` | `{notificationId, type, occurredAt}`; không có câu chữ, tên, tham số |
 
 Quy tắc chung:
 - Payload do hàm trigger tự chọn từng trường, không chuyển cả dòng.
@@ -447,11 +471,11 @@ Quy tắc chung:
 - Quyền nhận được kiểm lúc vào kênh và cache theo kết nối: gỡ quyền chỉ có hiệu lực khi token hết hạn.
 - **Đã kiểm trên Supabase local (phase 11, Realtime v2.154.0)**: `realtime.send(payload jsonb, event text, topic text, private boolean DEFAULT true)` đúng chữ ký; quyền vào kênh riêng tư lấy từ RLS của `realtime.messages` (authenticated vào được sau migration `0017`, anon bị từ chối, kênh công khai cùng tên không nhận được tin riêng tư); ghi Kudo bị rollback thì không phát. `realtime.send` không phải SECURITY DEFINER và tự nuốt lỗi của nó (`RAISE WARNING`).
 - `[UNVERIFIED]` Trên **Supabase hosted** chưa kiểm: làm theo "Release checklist — Realtime (F008)" ở Deployment View trước khi mở sự kiện.
-- Policy `realtime.messages` là bảng hệ thống, không phải bảng nghiệp vụ; chính sách mỗi topic phải tự kèm điều kiện `topic = '<tên>'` của dòng. Chỉ có `realtime.topic()` thì `authenticated` tự đặt `realtime.topic` và đọc được dòng của topic khác (các policy cộng bằng OR). Phase 13 thêm policy `notifications:*` riêng, độc lập.
+- Policy `realtime.messages` là bảng hệ thống, không phải bảng nghiệp vụ; chính sách mỗi topic phải tự kèm điều kiện `topic = '<tên>'` của dòng. Chỉ có `realtime.topic()` thì `authenticated` tự đặt `realtime.topic` và đọc được dòng của topic khác (các policy cộng bằng OR). Phase 13 thêm policy `notifications_recipient_read` riêng, độc lập (topic `notifications:{userId}`, payload chỉ có id: `{ notificationId, type, occurredAt }`).
 
 ### Spotlight phía client (F008)
 
-- Nối kênh: `realtime.setAuth(access_token)` rồi vào kênh private `spotlight`, nghe event `kudo`; `TOKEN_REFRESHED` gọi lại `setAuth`. Client trình duyệt nằm ở `features/spotlight-board/lib/spotlight-browser-supabase.ts` (chưa có client dùng chung ở `shared/`; chuyển sang `shared/` khi phase 13 cần).
+- Nối kênh: `realtime.setAuth(access_token)` rồi vào kênh private `spotlight`, nghe event `kudo`; `TOKEN_REFRESHED` gọi lại `setAuth`. Client trình duyệt dùng chung `browserSupabase()` ở `shared/auth/supabase-browser-client.ts` (Spotlight và chuông thông báo cùng dùng).
 - Mỗi lần vào kênh thành công (`SUBSCRIBED`): trạng thái `live`, rồi lấy lại snapshot sau 0–1999 ms ngẫu nhiên và THAY toàn bộ (không cộng dồn). 5 lần lỗi liên tiếp (`CHANNEL_ERROR`/`TIMED_OUT`/`CLOSED`) thì `failed` kèm nút thử lại. `offline` đóng kênh, `online` mở kênh mới rồi lấy lại snapshot. Tab hiện lại: lấy ngay.
 - Sau `removed`/`restored`: lấy lại snapshot 2000 + 0–999 ms sau sự kiện cuối của một loạt (gộp theo trailing debounce, không có thời gian chờ tối đa); snapshot là tiếng nói cuối cùng về số đếm. `added` không lên lịch vì đã chống trùng theo `kudoId`.
 - Reducer (DEC-001): chống trùng theo `kudoId`; `removed` của id chưa thấy vẫn trừ; số đếm không âm, tên về 0 thì bỏ. `restoredIds` (Kudo vừa Un Spam khi bảng đang mở) được giữ qua mỗi lần THAY và bị loại khỏi ticker sau khi cắt còn 5 dòng, để dòng của Kudo đó không quay lại. Tải lại trang thì dòng hiện ở giờ gốc.
@@ -485,7 +509,7 @@ Danh sách để planner xử lý. Mức: **blocking** = phải chốt trước 
 |----|-----|---------|--------|---------|
 | C-01 | blocking | F003, F005, F007, F010, F013 | F013 INT-001 kỳ vọng `KudoCreated` (F003), `HeartAdded` (F005), `KudoMarkedSpam` (F007) ghi vào outbox, nhưng F003 §5.2 nói "không tự đẩy sự kiện", F005 không có sự kiện nào, F007 INT-001 chưa chọn cơ chế (trigger / Realtime / ghi thẳng). F010 A1 lại kỳ vọng `HeartAdded` trong tiến trình sau commit của F005 (không qua outbox) | Một cơ chế duy nhất: mọi feature nguồn gọi `DomainEventOutbox#add(tx, ...)` trong cùng giao dịch; F010 A1 tiêu thụ `HeartAdded` từ outbox (hoặc gọi sau commit nhưng không để F005 phụ thuộc ngược vào F010); bổ sung rung Writes `domain_event_outbox` vào F003 A4, F005 A1, F007 A2. **Phần producer F007 đã giải ở phase 08**: `KudoMarkedSpam` ghi cùng transaction **Phần F010 đã giải ở phase 10: F010 không tiêu thụ `HeartAdded`; cấp hộp bằng đọc bù khi đọc và tick quét, chỉ ghi `BoxGranted`, `SetCompleted`, `NationalKudosFinalized`, không đụng `consumed_at`** |
 | C-02 | blocking | F005, F010 | F010 INT-001 cần `HeartStatsQuery#receivedByUser(userId, asOf)` trả `{weightedTotal, rawTotal, campaignActive}`; F005 A4 chưa có tham số `asOf` (cần để loại tim thả sau `SECRET_BOX_LOCK_AT`) và chưa nêu kiểu trả. F010 §5.3 còn phương án tự đếm lại từ `kudo_hearts` (nhân đôi trách nhiệm) | F005 bổ sung `asOf` + kiểu trả; F010 không tự đếm tim **Phase 06**: `HeartStatsQuery` đã có `asOf` và kiểu trả; **Phase 10: F010 dùng `HeartStatsQuery.receivedByUser(s)(…, asOf).weightedTotal`, không đếm `kudo_hearts`; `asOf = min(now, EVENT_END_AT)`** |
-| C-03 | blocking | F010, F013 | Outbox: F010 phác `type, payload, created_at, consumed_at`; F013 cần `id`, `attempts`, `failed_at`. F010 INT-002 `SetCompleted {userId}` thiếu `giftName` mà F013 cần | Định nghĩa schema outbox một lần (cột đủ cho F013) và payload `SetCompleted {userId, giftName}`; cập nhật F010 INT-002 **Phase 10: `SetCompleted{userId, giftName}` đã phát từ F010 (`giftName` lưu trong `mystery_gift_awards`); F013 chưa làm** |
+| C-03 | blocking | F010, F013 | Outbox: F010 phác `type, payload, created_at, consumed_at`; F013 cần `id`, `attempts`, `failed_at`. F010 INT-002 `SetCompleted {userId}` thiếu `giftName` mà F013 cần | Định nghĩa schema outbox một lần (cột đủ cho F013) và payload `SetCompleted {userId, giftName}`; cập nhật F010 INT-002 **Phase 10: `SetCompleted{userId, giftName}` đã phát từ F010 (`giftName` lưu trong `mystery_gift_awards`); F013 đã tiêu thụ ở phase 13 (dùng `id`, `attempts`, `failed_at`, thêm `next_attempt_at`)** |
 | C-04 | non-blocking | F009, F013 | F013 ALG-002 tự đếm người gửi khác nhau trước/sau một Kudo (cùng điều kiện `public`, `sender <> recipient` như F009) — trùng logic đếm của F009; chỉ chia sẻ `tierFromCount` | F009 công bố hàm đếm người gửi khác nhau theo vị trí `(created_at, id)`; F013 gọi lại, không tự viết truy vấn thứ hai **Phần F009 đã giải ở phase 09**: `getDistinctSenderCounts(ids, executor?)` nhận `Db | DbTx` để F013 đọc trước/sau trong transaction ghi Kudo (đếm theo trạng thái hiện tại, không theo vị trí `(created_at, id)`); F013 chưa làm |
 | C-05 | blocking | F004, F012 | F012 A3 cần `KudoPublicQuery` lọc theo người nhận (`received`) và người gửi (`sent`, gắn từ session, không từ client); F004 chỉ có lọc hashtag + phòng ban. Cursor `(created_at, id)` của F004 và khoá gộp ALG-001 của F012 phải trùng định nghĩa | F004 mở rộng `KudoPublicQuery` với `recipientId`, `senderId`, cursor chung; che ẩn danh vẫn chỉ ở một nơi **Phase 12 (phía F012): `KudoPublicQuery` đã có `recipientId`/`senderId`/`includeOwnSpam` và cursor chung; thêm `count(filters)` dùng chung `listConditions`; `senderId` của danh sách "Đã gửi" chỉ lấy từ session (người khác → 403); ALG-001 làm trong SQL bằng một cursor, không có hàm gộp riêng** |
 | C-06 | non-blocking | F003, F004, F007 | Hai handler cùng `GET /api/sunners/search`: F003 A1 (`SunnerSearch#search`, có thể loại chính mình) và F004 A5 (`SunnerSearchHandler#search`, ô tìm profile theo tên/email). F007 dùng lại bản F003 nhưng cần tìm được cả chính mình | Một handler duy nhất, một chủ (đề xuất F001, bảng `profiles`), tham số `excludeSelf`; F003/F004/F007 cùng gọi **Phase 04**: F003 đã công bố `excludeSelf`; handler F004 A5 chưa làm. |

@@ -20,9 +20,9 @@ Nguồn: `plans/261108-0048-saa-2025-kudos-platform/plan.md` (chi tiết từng 
 | 10 | Secret Box rewards | F010 | P2 | 06 | Hoàn thành (2026-11-22) |
 | 11 | Spotlight board (realtime) | F008 | P2 | 05, 08 | Hoàn thành (2026-11-23) |
 | 12 | Profile | F012 | P2 | 09, 10 | Hoàn thành (2026-11-23) |
-| 13 | Notifications | F013 | P2 | 06, 08, 09, 10 | Chưa làm |
+| 13 | Notifications | F013 | P2 | 06, 08, 09, 10 | Hoàn thành (2026-11-23) |
 | 14 | Admin users & overview | F014, F015 | P2/P3 | 08, 09, 10 | Chưa làm |
 
-Tiến độ: 12/14 phase hoàn thành (01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12).
+Tiến độ: 13/14 phase hoàn thành (01–13).
 
 Chạy song song được: 02 ∥ 03 · 07 ∥ 04 · 08 ∥ 05 (sau 04) · 09 ∥ 06. Phase 10 và 11 cùng sửa file chung của phase 01 nên chạy tuần tự.

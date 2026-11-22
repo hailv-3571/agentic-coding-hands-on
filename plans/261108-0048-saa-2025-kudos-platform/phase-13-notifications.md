@@ -2,7 +2,7 @@
 phase: 13
 feature: F013
 priority: P2
-status: pending
+status: completed
 depends_on: [06, 08, 09, 10]
 file_ownership:
   - features/notifications/**
@@ -26,7 +26,7 @@ file_ownership:
 - Upstream: 01 (`domain_event_outbox`: id, event_type, payload, occurred_at, consumed_at, attempts, failed_at), 03 (header bell slot), 04 `KudoCreated`, 06 `HeartAdded`, 08 `KudoMarkedSpam`, 09 `tierFromCount` + distinct-sender count, 10 `BoxGranted`/`SetCompleted{userId,giftName}`/`NationalKudosFinalized`
 
 ## Overview
-- Priority: P2 · Status: pending
+- Priority: P2 · Status: Completed (tests green, reviewed and signed off 2026-11-23 under the user's conditional pre-approval of 2026-11-22)
 - Outbox consumer turns domain events into per-user notifications (idempotent), a trigger pushes a content-free private Broadcast signal per user, the bell shows a red dot, dropdown (10 newest) + full page (20 per "Tải thêm"), mark-one / mark-all read.
 
 ## Key Insights
@@ -109,16 +109,20 @@ Delete: none.
 10. Tests per Scope Contract; run phase 04/06/08/10 suites that emit outbox events.
 
 ## Todo List
-- [ ] Read Next 16 docs
-- [ ] Spike realtime.send + topic policy + pg_cron/pg_net
-- [ ] Verify outbox schema, event payloads, phase 09 count export, single-consumer assumption
-- [ ] Migration + Drizzle schema
-- [ ] ALG-001/002/003 + unit tests
-- [ ] Writer, processor, drain route
-- [ ] Queries, routes, read actions
-- [ ] Bell, dropdown, rows, all-notifications page
-- [ ] Mount in header slot, i18n, env
-- [ ] Integration + e2e tests; re-run event-source suites
+- [x] Read Next 16 docs
+- [x] Spike realtime.send + topic policy + pg_cron/pg_net
+- [x] Verify outbox schema, event payloads, phase 09 count export, single-consumer assumption
+- [x] Migration + Drizzle schema
+- [x] ALG-001/002/003 + unit tests
+- [x] Writer, processor, drain route
+- [x] Queries, routes, read actions
+- [x] Bell, dropdown, rows, all-notifications page
+- [x] Mount in header slot, i18n, env
+- [x] Integration + e2e tests; re-run event-source suites
+- [x] Review-fix round: retry backoff (M1), `event_id` ON DELETE SET NULL (M2), migration 0021
+- [x] Tester full run (all gates exit 0, migrations 0018-0020); the post-fix gate with 0021 was run by the implementer (see Delivery Notes)
+- [x] Reviewer: 0 critical, 0 high, 2 medium (both fixed)
+- [x] Human sign-off (authz, privacy, migrations): conditional pre-approval of 2026-11-22 applied 2026-11-23 (all three conditions held)
 
 ## Success Criteria
 - Draining the same event twice (sequential and two concurrent drainers) yields exactly one notification per (event, recipient, type); heart count not double-incremented.
@@ -128,6 +132,27 @@ Delete: none.
 - Realtime row on topic `notifications:{A}` not readable by user B (policy test); bell updates ≤ 5 s in e2e.
 - Mark one / mark all idempotent; foreign id changes nothing; red dot clears.
 - Drain endpoint rejects missing/wrong secret (401); malformed event consumed without notification; transient failure retried up to 5 then `failed_at` set.
+
+## Delivery Notes
+Sources: `plans/reports/{implementer-261123-phase-13-notifications-backend,implementer-261123-phase-13-notifications-ui,implementer-261123-phase-13-review-fixes,reviewer-261123-phase-13,tester-261123-phase-13-full-run}.md`. Docs: `docs/features/F013_Notifications/technical-spec.md`, `docs/system/architecture.md`.
+- **Migrations 0018-0021.** 0018 table, enum, indexes, RLS; 0019 trigger `notifications_publish_signal` + `realtime.messages` policy `notifications_recipient_read`; 0020 guarded pg_cron job `saa-notifications-drain` (`'5 seconds'`, pg_net, Vault secrets `saa_notifications_drain_url` and `saa_outbox_drain_secret`; NOTICE and no-op when pg_cron, pg_net or Vault is missing); 0021 `domain_event_outbox.next_attempt_at` + `notifications.event_id` FK ON DELETE SET NULL (column nullable).
+- **Retry backoff (review M1).** After failure n the event waits `OUTBOX_RETRY_BASE_DELAY_SECONDS` (60) x 2^(n-1): 1, 2, 4, 8 min; `OUTBOX_MAX_ATTEMPTS = 5`, then `failed_at`. Manual replay SQL: 0021 header and the technical spec.
+- **Drain endpoint.** `POST /api/internal/notifications/drain`, header `x-drain-secret`, optional env `OUTBOX_DRAIN_SECRET` (>= 32 chars): 503 `not_configured` when unset, 401 missing or wrong, 200 `{processed, malformed, retrying, failed}`, 500 `unexpected`. Exact entry in `PUBLIC_PATHS`.
+- **Tier-up deviates from spec ALG-002 (positional count):** "before" = highest tier already notified for that recipient; no phase 09 export added.
+- **Names differ from the plan:** actions in `server/notification-actions.ts`; `getUnreadCount` in `server/notification-unread-query.ts`; Zod reuses the shared `domainEventSchema` (no per-type schema file).
+- **Shared browser client:** moved to `shared/auth/supabase-browser-client.ts` (`browserSupabase()`), used by Spotlight and notifications; the Spotlight-local file is deleted.
+- **Test evidence:** tester run 2026-11-23 (before 0021): unit 878, integration 520; implementer post-fix gate (with 0021): integration 521, e2e 132 passed + 5 by-design skips, prelaunch 5 passed, build, prod 16/16. Screenshots: `evidence/screenshots/phase-13/`. Unrelated e2e flakes seen once each during the review-fix gate (Spotlight counter, edit-kudo toast) passed on rerun.
+
+## Open items
+- **`cron.job_run_details` growth:** the 5 s cadence adds about 17k rows a day; production needs pg_cron housekeeping (none scheduled).
+- **Outbox pruning is not scheduled.** SET NULL makes it safe to prune consumed rows, but nothing does it.
+- **`domain_event_outbox.last_error` may hold driver text with SQL params (ids).** Server-only (RLS, no client grant); keep it out of any client-facing path.
+- **Copy awaiting BTC:** English strings (drafts) and the Kudos Quốc Dân (`national_kudos`) copy (placeholder, D006).
+- **Admin bell is absent:** the bell is mounted in the Sunner layout only.
+- **Real cron path unverified locally:** pg_cron -> pg_net -> drain never fires without Vault secrets; e2e calls `drain()` directly, the route is tested in-process. Verify once on staging.
+- **Not asserted:** English copy and mobile layout in e2e; national-kudos row and heart-count UI at e2e level; no coverage script exists.
+- **Reviewer low items left as is:** `actor_id` kept after an edit-to-anonymous (masked at read time); stale "anonymous" wording after anonymous-to-named edit; unread count awaited serially in the layout (not in Suspense); hard-coded "Hero" fallback and literal `?secretBox=open`; `'5 seconds'` needs pg_cron >= 1.5 (guard checks availability, not version).
+- **Sign-off:** applied 2026-11-23 under the conditional pre-approval (decision-log).
 
 ## Scope Contract — **full test set required** (migration + triggers + RLS policy, outbox idempotency, cross-feature event contracts, privacy of anonymous sender, internal secret-guarded endpoint)
 - **Changed:** notifications migration (table, triggers, policy, cron), Drizzle schema, processor/drain endpoint, read APIs/actions, bell/dropdown/page, header slot mount, i18n, env.

@@ -30,7 +30,7 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-cam
 
 - File chạm DB hoặc secret bắt đầu bằng `import "server-only"` (vd. `shared/db/client.ts`, `shared/events/domain-event-outbox.ts`).
 - Biến môi trường chỉ đọc qua `shared/config` (`env.ts` cho server, `public-env.ts` cho `NEXT_PUBLIC_*`), không dùng `process.env` rải rác. Schema ở `env-schema.ts`.
-- Secret tuỳ chọn (vd. `INTERNAL_JOB_SECRET`): khai `withDefault(z.string().min(32).optional())` trong `env-schema.ts`; dòng trống trong `.env.example` thành "chưa đặt", không chặn khởi động. Chưa đặt thì tính năng phụ thuộc tự tắt (endpoint trả 503), đặt sai (ngắn hơn 32 ký tự) thì app không khởi động và thông báo không in giá trị.
+- Secret tuỳ chọn (vd. `INTERNAL_JOB_SECRET`, `OUTBOX_DRAIN_SECRET`): khai `withDefault(z.string().min(32).optional())` trong `env-schema.ts`; dòng trống trong `.env.example` thành "chưa đặt", không chặn khởi động. Chưa đặt thì tính năng phụ thuộc tự tắt (endpoint trả 503), đặt sai (ngắn hơn 32 ký tự) thì app không khởi động và thông báo không in giá trị.
 - `next.config.ts` kiểm tra env khi `dev`/`build`/`start`. `SKIP_ENV_VALIDATION=1` chỉ dành cho `scripts/typecheck.mjs`; không đặt cho dev/build/start.
 - Drizzle kết nối bằng vai trò server nên bỏ qua RLS: mọi kiểm tra quyền nằm ở code server.
 - Chỉ dùng một pool: `db` từ `shared/db/client.ts`. Không tự `postgres(...)` ở nơi khác.

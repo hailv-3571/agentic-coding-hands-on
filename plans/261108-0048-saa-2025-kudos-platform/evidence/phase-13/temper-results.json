@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "878 passed (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations through 0021 + seeds applied (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "81 files, 521 passed; RED-first: notification-event-processor 2 failed on pre-fix code, 11/11 after (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npx playwright test --timeout 90000",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "132 passed, 5 skipped (prelaunch-only), 0 failed on run 3; runs 1-2 each failed one non-notification test (spotlight-board counter flake from parallel hard deletes; edit-kudo toast >5s under 3 workers), both pass in isolation (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "all checks passed (final code, after review fixes M1/M2, migration 0021)",
+      "ts": "2026-11-23T14:00:00.000Z"
+    }
+  ]
+}

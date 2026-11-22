@@ -6,6 +6,33 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-23 — Phase 13 (F013 Notifications) — hoàn thành, đã ký duyệt
+
+Added
+- Bảng `notifications` (enum 7 loại, RLS bật, không policy, không quyền cho client; chỉ mục duy nhất chống trùng theo sự kiện, tim chưa đọc và `hero_tier_up`) và bộ xử lý `NotificationEventProcessor.drain`: mỗi sự kiện outbox một giao dịch riêng, `FOR UPDATE SKIP LOCKED`, ghi thông báo và `consumed_at` cùng giao dịch. Tim cho cùng một Kudo gộp vào một dòng chưa đọc; lên cấp Hero báo một lần cho mỗi cấp. Kudo ẩn danh không lưu người gửi vào `actor_id`; Kudos Quốc Dân không lộ `senderId`. Migration `0018`.
+- Trigger `notifications_publish_signal` phát tin Broadcast riêng tư `notifications:{userId}` chỉ chứa id (`{notificationId, type, occurredAt}`), policy `notifications_recipient_read` trên `realtime.messages`, lỗi phát không huỷ giao dịch ghi. Migration `0019`.
+- `POST /api/internal/notifications/drain` (header `x-drain-secret`, env tuỳ chọn `OUTBOX_DRAIN_SECRET` tối thiểu 32 ký tự): 503 chưa đặt, 401 sai, 200 `{processed, malformed, retrying, failed}`. Mục riêng trong `PUBLIC_PATHS`. Job pg_cron `saa-notifications-drain` mỗi 5 giây qua pg_net, secret đọc từ Vault; thiếu pg_cron, pg_net hay Vault thì migration chỉ NOTICE. Migration `0020`.
+- `GET /api/notifications?limit&cursor` (mặc định 20, tối đa 50), `GET /api/notifications/unread-count` (cả hai 401 khi chưa đăng nhập, `private, no-store`); Server Action `markNotificationRead(id)` và `markAllNotificationsRead()`.
+- UI: chuông ở layout Sunner (chấm đỏ cập nhật qua kênh realtime), panel 10 dòng, trang `/notifications` (20 dòng mỗi lần, cuộn tải thêm), khoá `notifications.*` (vi, en).
+- Backoff thử lại: sau lần lỗi n chờ 60 s × 2^(n-1) (hằng `OUTBOX_RETRY_BASE_DELAY_SECONDS`), tối đa 5 lần rồi `failed_at`; cột `domain_event_outbox.next_attempt_at`. Migration `0021`. SQL đặt lại thủ công nằm ở `docs/features/F013_Notifications/technical-spec.md` (INT-001).
+
+Changed
+- `notifications.event_id` nullable, FK `ON DELETE SET NULL` (trước là CASCADE): dọn outbox không xoá lịch sử thông báo. Migration `0021`.
+- Client Supabase trình duyệt dùng chung chuyển về `shared/auth/supabase-browser-client.ts`; `features/spotlight-board/lib/spotlight-browser-supabase.ts` đã xoá.
+- `docs/system/architecture.md`: thêm mục "Cài đặt drain outbox theo môi trường (F013)", `next_attempt_at`, đường dẫn client dùng chung.
+
+Decisions
+- Hai nhận xét review mức trung bình (M1: thử lại sát nhau, 5 lần trong khoảng 25 s rồi bị đánh dấu thất bại; M2: CASCADE gắn lịch sử thông báo với việc dọn outbox) đã sửa bằng migration `0021`.
+- "Cấp trước" của lên cấp Hero là cấp cao nhất đã báo (lệch với ALG-002 đếm theo vị trí); không thêm export mới ở F009.
+
+Chưa làm
+- Chưa ký duyệt (authz, riêng tư, migration).
+- `cron.job_run_details` tăng khoảng 17 nghìn dòng mỗi ngày: cần việc dọn; outbox chưa có việc dọn dòng đã tiêu thụ.
+- `last_error` có thể chứa tham số SQL (id), chỉ phía máy chủ.
+- Bản tiếng Anh và copy Kudos Quốc Dân chờ BTC; chưa có chuông cho Admin.
+- Đường pg_cron → pg_net → drain chưa kiểm thật (không có secret Vault ở local); làm một lần trên staging.
+- Kết quả kiểm: unit 878, integration 521, e2e 132 đạt (5 bỏ qua theo thiết kế), prelaunch 5 đạt, build, `test:prod` đạt. Lượt chạy của tester (integration 520) áp dụng migration 0018-0020; lượt chạy sau sửa review (có 0021) do implementer chạy đủ bộ cổng, chưa có lượt tester riêng trên 0021.
+
 ## 2026-11-23 — Phase 12 (F012 Profile)
 
 Added

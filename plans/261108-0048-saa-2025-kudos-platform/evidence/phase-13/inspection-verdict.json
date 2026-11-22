@@ -1,0 +1,94 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "Each event type produces the right notification rows, params and links; re-draining or concurrent drains never duplicate and consume each event once",
+    "Failures increment attempts and mark failed_at at the max; malformed or unknown events are consumed and logged",
+    "Heart notifications aggregate per kudo while unread and start a new row after read; tier-up notifies once per tier reached",
+    "Anonymous kudos never expose the real sender in rows, API output or UI (nickname only); national kudos never expose senderId",
+    "Realtime signal carries ids only on notifications:{userId}; a user can read only their own topic; clients cannot insert",
+    "List and unread routes answer 401 without session and are no-store; read actions only touch the session user's rows",
+    "Drain endpoint answers 503 when unconfigured and 401 for a missing or wrong secret; cron migration is a no-op without pg_cron/pg_net/Vault",
+    "Bell shows a live unread dot without reload; panel lists items with localized copy and relative time, click marks read and navigates, mark-all clears; /notifications page with infinite scroll and empty state"
+  ],
+  "regressionChecked": [
+    "domain_event_outbox: only the notification processor writes consumed_at/attempts/failed_at/next_attempt_at; producers untouched; new column nullable, existing rows stay due",
+    "backoff under concurrent drains: consume re-reads FOR UPDATE SKIP LOCKED with the due predicate; recordFailure update requires pending AND due, so overlapping drains count one attempt; READ COMMITTED re-evaluates the predicate after the other commit",
+    "retry schedule 60/120/240/480 s (sum 15 min) matches config and docs; first failure uses pre-update attempts=0 so delay is BASE x 2^0",
+    "candidate scan: partial index domain_event_outbox_pending_idx (occurred_at, id) still serves the scan; backed-off rows are filtered, not starved (predicate applied before LIMIT)",
+    "migration 0021: drop FK, drop NOT NULL, add nullable column, re-add FK run in one migrator transaction; ADD COLUMN without default is metadata-only; FK re-validation scan is the only cost (small pre-launch table)",
+    "dedup with SET NULL: processor and writer always insert non-null event_id from an existing outbox row; NULLs are distinct only for historic rows; heart and tier unique indexes ignore event_id; signal trigger fires on INSERT or UPDATE OF count only, so SET NULL emits no signal",
+    "down script: restores NOT NULL + cascade, deletes null event_id rows as the 0018 cascade would have; documented, runs under rollback test; drops only next_attempt_at, no index depends on it",
+    "schema, snapshot 0021 and journal idx 21 agree (next_attempt_at, event_id nullable, on delete set null); 0018-0020 untouched",
+    "earlier Low items (actor_id minimisation, serial unread count, secretBox literal, docs) unchanged and still deferred",
+    "tests: backoff doubling, not-due skip, park at max, outbox delete keeps history, 5-way concurrent drain exactly once, roll down/up footprint all present"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  },
+  "findings": [
+    {
+      "severity": "Medium",
+      "category": "Reliability",
+      "location": "features/notifications/server/notification-event-processor.ts:81-99",
+      "summary": "RESOLVED: failed events now back off exponentially (1,2,4,8 min, ~15 min before parking), skipped while not due, one attempt per overlapping drain, with a documented manual reset",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Medium",
+      "category": "Data integrity",
+      "location": "shared/db/schema/notifications.ts:38",
+      "summary": "RESOLVED: event_id is nullable with ON DELETE SET NULL, so outbox pruning keeps notification history; migration 0021 and its down script verified",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Observability",
+      "location": "features/notifications/server/notification-event-processor.ts:91-94",
+      "summary": "recordFailure returns retrying and logs 'will retry' even when its update matched no row (another drainer consumed or recorded the event first); counters and log can overstate",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Operations",
+      "location": "db/migrations/0021_notifications_retry_backoff_and_event_fk.sql:15-19",
+      "summary": "FK drop and re-add takes a validating scan under lock on notifications; fine pre-launch, use NOT VALID then VALIDATE if the table is large when applied",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Privacy",
+      "location": "features/notifications/server/map-event-to-notifications.ts:36",
+      "summary": "actor_id keeps the real sender after edit-to-anonymous; masked only at read time (no client grant, so not exposed); consider minimising",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "features/notifications/components/notification-bell-slot.tsx:12",
+      "summary": "unread count awaited serially in the layout outside Suspense on every full load; parallelise or stream",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Maintainability",
+      "location": "features/notifications/server/notification-view-mapper.ts:50",
+      "summary": "literal ?secretBox=open duplicates the phase 10 deep-link constant; hard-coded English Hero fallback at notification-message.ts:37",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Documentation",
+      "location": "docs/code-standards.md:1",
+      "summary": "docs list INTERNAL_JOB_SECRET but not OUTBOX_DRAIN_SECRET, the drain path, notifications table or cron setup; doc-writer step pending",
+      "disposition": "Defer"
+    }
+  ]
+}

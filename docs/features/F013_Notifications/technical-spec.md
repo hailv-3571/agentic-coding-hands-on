@@ -45,13 +45,13 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-003, FR-601 | — | § 4.4 |
-| **A1** | `NotificationEventProcessor#drain` (planned) *(background, no FE)* | queue · `domain_event_outbox` (kích hoạt sau commit của feature nguồn và quét định kỳ) | FR-001, FR-002, FR-004, FR-405, FR-406, FR-407, FR-408, FR-603, BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, BR-008, BR-010, SM-001, ALG-001, ALG-002, INT-001, INT-003, US001_ReceiveNotifications | `notifications`, `domain_event_outbox` | § 3.1 ▸ **diagram** |
-| **A2** | `notify_realtime` (trigger Postgres, planned) *(background, no FE)* | trigger · `notifications` | FR-402, FR-602, INT-002, US002_SeeUnreadBell | — *(chỉ phát tin Broadcast, không ghi bảng nghiệp vụ)* | § 3.2 ▸ **diagram** |
-| **A3** | `NotificationBell#subscribe` (planned, client) | — | FR-101, FR-401, FR-409, DEC-003, US002_SeeUnreadBell | — *(client only)* | § 3.2 |
-| **A4** | `NotificationQuery#unreadCount` (planned) | `GET` `/api/notifications/unread-count` | FR-401, FR-409, US002_SeeUnreadBell | — *(read-only)* | § 3.2 |
-| **A5** | `NotificationQuery#list` (planned) | `GET` `/api/notifications` | FR-102, FR-201, FR-202, FR-203, FR-301, FR-302, BR-009, DEC-001, DEC-002, DEC-004, ALG-003, US003_BrowseRecentNotifications, US004_BrowseAllNotifications | — *(read-only)* | § 3.3 |
-| **A6** | `NotificationController#markRead` (planned) | `POST` `/api/notifications/{id}/read` | FR-103, FR-403, BR-007, SM-001, ALG-003, US005_OpenNotification | `notifications` | § 3.4 |
-| **A7** | `NotificationController#markAllRead` (planned) | `POST` `/api/notifications/read-all` | FR-404, BR-007, SM-001, US006_MarkAllRead | `notifications` | § 3.4 |
+| **A1** | `NotificationEventProcessor.drain` *(background, no FE)* | queue · `domain_event_outbox` (pg_cron mỗi 5 giây gọi endpoint drain, INT-001) | FR-001, FR-002, FR-004, FR-405, FR-406, FR-407, FR-408, FR-603, BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, BR-008, BR-010, SM-001, ALG-001, ALG-002, INT-001, INT-003, US001_ReceiveNotifications | `notifications`, `domain_event_outbox` | § 3.1 ▸ **diagram** |
+| **A2** | `notifications_publish_signal` (trigger Postgres) *(background, no FE)* | trigger · `notifications` | FR-402, FR-602, INT-002, US002_SeeUnreadBell | — *(chỉ phát tin Broadcast, không ghi bảng nghiệp vụ)* | § 3.2 ▸ **diagram** |
+| **A3** | `useNotificationChannel` (client hook) | — | FR-101, FR-401, FR-409, DEC-003, US002_SeeUnreadBell | — *(client only)* | § 3.2 |
+| **A4** | `getUnreadCount` | `GET` `/api/notifications/unread-count` | FR-401, FR-409, US002_SeeUnreadBell | — *(read-only)* | § 3.2 |
+| **A5** | `NotificationQuery.list` | `GET` `/api/notifications` | FR-102, FR-201, FR-202, FR-203, FR-301, FR-302, BR-009, DEC-001, DEC-002, DEC-004, ALG-003, US003_BrowseRecentNotifications, US004_BrowseAllNotifications | — *(read-only)* | § 3.3 |
+| **A6** | `markNotificationRead(id)` | Server Action *(không có route HTTP)* | FR-103, FR-403, BR-007, SM-001, ALG-003, US005_OpenNotification | `notifications` | § 3.4 |
+| **A7** | `markAllNotificationsRead()` | Server Action *(không có route HTTP)* | FR-404, BR-007, SM-001, US006_MarkAllRead | `notifications` | § 3.4 |
 
 **Rung set** theo template: Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn. **State** bỏ trong bản nháp vì chưa có nguồn xác nhận.
 
@@ -60,12 +60,12 @@ flowchart LR
 ### 3.1 CAP-01 — Generate notifications from events
 
 #### A1 · Drain the event outbox into notifications *(background, no FE)*
-`queue · domain_event_outbox` → `` `NotificationEventProcessor#drain` (planned) ``
+`queue · domain_event_outbox` → `` `NotificationEventProcessor.drain` ``
 `FR-001` `FR-002` `FR-004` `FR-405` `FR-406` `FR-407` `FR-408` `FR-603` `BR-001` `BR-002` `BR-003` `BR-004` `BR-005` `BR-006` `BR-008` `BR-010` `SM-001` `US001_ReceiveNotifications`
 
-**Who** · *không có người dùng trực tiếp — chạy sau khi feature nguồn commit một sự kiện và theo lịch quét dự phòng (US001_ReceiveNotifications — Sunner nhận thông báo cho từng sự việc liên quan mình)*
+**Who** · *không có người dùng trực tiếp — chạy theo lịch pg_cron mỗi 5 giây qua endpoint drain (US001_ReceiveNotifications — Sunner nhận thông báo cho từng sự việc liên quan mình)*
 **Request** · *no HTTP request* — mỗi dòng outbox `{ id, type, payload, created_at }`; payload kiểm bằng Zod theo `type` (xem bảng sự kiện ở `INT-001`)
-**BE** · `` `NotificationEventProcessor#drain` `` chọn lô dòng chưa tiêu thụ bằng `FOR UPDATE SKIP LOCKED`, rồi với MỖI sự kiện mở một giao dịch riêng: ánh xạ sự kiện sang 0..n thông báo theo `ALG-001`, ghi `notifications` và đặt `consumed_at` trong cùng giao dịch. Một sự kiện lỗi chỉ huỷ giao dịch của chính nó, không chặn các sự kiện khác.
+**BE** · `` `NotificationEventProcessor#drain` `` đọc không khoá tối đa `OUTBOX_BATCH_SIZE` id sự kiện chờ xử lý và đã đến hạn (`consumed_at`, `failed_at` rỗng; `next_attempt_at` rỗng hoặc đã qua), rồi với MỖI sự kiện mở một giao dịch riêng, đọc lại dòng bằng `FOR UPDATE SKIP LOCKED` (bên thua bỏ qua): ánh xạ sự kiện sang 0..n thông báo theo `ALG-001`, ghi `notifications` và đặt `consumed_at` trong cùng giao dịch. Một sự kiện lỗi chỉ huỷ giao dịch của chính nó, không chặn các sự kiện khác.
 **Rule**
 - **BR-001 — Một sự kiện, một người nhận, một loại thì tối đa một thông báo.** Ràng buộc duy nhất `(event_id, recipient_id, type)` cộng việc đặt `consumed_at` cùng giao dịch làm xử lý lặp hoặc chạy song song không sinh trùng (FR-001).
 - **BR-002 — Người gây ra sự kiện không tự nhận thông báo về hành động của chính mình.** Thả tim vào Kudo của chính mình, hay Kudo có người gửi trùng người nhận, không sinh thông báo (FR-004).
@@ -86,13 +86,13 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-    participant J as "kích hoạt sau commit / quét định kỳ"
+    participant J as "pg_cron mỗi 5 giây qua endpoint drain"
     participant P as "NotificationEventProcessor"
     participant O as domain_event_outbox
     participant K as "kudos (đọc)"
     participant N as notifications
     J->>P: drain()
-    P->>O: chọn lô chưa tiêu thụ, SKIP LOCKED
+    P->>O: chọn id chưa tiêu thụ và đến hạn, rồi khoá từng dòng SKIP LOCKED
     loop mỗi sự kiện, một giao dịch
         P->>K: đọc Kudo nếu loại cần
         alt không còn Public hoặc tự tác động
@@ -111,7 +111,7 @@ sequenceDiagram
 Một luồng dọc qua ba action: A2 (trigger phát tin khi thông báo được ghi) → kênh Broadcast riêng tư → A3 (chuông ở trình duyệt nhận tin) → A4 (đọc lại số chưa đọc). Sơ đồ đặt ở A2.
 
 #### A2 · Push a realtime signal to the owner *(background, no FE)*
-`trigger · notifications` → `` `notify_realtime` (trigger Postgres, planned) ``
+`trigger · notifications` → `` `notifications_publish_signal` (trigger Postgres) ``
 `FR-402` `FR-602` `US002_SeeUnreadBell`
 
 **Who** · *không có người dùng — trigger chạy khi A1 chèn một thông báo hoặc cộng `count` của thông báo tim (US002_SeeUnreadBell — thấy chuông cập nhật khi có thông báo mới)*
@@ -126,7 +126,7 @@ Một luồng dọc qua ba action: A2 (trigger phát tin khi thông báo đượ
 sequenceDiagram
     participant A as "A1 drain"
     participant N as notifications
-    participant T as "notify_realtime"
+    participant T as "notifications_publish_signal"
     participant R as "Supabase Realtime"
     participant B as "Trình duyệt của chủ (A3)"
     A->>N: INSERT / UPDATE count
@@ -142,7 +142,7 @@ sequenceDiagram
 ---
 
 #### A3 · Show the unread dot and keep it live *(client only)*
-`—` → `` `NotificationBell#subscribe` (planned) ``
+`—` → `` `useNotificationChannel` (client hook) ``
 `FR-101` `FR-401` `FR-409` `DEC-003` `US002_SeeUnreadBell` · bell trong header (draft `SCR025_NotificationDropdown`)
 
 **Who** · Sunner đã đăng nhập, ở bất kỳ trang nào có header của F002 (US002_SeeUnreadBell — thấy chuông cập nhật) *(gate A0 — § 4.4)*
@@ -163,13 +163,13 @@ sequenceDiagram
 ---
 
 #### A4 · Read the unread count
-`GET /api/notifications/unread-count` → `` `NotificationQuery#unreadCount` (planned) ``
+`GET /api/notifications/unread-count` → `` `getUnreadCount` ``
 `FR-401` `FR-409` `US002_SeeUnreadBell` · bell trong header (draft `SCR025_NotificationDropdown`)
 
 **Who** · Sunner đã đăng nhập (US002_SeeUnreadBell — thấy số chưa đọc đúng) *(gate A0)*
 **FE** · `NotificationBell` gọi sau thông điệp realtime, sau khi nối lại, khi tab hiện lại; giá trị đầu tiên do server dựng cùng header.
 **Request** · không tham số; `userId` lấy từ session.
-**BE** · `` `NotificationQuery#unreadCount` `` chạy `SELECT count(*) FROM notifications WHERE recipient_id = userId AND read_at IS NULL` (dùng chỉ mục từng phần trên chưa đọc). Trả `{ unread }`.
+**BE** · `` `getUnreadCount` `` chạy `SELECT count(*) FROM notifications WHERE recipient_id = userId AND read_at IS NULL` (dùng chỉ mục từng phần trên chưa đọc). Trả `{ unread }`.
 **Result** · read-only — **no DB write**.
 **Source:** TBD (draft)
 
@@ -180,7 +180,7 @@ sequenceDiagram
 ### 3.3 CAP-03 — Browse notifications
 
 #### A5 · List notifications for the current user
-`GET /api/notifications` → `` `NotificationQuery#list` (planned) ``
+`GET /api/notifications` → `` `NotificationQuery.list` ``
 `FR-102` `FR-201` `FR-202` `FR-203` `FR-301` `FR-302` `BR-009` `DEC-001` `DEC-002` `DEC-004` `US003_BrowseRecentNotifications` `US004_BrowseAllNotifications` · `SCR025_NotificationDropdown` · `SCR024_AllNotifications`
 
 **Who** · Sunner đã đăng nhập (US003_BrowseRecentNotifications — xem thông báo gần nhất ở dropdown; US004_BrowseAllNotifications — xem toàn bộ ở trang riêng) *(gate A0 — § 4.4)*
@@ -209,19 +209,19 @@ sequenceDiagram
 ### 3.4 CAP-04 — Open a notification and manage read state
 
 #### A6 · Mark one notification read
-`POST /api/notifications/{id}/read` → `` `NotificationController#markRead` (planned) ``
+`Server Action` → `` `markNotificationRead(id)` ``
 `FR-103` `FR-403` `BR-007` `SM-001` `US005_OpenNotification` · `SCR025_NotificationDropdown` · `SCR024_AllNotifications`
 
 **Who** · Sunner đã đăng nhập, chỉ với thông báo của chính mình (US005_OpenNotification — mở thông báo tới đối tượng liên quan) *(gate A0 — § 4.4)*
-**FE** · Bấm một dòng: bỏ chấm đỏ ngay (cập nhật lạc quan), gọi API bằng `fetch` có `keepalive` rồi điều hướng tới đích của `ALG-003` mà không chờ phản hồi (FR-103, FR-403). Lỗi mạng thì chấm đỏ trở lại ở lần nạp kế; việc điều hướng không bị chặn.
-**Request** · param `id` *(uuid, Zod)*, không body.
-**BE** · `` `NotificationController#markRead` `` chạy `UPDATE notifications SET read_at = now() WHERE id = id AND recipient_id = userId AND read_at IS NULL`. Không dòng nào bị ghi thì đọc lại `WHERE id AND recipient_id`: có thì coi như đã đọc (thành công), không có thì 404.
+**FE** · Bấm một dòng: bỏ chấm đỏ ngay (cập nhật lạc quan), gọi Server Action `markNotificationRead` rồi điều hướng tới đích của `ALG-003` mà không chờ phản hồi (FR-103, FR-403). Lỗi mạng thì chấm đỏ trở lại ở lần nạp kế; việc điều hướng không bị chặn.
+**Request** · Server Action, tham số `id` *(uuid, Zod)*; không có route HTTP.
+**BE** · `` `markNotificationRead` `` chạy `UPDATE notifications SET read_at = now() WHERE id = id AND recipient_id = userId AND read_at IS NULL`. Không dòng nào bị ghi thì đọc lại `WHERE id AND recipient_id`: có thì coi như đã đọc (thành công), không có thì `{ ok: false, code: "not_found" }`.
 **Rule**
 - **BR-007 — Đã đọc là một chiều và đánh dấu lặp là vô hại.** Điều kiện `read_at IS NULL` làm gọi lặp hay hai tab cùng bấm không đổi `read_at` đã có và không lỗi; không có thao tác nào đưa dòng về chưa đọc. *(§ 4.4)*
 **Result**
 - Writes `notifications.read_at` ← thời điểm hiện tại; đây là bước chuyển chưa đọc sang đã đọc của `SM-001` *(§ 4.3)* (FR-403).
-- Lỗi dự kiến: 401 chưa đăng nhập; 400 `id` không phải uuid; 404 không phải thông báo của mình hoặc không tồn tại (cùng một phản hồi).
-- User sees: chấm đỏ của dòng mất, chuông cập nhật theo `unread` trả về `{ unread }`.
+- Lỗi dự kiến: khách chưa đăng nhập bị chuyển về `/login` (`requireSunner`); `{ ok: false, code: "not_found" }` khi `id` sai dạng, không phải của mình hoặc không tồn tại (cùng một phản hồi); `{ ok: false, code: "unexpected" }` khi lỗi ghi.
+- User sees: chấm đỏ của dòng mất, chuông cập nhật theo `unread` trả về `{ ok: true, unread }`.
 **State** · [UNVERIFIED] `SM-001`: transition not confirmed from source *(§ 4.3)*
 **Source:** TBD (draft)
 **Shared structure:** `ALG-003` — đổi loại thông báo thành đích đến để điều hướng, chi tiết *(§ 4.5)*
@@ -231,17 +231,17 @@ sequenceDiagram
 ---
 
 #### A7 · Mark all notifications read
-`POST /api/notifications/read-all` → `` `NotificationController#markAllRead` (planned) ``
+`Server Action` → `` `markAllNotificationsRead()` ``
 `FR-404` `BR-007` `SM-001` `US006_MarkAllRead` · `SCR025_NotificationDropdown` · `SCR024_AllNotifications`
 
 **Who** · Sunner đã đăng nhập (US006_MarkAllRead — đánh dấu đọc tất cả) *(gate A0)*
 **FE** · Biểu tượng ≡ ở dropdown và nút "Đánh dấu đọc tất cả" ở trang riêng; bấm thì mọi chấm đỏ biến mất ngay, không hỏi xác nhận. Khi `unread == 0` thì nút mờ không bấm được [INFERRED].
 **Request** · không tham số; `userId` lấy từ session.
-**BE** · `` `NotificationController#markAllRead` `` chạy `UPDATE notifications SET read_at = now() WHERE recipient_id = userId AND read_at IS NULL`; trả số dòng đã đổi.
+**BE** · `` `markAllNotificationsRead` `` chạy `UPDATE notifications SET read_at = now() WHERE recipient_id = userId AND read_at IS NULL`; trả số dòng đã đổi.
 **Rule** · **BR-007 — Đã đọc là một chiều và đánh dấu lặp là vô hại.** Thông báo đến sau lệnh này vẫn chưa đọc; gọi khi không còn dòng chưa đọc trả thành công với `updated = 0`. *(§ 4.4)*
 **Result**
 - Writes `notifications.read_at` ← thời điểm hiện tại cho mọi dòng chưa đọc của người dùng (FR-404); mỗi dòng đi qua bước chuyển của `SM-001` *(§ 4.3)*.
-- User sees: mọi chấm đỏ và chấm trên chuông mất; trả `{ updated, unread: 0 }`.
+- User sees: mọi chấm đỏ và chấm trên chuông mất; trả `{ ok: true, updated, unread }`.
 **State** · [UNVERIFIED] `SM-001`: transition not confirmed from source *(§ 4.3)*
 **Source:** TBD (draft)
 
@@ -255,11 +255,11 @@ sequenceDiagram
 |---|---|---|
 | A1 | Cùng một sự kiện bị xử lý hai lần (kích hoạt sau commit trùng lịch quét) | `SKIP LOCKED` cho một tiến trình; nếu lỡ, ràng buộc `(event_id, recipient_id, type)` chặn dòng trùng và `consumed_at` cùng giao dịch chặn cộng `count` hai lần (BR-001) |
 | A1 | Sự kiện sai dạng payload hoặc loại lạ | Ghi log, đặt `consumed_at`, không tạo thông báo; không kẹt hàng đợi |
-| A1 | Lỗi tạm thời (mất kết nối DB, F009 lỗi) giữa giao dịch | Giao dịch huỷ trọn vẹn, `consumed_at` vẫn rỗng, lần quét sau thử lại; quá `OUTBOX_MAX_ATTEMPTS` thì đánh dấu thất bại để cảnh báo (cần cột `attempts`, § 5.3 mục 3) |
+| A1 | Lỗi tạm thời (mất kết nối DB, F009 lỗi) giữa giao dịch | Giao dịch huỷ trọn vẹn, `consumed_at` vẫn rỗng, lần quét sau thử lại; mỗi lần lỗi tăng `attempts` và đặt `next_attempt_at` theo backoff luỹ thừa (xem INT-001), quá `OUTBOX_MAX_ATTEMPTS` thì đặt `failed_at` và ghi log lỗi |
 | A1 | Kudo bị Spam hoặc xoá trước khi xử lý | Bỏ qua thông báo Kudo mới/tim/lên cấp (BR-003); thông báo "Kudo bị tạm ẩn" vẫn gửi |
 | A1 | Hai tim cho cùng Kudo xử lý song song, chưa có dòng chưa đọc | Chỉ mục duy nhất từng phần làm một bên chèn, bên kia cộng `count` (BR-004) |
 | A1 | Tim đến đúng lúc Sunner vừa bấm đọc dòng tim | Dòng đã đọc không khớp chỉ mục từng phần nên tim sinh dòng mới chưa đọc (BR-004, BR-007) |
-| A1 | Nhiều Kudo tới cùng người nhận gần nhau, xử lý lệch thứ tự | Cấp trước/sau tính theo vị trí `(created_at, id)` của từng Kudo nên mỗi cấp chỉ được báo ở đúng một Kudo (BR-005) |
+| A1 | Nhiều Kudo tới cùng người nhận gần nhau, xử lý lệch thứ tự | "Trước" là cấp cao nhất đã báo và "sau" là cấp hiện tại (xem ALG-002) nên mỗi cấp chỉ được báo đúng một lần (BR-005) |
 | A1 | Người gửi có hai Kudo trong 5 Kudos Quốc Dân | Một thông báo cho người đó, `params.items` liệt kê cả hai (BR-001) |
 | A1 | Feature nguồn chưa ghi outbox (F003 hoặc F005 chưa nối) | Loại thông báo tương ứng không bao giờ sinh; các loại khác không ảnh hưởng (xem § 5.3 mục 1) |
 | A2 | Người nhận offline hoặc kênh lỗi | Tin bị bỏ; A4 ở lần tải trang kế và khi tab hiện lại trả số đúng |
@@ -268,7 +268,7 @@ sequenceDiagram
 | A5 | Trang đang cuộn mà có thông báo mới hoặc tim làm dời `occurred_at` | Dòng có thể lặp hoặc lệch giữa hai trang; FE khử trùng theo `id` khi nối trang (§ 5.3 mục 6) |
 | A5 | `cursor` hỏng | 400 thông điệp chung; FE hiện lỗi và cho nạp lại từ đầu |
 | A5 | Kudo đích đã Spam khi Sunner bấm | Dòng vẫn hiện, đích dẫn tới trang "không tìm thấy" của F002 (qua trang chi tiết Kudo) |
-| A6 | Bấm thông báo của người khác hoặc id lạ | 404 cùng một phản hồi, không lộ id có tồn tại |
+| A6 | Bấm thông báo của người khác hoặc id lạ | `{ ok: false, code: "not_found" }` cùng một phản hồi, không lộ id có tồn tại |
 | A6 · A7 | Bấm đọc tất cả cùng lúc thông báo mới đến | Dòng đến sau câu `UPDATE` vẫn chưa đọc, chuông đúng theo A4 |
 | A0-A7 | Chưa đăng nhập | 401 từ cổng chung (A0 — § 4.4) |
 
@@ -280,13 +280,13 @@ sequenceDiagram
 |---|---|---|---|
 | `NotificationEventProcessor` | Chọn lô outbox, mở giao dịch từng sự kiện, gọi `ALG-001`, ghi thông báo và `consumed_at` | A1 | TBD (draft) |
 | `DomainEventOutbox` | Hợp đồng ghi/đọc `domain_event_outbox`; F010 đã phác thảo, F013 dùng lại và là bên tiêu thụ | A1 | TBD (draft) |
-| `notify_realtime` | Hàm trigger Postgres phát tin Broadcast riêng tư | A2 | TBD (draft) |
+| `notifications_publish_signal` | Hàm trigger Postgres phát tin Broadcast riêng tư | A2 | TBD (draft) |
 | `NotificationBell` | Client component ở slot chuông của F002: chấm đỏ, đăng ký kênh, mở dropdown | A3, A4, A5 | TBD (draft) |
-| `NotificationDropdown` | Client component: tiêu đề, "Xem tất cả", ≡, danh sách | A5, A7 | TBD (draft) |
+| `NotificationPanel` | Client component (dropdown): tiêu đề, "Xem tất cả", ≡, danh sách | A5, A7 | TBD (draft) |
 | `NotificationsPage` | Server component trang "Tất cả thông báo" kèm nạp thêm | A5, A7 | TBD (draft) |
 | `NotificationRow` | Component dùng chung của dropdown và trang: biểu tượng theo loại, câu chữ next-intl, thời gian tương đối, chấm đỏ, điều hướng | A5, A6 | TBD (draft) |
 | `NotificationQuery` | Truy vấn Drizzle: đếm chưa đọc, danh sách cursor kèm tên | A4, A5 | TBD (draft) |
-| `NotificationController` | Route handler đánh dấu đọc một và tất cả, kiểm session và Zod | A6, A7 | TBD (draft) |
+| `notification-actions.ts` | Server Action `markNotificationRead` và `markAllNotificationsRead`, session từ `requireSunner` | A6, A7 | TBD (draft) |
 
 ### 4.2 Data Model
 
@@ -299,7 +299,7 @@ erDiagram
         uuid id
         uuid recipient_id
         string type "DISC enum 7 types"
-        uuid event_id
+        uuid event_id "nullable, ON DELETE SET NULL"
         uuid actor_id "null when anonymous or no actor"
         string dedupe_key "null except tier and heart"
         jsonb params
@@ -310,17 +310,21 @@ erDiagram
     }
     DOMAIN_EVENT_OUTBOX {
         uuid id
-        string type
+        string event_type
         jsonb payload
-        timestamptz created_at
+        timestamptz occurred_at
         timestamptz consumed_at
+        integer attempts
+        timestamptz next_attempt_at "null means due now"
+        timestamptz failed_at
+        text last_error
     }
 ```
 
 | Entity | Table | Used for | Action |
 |---|---|---|---|
-| `Notification` | `notifications` | Một thông báo cho một Sunner. `UNIQUE (event_id, recipient_id, type)`; chỉ mục duy nhất từng phần `(recipient_id, dedupe_key)` khi `type = 'hero_tier_up'`; chỉ mục duy nhất từng phần `(recipient_id, dedupe_key)` khi `type = 'heart_received' AND read_at IS NULL` (`dedupe_key` = id Kudo); chỉ mục `(recipient_id, occurred_at DESC, id DESC)`; chỉ mục từng phần `(recipient_id)` khi `read_at IS NULL`; `CHECK (count >= 1)`; khoá ngoại tới `profiles` (F001) | A1-A7 |
-| `DomainEventOutbox` | `domain_event_outbox` | Sự kiện chờ tiêu thụ. F010 đã phác thảo (`type`, `payload`, `created_at`, `consumed_at`); F013 cần thêm `id`, và `attempts`, `failed_at` (§ 5.3 mục 3); chỉ mục từng phần `(created_at)` khi `consumed_at IS NULL` | A1 |
+| `Notification` | `notifications` | Một thông báo cho một Sunner. `UNIQUE (event_id, recipient_id, type)`; chỉ mục duy nhất từng phần `(recipient_id, dedupe_key)` khi `type = 'hero_tier_up'`; chỉ mục duy nhất từng phần `(recipient_id, dedupe_key)` khi `type = 'heart_received' AND read_at IS NULL` (`dedupe_key` = id Kudo); chỉ mục `(recipient_id, occurred_at DESC, id DESC)`; chỉ mục từng phần `(recipient_id)` khi `read_at IS NULL`; `CHECK (count >= 1)`; khoá ngoại tới `profiles` (F001); `event_id` nullable, khoá ngoại tới `domain_event_outbox` với `ON DELETE SET NULL` (migration `0021`): xoá dòng outbox không xoá lịch sử thông báo; RLS bật, không policy, không quyền cho client | A1-A7 |
+| `DomainEventOutbox` | `domain_event_outbox` | Sự kiện chờ tiêu thụ. cột `id`, `event_type`, `payload`, `occurred_at`, `consumed_at`, `attempts`, `next_attempt_at` (rỗng = đến hạn ngay; migration `0021`), `failed_at`, `last_error` (chỉ phía máy chủ, có thể chứa tham số SQL là id); chỉ mục từng phần `(occurred_at, id)` khi `consumed_at` và `failed_at` rỗng | A1 |
 | `Kudo`, `SunnerProfile` | `kudos`, `profiles` | Chỉ đọc; do F003 (và F007 cho `status`), F001 sở hữu | A1, A5 |
 
 #### Polymorphic Behavior
@@ -364,7 +368,7 @@ stateDiagram-v2
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · FR-003 / FR-601 — Mọi action chỉ chạy với Sunner đã đăng nhập và chỉ trên thông báo của chính họ.**
-Route handler, bộ nạp trang và `NotificationBell` đọc session Supabase Auth do F001 cung cấp và lấy `userId` từ session, không bao giờ từ body, đường dẫn hay query; thiếu session trả 401 trước khi đụng cơ sở dữ liệu. Mọi truy vấn và `UPDATE` đều có `recipient_id = userId`. Drizzle chạy bằng vai trò server nên bỏ qua RLS của Supabase; bộ lọc `recipient_id` phải nằm trong `NotificationQuery` và `NotificationController`, không trông vào RLS. RLS trên `notifications` (`recipient_id = auth.uid()`) là lớp thứ hai nếu sau này có truy cập trực tiếp từ client. Kênh Broadcast có chính sách RLS riêng trên `realtime.messages` (FR-602, xem `INT-002`). A1 chạy bằng khoá dịch vụ phía máy chủ, không có đường gọi từ trình duyệt. **Not a rule of this feature** — cổng này dùng chung toàn hệ thống.
+Route handler (list, unread-count), Server Action đánh dấu đọc và bộ nạp trang đọc session Supabase Auth do F001 cung cấp và lấy `userId` từ session, không bao giờ từ body, đường dẫn hay query; thiếu session thì route trả 401 trước khi đụng cơ sở dữ liệu, còn Server Action chuyển khách về `/login`. Mọi truy vấn và `UPDATE` đều có `recipient_id = userId`. Drizzle chạy bằng vai trò server nên bỏ qua RLS của Supabase; bộ lọc `recipient_id` phải nằm trong `NotificationQuery` và `NotificationReadState`, không trông vào RLS. RLS trên `notifications` được bật và không có policy nào, role client cũng không có quyền (C-20): trình duyệt không đọc được bảng này trực tiếp. Kênh Broadcast có chính sách RLS riêng trên `realtime.messages` (FR-602, xem `INT-002`). A1 chạy phía máy chủ qua endpoint nội bộ có secret (INT-001), không có đường gọi từ trình duyệt. **Not a rule of this feature** — cổng này dùng chung toàn hệ thống.
 **Source:** TBD (draft)
 
 #### Bin 2 — used by ≥2 named actions
@@ -425,7 +429,7 @@ write: heart_received -> upsert unread (recipient, kudoId): count += 1, occurred
 **Used in:** A1
 **Source:** TBD (draft)
 **Input:** một Kudo `k` · **Output:** `{ tier, count }` hoặc rỗng · **Complexity:** O(số Kudo Public của người nhận)
-**Description:** So cấp Hero của người nhận ngay trước và ngay sau Kudo `k`, theo số người gửi khác nhau cách F009 đếm. Bất biến: cấp trước/sau tính theo vị trí `(created_at, id)` của `k`, không theo lúc xử lý, nên xử lý lệch thứ tự không làm trượt hay báo đôi một mốc.
+**Description:** So cấp Hero của người nhận ngay trước và ngay sau Kudo `k`, theo số người gửi khác nhau cách F009 đếm. **Cách cài đặt thực tế (phase 13, lệch với pseudocode dưới đây):** "sau" = `tierFromCount` của số người gửi khác nhau hiện tại, đọc trong giao dịch của sự kiện (`HeroTierQuery.getDistinctSenderCounts`); "trước" = cấp cao nhất người nhận đã được báo (theo các `dedupe_key` của `hero_tier_up`). Chỉ báo khi "sau" cao hơn "trước"; chỉ mục duy nhất từng phần chặn báo đôi khi hai drain chạy song song. Nhờ vậy kết quả đúng cả khi sự kiện được xử lý muộn, theo đợt hay lệch thứ tự, và không cần thêm truy vấn đếm theo vị trí ở F009 (C-04). Nhảy qua nhiều cấp chỉ báo cấp cao nhất; cấp tụt vì Spam không bao giờ báo lại một cấp đã báo. Bất biến gốc: xử lý lệch thứ tự không làm trượt hay báo đôi một mốc.
 
 **Pseudocode:**
 ```text
@@ -473,7 +477,21 @@ target(type, params):
 | `SetCompleted` | F010 | `{ userId, giftName }` *(giftName là yêu cầu bổ sung)* | `userId` |
 | `NationalKudosFinalized` | F010 | `{ items: [{ kudoId, senderId, rank }] }` | từng `senderId` |
 
-**Failure handling:** mỗi sự kiện một giao dịch; lỗi thì huỷ giao dịch đó, `consumed_at` vẫn rỗng và lần quét sau thử lại, tối đa `OUTBOX_MAX_ATTEMPTS` rồi đánh dấu thất bại và ghi log cảnh báo. Sự kiện sai dạng hoặc loại lạ thì ghi log và đánh dấu đã tiêu thụ. Feature nguồn chưa build thì không có sự kiện, không ảnh hưởng phần còn lại.
+**Failure handling:** mỗi sự kiện một giao dịch; lỗi thì huỷ giao dịch đó, `consumed_at` vẫn rỗng. Một UPDATE riêng (chỉ ghi khi dòng còn chờ và đã đến hạn, nên hai lần drain chồng nhau chỉ tính một lần thử) tăng `attempts`, ghi `last_error` và đặt `next_attempt_at = now() + 60 s × 2^attempts_trước` (hằng `OUTBOX_RETRY_BASE_DELAY_SECONDS = 60`): chờ 1, 2, 4, 8 phút, năm lần thử trải trên khoảng 15 phút. Đủ `OUTBOX_MAX_ATTEMPTS = 5` thì đặt `failed_at` (không thử lại) và `console.error`. Sự kiện sai dạng hoặc loại lạ thì ghi log, ghi `last_error` (chỉ đường dẫn, không giá trị) và đánh dấu đã tiêu thụ. Người nhận đã bị xoá profile thì bị bỏ qua, không gây vòng thử lại. Feature nguồn chưa build thì không có sự kiện, không ảnh hưởng phần còn lại.
+
+**Đặt lại thủ công** (phát lại mọi sự kiện đã bị đánh dấu thất bại sau khi sửa nguyên nhân; lần drain kế nhặt lại; thêm `and id = '<uuid sự kiện>'` để chỉ phát lại một sự kiện):
+
+```sql
+update public.domain_event_outbox
+set failed_at = null, attempts = 0, next_attempt_at = null
+where consumed_at is null and failed_at is not null;
+```
+
+Phát lại an toàn vì khoá hàng, `consumed_at` cùng giao dịch và `UNIQUE (event_id, recipient_id, type)` vẫn áp dụng.
+
+**Endpoint drain nội bộ:** `POST /api/internal/notifications/drain` (không session; đường này là đúng một mục trong `PUBLIC_PATHS` ở `shared/auth/public-paths.ts`). Header `x-drain-secret` so với env `OUTBOX_DRAIN_SECRET` (tuỳ chọn, tối thiểu 32 ký tự; so sánh SHA-256 bằng `timingSafeEqual`). Chưa đặt env: 503 `{ code: "not_configured" }` (sự kiện chờ trong outbox, chưa có thông báo nào); thiếu hoặc sai header: 401 `{ code: "unauthorized" }`; đúng: 200 `{ processed, malformed, retrying, failed }` cho một lần drain; lỗi không chạy được: 500 `{ code: "unexpected" }`. Mọi phản hồi `Cache-Control: no-store`. Các lần drain idempotent và chồng nhau vô hại.
+
+**Lịch (migration `0020_notifications_drain_cron`):** job pg_cron `saa-notifications-drain` chạy `'5 seconds'` và gọi `net.http_post` (pg_net) tới URL đọc từ Vault `saa_notifications_drain_url`, kèm header `x-drain-secret` lấy từ Vault `saa_outbox_drain_secret`; không gửi gì cho tới khi cả hai secret cùng tồn tại. Migration chỉ lên lịch khi `pg_cron` và `pg_net` có sẵn và đã preload, và `vault.decrypted_secrets` tồn tại; thiếu thứ nào thì chỉ `RAISE NOTICE` và không đổi gì (migration sau vẫn chạy). Chỗ không có pg_cron thì dùng cron máy chủ POST cùng endpoint. Cài đặt theo môi trường: `docs/system/architecture.md`, mục "Cài đặt drain outbox theo môi trường (F013)".
 
 ### Push a realtime signal for a new notification (INT-002)
 **Linked FR:** FR-402
@@ -482,7 +500,7 @@ target(type, params):
 **Type:** event-publish
 **Target:** Supabase Realtime — kênh Broadcast riêng tư `notifications:{recipient_id}` (một kênh cho mỗi Sunner), phát từ trigger Postgres bằng `realtime.send`, cùng cách F008 dùng
 **Payload:** `{ notificationId, type, occurredAt }`; không kèm câu chữ, tên, tham số
-**Failure handling:** lỗi phát bị nuốt và ghi log, không huỷ giao dịch ghi thông báo; không retry. Mất tin được bù bằng A4 khi tải trang, nối lại kênh, hoặc tab hiện lại. Quyền nhận do chính sách RLS trên `realtime.messages`: Sunner đã xác thực chỉ nhận kênh có topic bằng `notifications:` ghép `auth.uid()` của chính mình.
+**Failure handling:** trigger `notifications_publish_signal` (AFTER INSERT OR UPDATE OF `count`; SECURITY DEFINER, `search_path = ''`, EXECUTE bị thu hồi) bắt mọi lỗi; lỗi phát bị nuốt và ghi log (`RAISE LOG`), không huỷ giao dịch ghi thông báo; không retry. Mất tin được bù bằng A4 khi tải trang, nối lại kênh, hoặc tab hiện lại. Quyền nhận do chính sách RLS trên `realtime.messages`: Sunner đã xác thực chỉ nhận kênh có topic bằng `notifications:` ghép `auth.uid()` của chính mình: policy `notifications_recipient_read` đòi cả topic của lần vào kênh lẫn topic của dòng tin đều bằng giá trị đó, chỉ Broadcast, không có policy INSERT nên client không giả được tin. Tên event là `notification`.
 
 ### Compute the Hero tier from a count with the F009 pure function (INT-003)
 **Linked FR:** FR-407
@@ -500,9 +518,11 @@ NOTIFICATION_DROPDOWN_LIMIT = 10          # số dòng dropdown mỗi lần mở
 NOTIFICATION_PAGE_SIZE = 20               # số dòng mỗi lần nạp ở trang tất cả (A5) [INFERRED]
 NOTIFICATION_MAX_PAGE_SIZE = 50           # trần của tham số limit (A5)
 OUTBOX_BATCH_SIZE = 50                    # số sự kiện lấy mỗi lần drain (A1)
-OUTBOX_SWEEP_INTERVAL_SEC = 60            # chu kỳ quét dự phòng (A1)
+# chu kỳ quét: pg_cron '5 seconds' trong migration 0020 (không phải hằng số trong mã)
 OUTBOX_MAX_ATTEMPTS = 5                   # số lần thử trước khi đánh dấu thất bại (A1)
-NOTIFICATION_TOPIC_PREFIX = "notifications"   # tiền tố kênh Broadcast (A2, A3) — TBD (draft) chốt khi triển khai
+OUTBOX_RETRY_BASE_DELAY_SECONDS = 60      # backoff: sau lần lỗi n chờ 60 × 2^(n-1) giây (A1)
+NOTIFICATION_TOPIC_PREFIX = "notifications"   # tiền tố kênh Broadcast (A2, A3); topic là notifications:{userId}
+OUTBOX_DRAIN_SECRET = <env, tuỳ chọn, >= 32 ký tự>  # secret của endpoint drain; chưa đặt thì 503 (A1)
 ```
 
 **Client behavior:** xem `behavior-logic`, `permissions`, `architecture` của hệ thống — TBD (draft), chưa có artifact để dẫn liên kết. Hành vi ở trình duyệt gồm: đăng ký kênh realtime và huỷ khi unmount, gọi lại số chưa đọc khi nối lại kênh hoặc tab hiện lại, cập nhật lạc quan khi đánh dấu đọc, khử trùng dòng theo `id` khi nối trang.
@@ -520,7 +540,7 @@ NOTIFICATION_TOPIC_PREFIX = "notifications"   # tiền tố kênh Broadcast (A2,
 - **SC-007** *(A2, A3)* Chèn thông báo cho Sunner X: trình duyệt của X nhận thông điệp trong vài giây, trình duyệt của Sunner Y không nhận; thông điệp không chứa câu chữ hay tên (covers FR-402, FR-602)
 - **SC-008** *(A3, A4)* Chấm đỏ hiện khi `unread > 0` và mất khi về 0; ngắt rồi nối lại kênh thì số được đồng bộ (covers FR-401, FR-409, DEC-003)
 - **SC-009** *(A5)* Danh sách sắp mới nhất trước, phân trang cursor không lặp không sót khi dữ liệu đứng yên; tên người gửi lấy mới nhất; danh sách rỗng hiện trạng thái trống (covers FR-201, FR-302, BR-009, DEC-004)
-- **SC-010** *(A6, A7)* Đánh dấu đọc lặp hoặc song song vẫn một `read_at`; thông báo đến sau "đọc tất cả" vẫn chưa đọc; dòng của người khác nhận 404 (covers FR-403, FR-404, BR-007)
+- **SC-010** *(A6, A7)* Đánh dấu đọc lặp hoặc song song vẫn một `read_at`; thông báo đến sau "đọc tất cả" vẫn chưa đọc; dòng của người khác nhận `not_found` (covers FR-403, FR-404, BR-007)
 - **SC-011** *(A0)* Yêu cầu không có session nhận 401 và không ghi gì; không đọc hay đánh dấu được thông báo của người khác (covers FR-003, FR-601)
 
 #### US001_ReceiveNotifications *(A1)*
@@ -567,7 +587,7 @@ NOTIFICATION_TOPIC_PREFIX = "notifications"   # tiền tố kênh Broadcast (A2,
 **Acceptance Scenarios:**
 
 1. **Given** thông báo Secret Box chưa đọc, **When** bấm dòng, **Then** dòng thành đã đọc và mở modal mở hộp.
-2. **Given** thông báo của người khác, **When** gọi A6 với id đó, **Then** 404.
+2. **Given** thông báo của người khác, **When** gọi A6 với id đó, **Then** `{ ok: false, code: "not_found" }`.
 
 #### US006_MarkAllRead *(A7)*
 
@@ -589,8 +609,8 @@ NOTIFICATION_TOPIC_PREFIX = "notifications"   # tiền tố kênh Broadcast (A2,
 ### 5.3 Unresolved Questions
 
 1. **Cách feature nguồn ghi outbox** *(A1)*: F003 và F005 hiện chưa có bước ghi `domain_event_outbox` (F003 ghi chú không tự đẩy sự kiện; F005 phát tin trong tiến trình cho F010). Cần thống nhất khi promote: gọi `DomainEventOutbox#add` trong giao dịch nghiệp vụ, hay trigger Postgres trên `kudos` và `kudo_hearts`.
-2. **Cơ chế kích hoạt bộ xử lý** *(A1)*: gọi `drain` ngay sau commit (qua hàm hậu commit của Next.js hay helper dùng chung) cộng quét định kỳ bằng `pg_cron`, Vercel Cron hay Edge Function; mỗi cách xác thực khác nhau và đều phải chạy bằng khoá dịch vụ. Cùng câu hỏi kích hoạt job ở F010.
-3. **Hình dạng bảng outbox** *(A1)*: F010 phác thảo bốn cột; F013 cần `id` (để làm `event_id`), `attempts`, `failed_at`. Ai sở hữu migration, và F010 có tiêu thụ cùng bảng bằng `consumed_at` riêng không (một cột `consumed_at` chỉ hợp với một bên tiêu thụ).
+2. **Cơ chế kích hoạt bộ xử lý** *(A1)*: *đã chốt ở phase 13*. pg_cron mỗi 5 giây gọi endpoint drain qua pg_net (vừa kích hoạt vừa quét dự phòng); không có kích hoạt sau commit. Xem INT-001.
+3. **Hình dạng bảng outbox** *(A1)*: *đã chốt*. Bảng thuộc nền tảng (phase 01) và đã có `id`, `attempts`, `failed_at`; phase 13 thêm `next_attempt_at`. F013 là bên duy nhất đọc và ghi `consumed_at` (đã grep ở phase 13). Bên tiêu thụ thứ hai sẽ cần bảng biên nhận riêng.
 4. **Quy ước Next.js 16** *(A3, A5, A6, A7)*: Route Handler hay Server Action cho đánh dấu đọc, cách dựng trang và slot chuông trong layout; phải đọc tài liệu trong `node_modules/next/dist/docs/` trước khi code (AGENTS.md cảnh báo có thay đổi lớn).
 5. **Giao diện slot chuông** *(A3)*: F002 chưa chốt props giữa header và F013; đề xuất `NotificationBell` nhận `initialUnread` và tự lo phần còn lại.
 6. **Cursor khi `occurred_at` đổi** *(A5)*: thông báo tim được dời lên đầu khi cộng `count` nên trang đang cuộn có thể lặp dòng; chấp nhận khử trùng ở client hay chuyển sang cursor theo `created_at`.
@@ -598,12 +618,12 @@ NOTIFICATION_TOPIC_PREFIX = "notifications"   # tiền tố kênh Broadcast (A2,
 
 ### 5.4 Source References
 
-Chưa có mã nguồn — xem `## 7. User Stories` trong functional-spec.md để biết hành vi dự kiến.
+Mã nguồn (phase 13): `features/notifications/` (`server/` bộ xử lý, truy vấn, Server Action; `hooks/`, `components/`, `lib/`), `app/api/notifications/route.ts`, `app/api/notifications/unread-count/route.ts`, `app/api/internal/notifications/drain/route.ts`, `app/(app)/notifications/page.tsx`, `shared/db/schema/notifications.ts`, `shared/db/schema/domain-event-outbox.ts`; migration `db/migrations/0018` đến `0021`. Kiểm thử: `tests/unit/notifications/`, `tests/integration/notifications/`, `tests/e2e/notifications.spec.ts`. Lệch so với bản nháp: Zod dùng chung `domainEventSchema` thay vì schema riêng; "cấp trước" của `ALG-002` là cấp cao nhất người nhận đã được báo (không đếm theo vị trí).
 
 #### Data Flow
 
 ```text
-sự kiện nguồn (outbox) -> drain: kiểm Zod, ALG-001/ALG-002 -> INSERT notifications + consumed_at -> trigger notify_realtime -> Broadcast riêng tư -> NotificationBell -> A4/A5 -> NotificationRow (next-intl) -> A6/A7 -> read_at
+sự kiện nguồn (outbox) -> drain: kiểm Zod, ALG-001/ALG-002 -> INSERT notifications + consumed_at -> trigger notifications_publish_signal -> Broadcast riêng tư -> NotificationBell -> A4/A5 -> NotificationRow (next-intl) -> A6/A7 -> read_at
 ```
 
 ### 5.5 Artifact References
