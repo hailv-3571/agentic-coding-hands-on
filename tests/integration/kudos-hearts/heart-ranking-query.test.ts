@@ -71,8 +71,21 @@ describe("HeartRankingQuery.rankKudoIds", () => {
   });
 
   it("counts only hearts created up to asOf", async () => {
-    const ranked = await HeartRankingQuery.rankKudoIds(candidates(), 10, new Date(OLD));
+    const ranked = await HeartRankingQuery.rankKudoIds(candidates(), 10, { asOf: new Date(OLD) });
     expect(ranked).toEqual([k.twoNewer, k.twoOlderWeighted, k.three, ...tieOrder(), k.none]);
+  });
+
+  it("breaks ties oldest first with tieBreak 'oldest' (Kudos Quốc Dân, BR-008), default unchanged", async () => {
+    expect(await HeartRankingQuery.rankKudoIds(candidates(), 10, { tieBreak: "oldest" })).toEqual([
+      k.three,
+      k.twoOlderWeighted,
+      k.twoNewer,
+      ...tieOrder().reverse(),
+      k.none,
+    ]);
+    expect(await HeartRankingQuery.rankKudoIds(candidates(), 10, { tieBreak: "newest" })).toEqual(
+      await HeartRankingQuery.rankKudoIds(candidates(), 10),
+    );
   });
 
   it("puts two x1 hearts above one x2 heart: the raw count ranks, not the multiplier sum (D003)", async () => {

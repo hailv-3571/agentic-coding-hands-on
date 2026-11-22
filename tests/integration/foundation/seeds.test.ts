@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { applyAllSeeds } from "@/db/seeds/apply-all-seeds";
 import { departmentSeeds } from "@/db/seeds/departments";
 import { hashtagSeeds } from "@/db/seeds/hashtags";
+import { secretBoxPrizeCatalog } from "@/db/seeds/secret-box-prize-catalog";
 import { departments, hashtags } from "@/shared/db/schema";
 import { testDb } from "../../setup/integration-db";
 
@@ -26,6 +27,7 @@ describe("reference data seeds", () => {
     expect(firstReport).toEqual({
       departments: departmentSeeds.length,
       hashtags: hashtagSeeds.length,
+      secretBoxPrizes: secretBoxPrizeCatalog.length,
     });
   });
 

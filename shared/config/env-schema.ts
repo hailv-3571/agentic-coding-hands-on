@@ -76,6 +76,9 @@ const serverShape = {
   EXPORT_MAX_ROWS: withDefault(z.coerce.number().int().min(1).default(10000)),
   // Where the server reaches its own pages (the proxy's 403 view). Unset: http://127.0.0.1:$PORT.
   INTERNAL_APP_ORIGIN: withDefault(httpOrigin.optional()),
+  // Shared secret of POST /api/internal/secret-box/tick (pg_cron reads it from Vault). Optional so a
+  // missing key never blocks boot: unset, the tick answers 503 `not_configured` (phase 10).
+  INTERNAL_JOB_SECRET: withDefault(z.string().min(32, "Expected at least 32 characters").optional()),
 };
 
 /** Run a cross-field check only when the fields it compares parsed cleanly. */

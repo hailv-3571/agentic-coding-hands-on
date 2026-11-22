@@ -6,3 +6,4 @@ export * from "./profiles";
 export * from "./kudos";
 export * from "./kudo-hearts";
 export * from "./campaigns";
+export * from "./secret-box-rewards";

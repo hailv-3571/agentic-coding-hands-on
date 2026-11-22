@@ -618,5 +618,54 @@
       "warning": "Community standards violation warning",
       "hidden": "This Kudo is hidden from public pages."
     }
+  },
+  "secretBox": {
+    "column": {
+      "label": "Secret Box rewards"
+    },
+    "stats": {
+      "label": "Your stats",
+      "kudosReceived": "Kudos you received:",
+      "kudosSent": "Kudos you sent:",
+      "heartsReceived": "Hearts you received:",
+      "x2": "x2",
+      "x2Label": "Hearts are doubled",
+      "boxesOpened": "Secret Boxes opened:",
+      "boxesUnopened": "Secret Boxes unopened:",
+      "loadFailed": "Couldn't load your stats. Please try again."
+    },
+    "openButton": "Open Secret Box",
+    "noBoxTooltip": "You don't have any Secret Box yet",
+    "retry": "Try again",
+    "winners": {
+      "title": "10 LATEST SUNNER GIFT WINNERS",
+      "received": "Received {giftName}",
+      "empty": "No Sunner has received a gift yet.",
+      "loadFailed": "Couldn't load the gift winners. Please try again."
+    },
+    "modal": {
+      "title": "DISCOVER YOUR SECRET BOX",
+      "congratsTitle": "Congratulations on your gift from the SAA 2025 organizers",
+      "close": "Close",
+      "hint": "Click the box to open it",
+      "openBox": "Open Secret Box",
+      "opening": "Opening your Secret Box…",
+      "unopenedLabel": "Unopened Secret Boxes",
+      "empty": "You don't have any Secret Box to open",
+      "loadFailed": "Couldn't load your Secret Boxes. Please try again.",
+      "openFailed": "Couldn't open the box, please try again",
+      "sessionExpired": "Your session has expired, please sign in again",
+      "resultIcon": "You got the {name} icon.",
+      "resultGift": "You got {name}.",
+      "setCompleted": "You collected all 6 icons",
+      "duplicateIcon": "You already have this icon",
+      "unopenedLeft": "{count} Secret Boxes left to open."
+    },
+    "iconCollection": {
+      "label": "Icon collection",
+      "owned": "{name}",
+      "ownedMany": "{name}, quantity {quantity}",
+      "missing": "{name}, not collected yet"
+    }
   }
 }

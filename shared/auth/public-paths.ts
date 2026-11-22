@@ -16,8 +16,15 @@ export const ONBOARDING_DEPARTMENT_PATH = "/onboarding/department";
  */
 export const ACCESS_DENIED_PATH = "/access-denied";
 
+/**
+ * Phase 10 internal job endpoint, called by pg_cron / a host cron WITHOUT a session cookie. Its
+ * route handler guards itself (INTERNAL_JOB_SECRET header, constant-time compare); the jobs are
+ * no-ops before launch, so the prelaunch gate lets it through too.
+ */
+export const SECRET_BOX_TICK_PATH = "/api/internal/secret-box/tick";
+
 /** Reachable without a session. Exact matches only, so `/login-help` stays protected. */
-export const PUBLIC_PATHS: readonly string[] = [LOGIN_PATH, AUTH_CALLBACK_PATH, COUNTDOWN_PATH, ACCESS_DENIED_PATH];
+export const PUBLIC_PATHS: readonly string[] = [LOGIN_PATH, AUTH_CALLBACK_PATH, COUNTDOWN_PATH, ACCESS_DENIED_PATH, SECRET_BOX_TICK_PATH];
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.includes(pathname);

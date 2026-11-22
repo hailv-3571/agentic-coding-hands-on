@@ -618,5 +618,54 @@
       "warning": "Cảnh báo vi phạm tiêu chuẩn cộng đồng",
       "hidden": "Kudo này đang bị tạm ẩn khỏi các trang công khai."
     }
+  },
+  "secretBox": {
+    "column": {
+      "label": "Phần thưởng Secret Box"
+    },
+    "stats": {
+      "label": "Thống kê của bạn",
+      "kudosReceived": "Số Kudos bạn nhận được:",
+      "kudosSent": "Số Kudos bạn đã gửi:",
+      "heartsReceived": "Số tim bạn nhận được:",
+      "x2": "x2",
+      "x2Label": "Tim đang được nhân đôi",
+      "boxesOpened": "Số Secret Box bạn đã mở:",
+      "boxesUnopened": "Số Secret Box chưa mở:",
+      "loadFailed": "Không tải được thống kê. Vui lòng thử lại."
+    },
+    "openButton": "Mở Secret Box",
+    "noBoxTooltip": "Bạn chưa có Secret Box nào",
+    "retry": "Thử lại",
+    "winners": {
+      "title": "10 SUNNER NHẬN QUÀ MỚI NHẤT",
+      "received": "Nhận được {giftName}",
+      "empty": "Chưa có Sunner nào nhận quà.",
+      "loadFailed": "Không tải được danh sách nhận quà. Vui lòng thử lại."
+    },
+    "modal": {
+      "title": "KHÁM PHÁ SECRET BOX CỦA BẠN",
+      "congratsTitle": "Chúc mừng bạn đã nhận được phần quà từ BTC SAA 2025",
+      "close": "Đóng",
+      "hint": "Click vào box để mở",
+      "openBox": "Mở Secret Box",
+      "opening": "Đang mở Secret Box…",
+      "unopenedLabel": "Secretbox chưa mở",
+      "empty": "Bạn chưa có Secret Box nào để mở",
+      "loadFailed": "Không tải được số Secret Box. Vui lòng thử lại.",
+      "openFailed": "Không thể mở hộp, vui lòng thử lại",
+      "sessionExpired": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại",
+      "resultIcon": "Bạn nhận được icon {name}.",
+      "resultGift": "Bạn nhận được {name}.",
+      "setCompleted": "Bạn đã sưu tập trọn bộ 6 icon",
+      "duplicateIcon": "Bạn đã có icon này rồi",
+      "unopenedLeft": "Còn {count} Secret Box chưa mở."
+    },
+    "iconCollection": {
+      "label": "Bộ sưu tập icon",
+      "owned": "{name}",
+      "ownedMany": "{name}, số lượng {quantity}",
+      "missing": "{name}, chưa có"
+    }
   }
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray, lte, sql, type SQLWrapper } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte, sql, type SQLWrapper } from "drizzle-orm";
 import { db } from "@/shared/db/client";
 import { kudoHearts } from "@/shared/db/schema";
 import type { PublicKudoIdsSubquery } from "@/features/kudos-feed/server/kudo-public-filters";
@@ -7,7 +7,7 @@ import type { PublicKudoIdsSubquery } from "@/features/kudos-feed/server/kudo-pu
 /**
  * HeartRankingQuery (C-19): the ONE "rank kudos by hearts" query, shared by the Highlight carousel
  * (phase 05 seam) and Kudos Quốc Dân (phase 10). Ranks by the RAW count (multipliers never change
- * the order, D003), then newest, then id — a total order, so pages and ties are stable.
+ * the order, D003), then by age, then id — a total order, so pages and ties are stable.
  */
 
 /**
@@ -31,18 +31,29 @@ export function heartCountsSubquery(kudoIds: KudoIdSet, asOf?: Date) {
     .as("heart_counts");
 }
 
+export type RankKudoIdsOptions = {
+  /** Count only hearts created up to this instant. */
+  asOf?: Date;
+  /**
+   * Order among equal counts: `'newest'` (default — Highlight, phase 05/06 behavior) = created_at
+   * DESC, id DESC; `'oldest'` (Kudos Quốc Dân, BR-008/D006) = created_at ASC, id ASC.
+   */
+  tieBreak?: "newest" | "oldest";
+};
+
 /**
  * Ids of the top `limit` candidates (any public-kudo subquery with `id` + `createdAt`, e.g.
- * `KudoPublicQuery.publicKudoIdsSubquery(filters)`), best first: raw count DESC (no hearts = 0),
- * created_at DESC, id DESC. The candidates carry no sender column, so ranking cannot leak one.
+ * `KudoPublicQuery.publicKudoIdsSubquery(filters)`), best first: raw count DESC (no hearts = 0), then
+ * the tie-break. The candidates carry no sender column, so ranking cannot leak one.
  */
-async function rankKudoIds(candidates: PublicKudoIdsSubquery, limit: number, asOf?: Date): Promise<string[]> {
+async function rankKudoIds(candidates: PublicKudoIdsSubquery, limit: number, { asOf, tieBreak = "newest" }: RankKudoIdsOptions = {}): Promise<string[]> {
   const counts = heartCountsSubquery(db.select({ id: candidates.id }).from(candidates), asOf);
+  const byAge = tieBreak === "oldest" ? asc : desc;
   const rows = await db
     .select({ id: candidates.id })
     .from(candidates)
     .leftJoin(counts, eq(counts.kudoId, candidates.id))
-    .orderBy(desc(sql`coalesce(${counts.rawCount}, 0)`), desc(candidates.createdAt), desc(candidates.id))
+    .orderBy(desc(sql`coalesce(${counts.rawCount}, 0)`), byAge(candidates.createdAt), byAge(candidates.id))
     .limit(limit);
   return rows.map((row) => row.id);
 }

@@ -69,6 +69,16 @@ describe("parseServerEnv", () => {
     expect(env.INTERNAL_APP_ORIGIN).toBe("http://app-internal:8080");
   });
 
+  it("treats INTERNAL_JOB_SECRET as optional (unset → the tick answers 503) and keeps a long one verbatim", () => {
+    expect(parseServerEnv(validSource()).INTERNAL_JOB_SECRET).toBeUndefined();
+    expect(parseServerEnv(validSource({ INTERNAL_JOB_SECRET: "" })).INTERNAL_JOB_SECRET).toBeUndefined();
+    const secret = "a".repeat(31) + "Z";
+    expect(parseServerEnv(validSource({ INTERNAL_JOB_SECRET: secret })).INTERNAL_JOB_SECRET).toBe(secret);
+    const message = parseError(validSource({ INTERNAL_JOB_SECRET: "short-job-secret" }));
+    expect(message).toContain("INTERNAL_JOB_SECRET");
+    expect(message).not.toContain("short-job-secret");
+  });
+
   it("names the missing variable in a readable error", () => {
     expect(parseError(validSource({ DATABASE_URL: undefined }))).toMatch(
       /Invalid environment configuration[\s\S]*DATABASE_URL/,
