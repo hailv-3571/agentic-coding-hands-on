@@ -711,5 +711,42 @@
       "message": "This Sunner could not be found.",
       "back": "Back to the Live board"
     }
+  },
+  "notifications": {
+    "metaTitle": "Notifications",
+    "title": "Notifications",
+    "bell": {
+      "label": "Notifications",
+      "labelUnread": "Notifications (unread notifications)",
+      "newArrived": "You have a new notification"
+    },
+    "viewAll": "View all",
+    "markAllRead": "Mark all as read",
+    "unread": "Unread",
+    "empty": "You have no notifications yet",
+    "loading": "Loading notifications…",
+    "loadingMore": "Loading more notifications…",
+    "loadFailed": "Could not load notifications. Please try again.",
+    "retry": "Try again",
+    "communityStandards": "Community standards",
+    "types": {
+      "kudo_received": {
+        "named": "Sunner {name} just sent you a heartfelt Kudos!",
+        "anonymous": "Sunner {nickname} (anonymous) just sent you a heartfelt Kudos!",
+        "anonymousUnnamed": "An anonymous Sunner just sent you a heartfelt Kudos!"
+      },
+      "heart_received": "{count, plural, =1 {Wow! Your Kudos to Sunner {name} just got another heart!} other {Wow! Your Kudos to Sunner {name} just got # more hearts!}}",
+      "secret_box_granted": "Congratulations! You just got a new Secret Box to open! Click here to open it now!",
+      "hero_tier_up": {
+        "main": "You have received Kudos from {count} colleagues and moved up to {tier}!",
+        "encouragement": "Keep spreading positive energy to your colleagues!"
+      },
+      "kudo_hidden_spam": "Oh no! One of your Kudos has been temporarily hidden because it did not meet some standards! Please review the standards and send it to your teammate again!",
+      "icon_set_completed": "Congratulations on collecting all 6 SAA badges. Your gift from the organizers is {gift}. The organizers will contact you to deliver it at the end of the event.",
+      "national_kudos": {
+        "ranked": "Congratulations! Your Kudos became a National Kudos (rank {rank}) and receives a special gift from SAA 2025: Root Further.",
+        "plain": "Congratulations! Your Kudos became a National Kudos and receives a special gift from SAA 2025: Root Further."
+      }
+    }
   }
 }

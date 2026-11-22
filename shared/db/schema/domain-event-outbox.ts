@@ -15,6 +15,8 @@ export const domainEventOutbox = pgTable(
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
     consumedAt: timestamp("consumed_at", { withTimezone: true }),
     attempts: integer("attempts").notNull().default(0),
+    /** Earliest retry after a failed attempt (exponential backoff, phase 13); null = due now. */
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
     failedAt: timestamp("failed_at", { withTimezone: true }),
     lastError: text("last_error"),
   },

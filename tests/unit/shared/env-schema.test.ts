@@ -79,6 +79,15 @@ describe("parseServerEnv", () => {
     expect(message).not.toContain("short-job-secret");
   });
 
+  it("treats OUTBOX_DRAIN_SECRET as optional (unset → the drain answers 503) and rejects a short one", () => {
+    expect(parseServerEnv(validSource({ OUTBOX_DRAIN_SECRET: "" })).OUTBOX_DRAIN_SECRET).toBeUndefined();
+    const secret = "d".repeat(31) + "Z";
+    expect(parseServerEnv(validSource({ OUTBOX_DRAIN_SECRET: secret })).OUTBOX_DRAIN_SECRET).toBe(secret);
+    const message = parseError(validSource({ OUTBOX_DRAIN_SECRET: "short-drain-secret" }));
+    expect(message).toContain("OUTBOX_DRAIN_SECRET");
+    expect(message).not.toContain("short-drain-secret");
+  });
+
   it("names the missing variable in a readable error", () => {
     expect(parseError(validSource({ DATABASE_URL: undefined }))).toMatch(
       /Invalid environment configuration[\s\S]*DATABASE_URL/,

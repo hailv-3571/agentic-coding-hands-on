@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { parseSpotlightEvent } from "../lib/fetch-spotlight-snapshot";
-import { spotlightBrowserSupabase } from "../lib/spotlight-browser-supabase";
+import { browserSupabase } from "@/shared/auth/supabase-browser-client";
 import {
   INITIAL_CHANNEL_STATE,
   nextChannelState,
@@ -37,7 +37,7 @@ export function useSpotlightChannel(handlers: ChannelHandlers): { status: Spotli
   });
 
   useEffect(() => {
-    const supabase = spotlightBrowserSupabase();
+    const supabase = browserSupabase();
     const resync = createSpotlightResync(() => handlersRef.current.onResync());
     let disposed = false;
     let channel: RealtimeChannel | null = null;

@@ -711,5 +711,42 @@
       "message": "Không tìm thấy Sunner này.",
       "back": "Quay lại Live board"
     }
+  },
+  "notifications": {
+    "metaTitle": "Thông báo",
+    "title": "Thông báo",
+    "bell": {
+      "label": "Thông báo",
+      "labelUnread": "Thông báo (có thông báo chưa đọc)",
+      "newArrived": "Bạn có thông báo mới"
+    },
+    "viewAll": "Xem tất cả",
+    "markAllRead": "Đánh dấu đọc tất cả",
+    "unread": "Chưa đọc",
+    "empty": "Bạn chưa có thông báo nào",
+    "loading": "Đang tải thông báo…",
+    "loadingMore": "Đang tải thêm thông báo…",
+    "loadFailed": "Không tải được thông báo. Vui lòng thử lại.",
+    "retry": "Thử lại",
+    "communityStandards": "Tiêu chuẩn cộng đồng",
+    "types": {
+      "kudo_received": {
+        "named": "Sunner {name} vừa gửi đến bạn lời ghi nhận đầy yêu thương!",
+        "anonymous": "Sunner {nickname} (ẩn danh) vừa gửi đến bạn lời ghi nhận đầy yêu thương!",
+        "anonymousUnnamed": "Một Sunner ẩn danh vừa gửi đến bạn lời ghi nhận đầy yêu thương!"
+      },
+      "heart_received": "{count, plural, =1 {Wow! Lời nhắn gửi của bạn cho Sunner {name} vừa nhận thêm lượt tim!} other {Wow! Lời nhắn gửi của bạn cho Sunner {name} vừa nhận thêm # lượt tim!}}",
+      "secret_box_granted": "Chúc mừng! Bạn vừa nhận được lượt mở Secret Box mới! Click vào đây để mở ngay nhé!",
+      "hero_tier_up": {
+        "main": "Bạn nhận được {count} lời nhắn gửi từ đồng nghiệp và thăng hạng {tier}!",
+        "encouragement": "Tiếp tục lan tỏa năng lượng tích cực đến đồng nghiệp nhé!"
+      },
+      "kudo_hidden_spam": "Tiếc quá! Bạn có một lời nhắn bị tạm ẩn vì \"vướng\" một số tiêu chuẩn! Hãy xem các tiêu chuẩn và gửi lại cho đồng đội nhé!",
+      "icon_set_completed": "Chúc mừng bạn đã thu thập đủ 6 huy hiệu của SAA. Bạn đã nhận được phần quà từ BTC chính là {gift}. BTC sẽ liên hệ để gửi quà đến bạn vào cuối sự kiện.",
+      "national_kudos": {
+        "ranked": "Chúc mừng! Lời nhắn gửi của bạn đã trở thành Kudos Quốc Dân (hạng {rank}) và nhận phần quà đặc biệt từ SAA 2025: Root Further.",
+        "plain": "Chúc mừng! Lời nhắn gửi của bạn đã trở thành Kudos Quốc Dân và nhận phần quà đặc biệt từ SAA 2025: Root Further."
+      }
+    }
   }
 }

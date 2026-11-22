@@ -79,6 +79,9 @@ const serverShape = {
   // Shared secret of POST /api/internal/secret-box/tick (pg_cron reads it from Vault). Optional so a
   // missing key never blocks boot: unset, the tick answers 503 `not_configured` (phase 10).
   INTERNAL_JOB_SECRET: withDefault(z.string().min(32, "Expected at least 32 characters").optional()),
+  // Shared secret of POST /api/internal/notifications/drain (pg_cron reads it from Vault, phase 13).
+  // Optional like INTERNAL_JOB_SECRET: unset, the drain answers 503 `not_configured`.
+  OUTBOX_DRAIN_SECRET: withDefault(z.string().min(32, "Expected at least 32 characters").optional()),
 };
 
 /** Run a cross-field check only when the fields it compares parsed cleanly. */

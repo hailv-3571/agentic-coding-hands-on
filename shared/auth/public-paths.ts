@@ -23,8 +23,21 @@ export const ACCESS_DENIED_PATH = "/access-denied";
  */
 export const SECRET_BOX_TICK_PATH = "/api/internal/secret-box/tick";
 
+/**
+ * Phase 13 outbox drain, called by pg_cron every 5 s WITHOUT a session cookie. Its route handler
+ * guards itself (OUTBOX_DRAIN_SECRET header, constant-time compare); draining before launch is harmless.
+ */
+export const NOTIFICATIONS_DRAIN_PATH = "/api/internal/notifications/drain";
+
 /** Reachable without a session. Exact matches only, so `/login-help` stays protected. */
-export const PUBLIC_PATHS: readonly string[] = [LOGIN_PATH, AUTH_CALLBACK_PATH, COUNTDOWN_PATH, ACCESS_DENIED_PATH, SECRET_BOX_TICK_PATH];
+export const PUBLIC_PATHS: readonly string[] = [
+  LOGIN_PATH,
+  AUTH_CALLBACK_PATH,
+  COUNTDOWN_PATH,
+  ACCESS_DENIED_PATH,
+  SECRET_BOX_TICK_PATH,
+  NOTIFICATIONS_DRAIN_PATH,
+];
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.includes(pathname);

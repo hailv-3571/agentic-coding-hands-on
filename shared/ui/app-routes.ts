@@ -9,6 +9,7 @@ export const APP_ROUTES = {
   communityStandards: "/community-standards",
   kudos: "/kudos",
   profile: "/profile",
+  notifications: "/notifications",
   login: "/login",
   countdown: "/countdown",
 } as const;

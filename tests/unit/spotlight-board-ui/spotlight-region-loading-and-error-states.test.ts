@@ -6,7 +6,7 @@ import type { SpotlightSnapshot } from "@/features/spotlight-board/schemas/spotl
 import { renderSpotlightMarkup, textOf } from "./render-spotlight-markup";
 
 // The browser client is only created inside the channel effect, which a static render never runs.
-vi.mock("@/features/spotlight-board/lib/spotlight-browser-supabase", () => ({ spotlightBrowserSupabase: vi.fn() }));
+vi.mock("@/shared/auth/supabase-browser-client", () => ({ browserSupabase: vi.fn() }));
 
 /**
  * Region states around the live board (SCR-spotlight-board-region § 5): while the server snapshot

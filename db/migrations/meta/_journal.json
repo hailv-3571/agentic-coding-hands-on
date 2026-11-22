@@ -127,6 +127,34 @@
       "when": 1795361601434,
       "tag": "0017_spotlight_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795372142126,
+      "tag": "0018_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795372158612,
+      "tag": "0019_notifications_realtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795372160707,
+      "tag": "0020_notifications_drain_cron",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795375080885,
+      "tag": "0021_notifications_retry_backoff_and_event_fk",
+      "breakpoints": true
     }
   ]
 }
