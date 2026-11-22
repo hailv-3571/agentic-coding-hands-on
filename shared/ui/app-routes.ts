@@ -10,6 +10,7 @@ export const APP_ROUTES = {
   kudos: "/kudos",
   profile: "/profile",
   login: "/login",
+  countdown: "/countdown",
 } as const;
 
 export const ADMIN_ROUTES = {

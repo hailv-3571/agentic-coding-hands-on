@@ -5,7 +5,7 @@ import { DomainEventOutbox } from "@/shared/events/domain-event-outbox";
 import { testSql } from "../../setup/integration-db";
 import { closeAppDb, redirectLocationOf, signInToJar } from "../auth/auth-test-users";
 import { requestCookies } from "../auth/next-request-stub";
-import { closeWriting, openWriting } from "./event-end-override";
+import { beforeLaunch, closeWriting, openWriting } from "./event-end-override";
 import { activeHashtagIds, cleanupSunners, createSunner, kudoCountBySender, type Sunner } from "./kudo-test-fixtures";
 
 vi.mock("next/headers", async () => (await import("../auth/next-request-stub")).nextHeadersMock);
@@ -138,6 +138,11 @@ describe("createKudo", () => {
 
   it("returns WRITING_CLOSED from EVENT_END_AT and writes nothing", async () => {
     closeWriting();
+    expect(await expectNothingWritten(valid())).toEqual({ ok: false, code: "WRITING_CLOSED" });
+  });
+
+  it("returns WRITING_CLOSED before LAUNCH_AT, even when posted past the proxy gate, and writes nothing", async () => {
+    beforeLaunch();
     expect(await expectNothingWritten(valid())).toEqual({ ok: false, code: "WRITING_CLOSED" });
   });
 

@@ -11,6 +11,7 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",
+    "test:e2e:prelaunch": "playwright test --config playwright.prelaunch.config.ts",
     "test:prod": "tsx tests/prod/production-admin-403-status.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

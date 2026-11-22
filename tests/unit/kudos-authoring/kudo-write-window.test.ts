@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const connection = vi.hoisted(() => vi.fn(async () => undefined));
-vi.mock("@/shared/config/env", () => ({ env: { EVENT_END_AT: Date.parse("2026-12-31T16:59:59.000Z") } }));
+vi.mock("@/shared/config/env", () => ({
+  env: { LAUNCH_AT: Date.parse("2026-10-31T17:00:00.000Z"), EVENT_END_AT: Date.parse("2026-12-31T16:59:59.000Z") },
+}));
 vi.mock("next/server", () => ({ connection }));
 
 const { isKudoWritingOpen } = await import("@/features/kudos-authoring/server/kudo-write-window");

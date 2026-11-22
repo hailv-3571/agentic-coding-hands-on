@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { prelaunchGateStep } from "@/features/awards-portal/server/prelaunch-gate-step";
 import { publicEnv } from "@/shared/config/public-env";
 import { accessDeniedPage } from "./access-denied-response";
 import { decideRouteAccess, isAdminPath, type RouteAccessDecision } from "./route-access-policy";
@@ -16,7 +17,9 @@ import { findSessionProfile, type SessionProfile } from "./session-profile-query
  *   (4b) admin area: a signed-in non-admin on /admin/* gets HTTP 403 HERE — the admin layout's
  *        forbidden() cannot change a status under Cache Components (FR-602, SC-004): page
  *        loads → the access-denied page, Server Actions / other methods → JSON 403;
- *   (5) prelaunch gate — owned by phase 07, inserted where marked below.
+ *   (5) prelaunch gate (phase 07, features/awards-portal/server/prelaunch-gate-step.ts):
+ *       before LAUNCH_AT a signed-in non-admin off the allowlist → /countdown (actions/API →
+ *       JSON 403); after LAUNCH_AT /countdown → /.
  * Profile (role) via getProfile(): lazy and memoized, so at most ONE DB read per request, and
  * only on /admin/* or (phase 07) while prelaunch — zero DB cost for other requests after launch.
  * Optimistic only: every page/layout/action still calls requireSunner()/requireAdmin().
@@ -106,11 +109,13 @@ export async function runSessionProxy(request: NextRequest): Promise<NextRespons
     return carrySessionCookies(await forbiddenResponse(request), session.response);
   }
 
-  // (5) Phase 07 extension point — prelaunch gate. Runs for every passing request, public
-  // paths included (/countdown → / after launch), with `session.userId` (null for guests).
-  // Admin bypass reads the role via getProfile() (memoized: an /admin request reuses the
-  // step-4b read), only while prelaunch. Let /access-denied through for guests: step 4b's
-  // page render fetches it without a session. Return a gate redirect through
-  // carrySessionCookies(…, session.response).
-  return session.response;
+  // (5) Phase 07 prelaunch gate. Runs for every passing request, public paths included
+  // (/countdown → / after launch), guests too. The admin bypass reads the role through
+  // getProfile() (memoized: an /admin request reuses the step-4b read; fails closed), and only
+  // while prelaunch on a gated path: after launch this step costs no DB read.
+  const gated = await prelaunchGateStep(request, {
+    isSignedIn: session.userId !== null,
+    getRole: async () => (await getProfile())?.role ?? null,
+  });
+  return gated ? carrySessionCookies(gated, session.response) : session.response;
 }

@@ -5,6 +5,8 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Stops the run with a clear message if the server is still before LAUNCH_AT.
+  globalSetup: "./tests/e2e/global-setup-require-launched-server.ts",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
