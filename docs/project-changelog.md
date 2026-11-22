@@ -6,6 +6,40 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-22 — Phase 07 (F006 Cổng giải thưởng & cổng prelaunch)
+
+Added
+- Cổng prelaunch là bước 5 của session proxy (`features/awards-portal/server/prelaunch-gate.ts`, `prelaunch-gate-step.ts`). Trước `LAUNCH_AT`, người đã đăng nhập không phải Admin vào trang ngoài danh sách cho phép bị chuyển `/countdown`; Server Action, `/api/*` và method khác GET/HEAD nhận JSON 403 `{ code: "prelaunch" }`. Từ `LAUNCH_AT`, `/countdown` chuyển `/`. Admin được vào mọi trang. Tra role fail closed, chỉ chạy khi đang prelaunch trên đường bị chặn.
+- Năm trang: `/countdown` (công khai, DAYS/HOURS/MINUTES tới `LAUNCH_AT`), Homepage `/` (hero + đếm ngược tới `EVENT_AT`, bài chủ đề, 6 thẻ giải, banner Sun* Kudos), `/awards` (menu neo + 6 khối giải), `/rules` (khung phải 553px), `/community-standards`.
+- `AWARDS` (`features/awards-portal/data/awards-data.ts`): một nguồn cho 6 giải, Homepage và `/awards` cùng đọc. `CountdownTimer` tính theo giờ máy chủ (`request-time.ts`, `countdown-parts.ts`), font số DSEG7 Classic (SIL OFL 1.1) tự chứa.
+- i18n key `awardsPortal.*` (vi, en); `APP_ROUTES.countdown`.
+- `npm run test:e2e:prelaunch` (`playwright.prelaunch.config.ts`) và `globalSetup` cho `npm run test:e2e` (`tests/e2e/global-setup-require-launched-server.ts`).
+
+Changed
+- `isEventWritingOpen` (`shared/config/event-window.ts`) nay là `LAUNCH_AT ≤ now < EVENT_END_AT`: tạo/sửa Kudo, ký ảnh và thả tim cùng bị chặn trước giờ mở, kể cả Admin (Admin xem được trang, không ghi được). Proxy chỉ chặn tải trang nên đây là lớp đỡ cho Server Action gửi tới đường được phép.
+
+Decisions
+- Allowlist trước giờ mở chỉ gồm Login, Countdown, `/auth/callback`, `/access-denied`; `/awards` không còn trong đó (đè lên F006 D002). Countdown không có liên kết sang thông tin giải (khớp Figma). Admin vượt cổng (D003).
+- `/rules` có URL riêng, vẽ thành khung phải 553px; "Đóng" về trang trước (không có lịch sử cùng origin thì về `/`), "Viết KUDOS" tới `/kudos`.
+- Nút bút nổi trên Homepage chưa làm (giữ F003 D014 và F002 D003).
+- E2E trước giờ mở chạy trên `next build` + `next start -p 3100` với `LAUNCH_AT` = now + 30 ngày, vì một thư mục chỉ có một `next dev`.
+- Chấp nhận: trước giờ mở, `choose-department-action` và đổi ngôn ngữ vẫn chạy khi gửi tới đường được phép (chỉ ghi hồ sơ của chính người dùng; đăng xuất và đổi ngôn ngữ phải luôn mở).
+
+Security
+- Cổng quyết định trên giờ máy chủ và role đọc từ DB, không từ cookie hay input; lỗi tra role coi như không phải Admin.
+- Request không phải tải trang không bao giờ bị redirect (307 làm `fetch` gửi lại POST), mà nhận 403.
+
+Tests
+- Review phase 07: SEALED, 0 critical. Unit 598 qua, integration 269 qua; `test:e2e:prelaunch` 5 qua, 1 bỏ qua; e2e đầy đủ trên server khởi động lại 84 qua, 5 bỏ qua (lần chạy đầu đỏ 10 test của kudos do dev server chạy từ 11/17 bị chậm, không thuộc phase 07).
+
+Deferred
+- Footer thêm mục "Thể lệ" (en "Rules") trỏ tới `/rules`, cạnh "Tiêu chuẩn chung" — lối vào duy nhất tới trang này khi nút nổi Figma còn hoãn (user chọn 2026-11-22).
+- Nút tim báo `EVENT_ENDED` cho Admin trước giờ mở (cận mới `LAUNCH_AT`); chưa có tag log riêng khi tra role lỗi; chưa có câu báo lỗi riêng cho "chưa mở" thay `WRITING_CLOSED`.
+- Nội dung Thể lệ và Tiêu chuẩn cộng đồng chờ bản chữ cuối từ BTC (F006 D007).
+
+Docs
+- Quyết định ở `spec/decision-log.md` (phiên 2026-11-17 và 2026-11-22). `docs/system/architecture.md` có mục "Cổng prelaunch và cổng thông tin". F006 `technical-spec.md` và 5 spec màn hình SCR009–SCR013 cập nhật; `functional-spec.md` § 3 Open Decisions còn ghi allowlist cũ (do `rebuild-spec` giữ).
+
 ## 2026-11-17 — Phase 06 (F005 Thả tim & F011 Campaign x2)
 
 Added

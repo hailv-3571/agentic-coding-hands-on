@@ -1,0 +1,43 @@
+{
+  "task": "Phase 07 (F006 Awards portal & prelaunch): prelaunch gate as proxy step (5) with admin bypass, public Countdown page with server-clock countdown, Homepage, Awards system with sticky anchor menu, Thể lệ page drawn as a right panel, Community standards page, single awards data module, LAUNCH_AT bound on the shared write window",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "Before LAUNCH_AT a signed-in non-admin on any path except /login, /auth/callback, /countdown, /access-denied is redirected to /countdown (page loads) or gets JSON 403 {code:prelaunch} (actions/API); admin passes everywhere; role lookup failure fails closed",
+    "At/after LAUNCH_AT /countdown redirects to / for everyone and the proxy performs no role read",
+    "Guests still reach /countdown, /login, /auth/callback, /access-denied before launch",
+    "Countdown shows DAYS/HOURS/MINUTES from server time, ignores client clock skew, ticks per minute, never negative, navigates to / when it reaches zero; no link to /awards (decision 2026-11-15)",
+    "Homepage: hero, Coming soon + countdown to EVENT_AT (hidden label and 00 after it), event date from EVENT_AT, theme article, 6 award cards linking /awards#slug, ABOUT AWARDS/ABOUT KUDOS and Kudos banner links",
+    "Awards page: 6 blocks matching the SCR-awards-system table exactly (Signature two values), anchor menu active by scroll, click scrolls + updates hash, invalid hash stays at top",
+    "Rules and Community standards render static content (4 hero tiers, Secret Box, Kudos Quốc Dân, Tiêu chuẩn bảo mật) with no input/form/PII",
+    "All copy vi + en via next-intl; desktop 1440 and mobile 375 without horizontal scroll",
+    "Shared write window open only for LAUNCH_AT <= now < EVENT_END_AT so prelaunch writes are refused even past the proxy (decision 2026-11-22)"
+  ],
+  "touchpoints": [
+    "features/awards-portal/",
+    "shared/auth/session-proxy.ts",
+    "shared/ui/app-routes.ts",
+    "shared/config/event-window.ts",
+    "app/(public)/countdown/",
+    "app/(app)/page.tsx",
+    "app/(app)/awards/",
+    "app/(app)/rules/",
+    "app/(app)/community-standards/",
+    "messages/",
+    "public/images/awards-portal/",
+    "playwright.prelaunch.config.ts",
+    "package.json",
+    "tests/"
+  ],
+  "blastRadius": [
+    "every request through the session proxy (authorization path)",
+    "root / page opened by smoke and app-shell e2e",
+    "all write actions using isEventWritingOpen (create/update Kudo, hearts, image sign) now closed before LAUNCH_AT",
+    "phase 09/10 may reuse hero tag and badge images"
+  ],
+  "contracts": [
+    "decidePrelaunchRoute → pass | redirect /countdown | redirect / | forbidden (JSON 403 prelaunch)",
+    "remainingParts(targetMs, nowMs) → {days, hours, minutes, done}",
+    "AWARDS: readonly 6 awards {slug, image, quantity, unit, values[{amountVnd, note}]}",
+    "isEventWritingOpen(now) = LAUNCH_AT <= now < EVENT_END_AT"
+  ]
+}

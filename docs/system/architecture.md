@@ -65,9 +65,9 @@ Thứ tự bước cố định cho mọi request khớp matcher:
 | 3 | Đường dẫn công khai (`/login`, `/auth/callback`, `/countdown`, `/access-denied`) đi tiếp; đã đăng nhập mà vào `/login` thì về `/` | `decideRouteAccess()` trong `route-access-policy.ts`, hàm thuần |
 | 4 | Chưa có session, đường dẫn được bảo vệ: chuyển `/login?next=<đường dẫn>`; đường dẫn `/api/` trả JSON 401 `{ code: "unauthorized" }` | Redirect/401 vẫn mang cookie vừa làm mới |
 | 4b | Đã đăng nhập, vào `/admin/*`, `profiles.role` khác `admin` (hoặc không có profile): 403 | Xem dưới |
-| 5 | Cổng prelaunch: để trống tới phase 07 | Điểm chèn đã đánh dấu trong code |
+| 5 | Cổng prelaunch (phase 07, xem mục "Cổng prelaunch" bên dưới): trước `LAUNCH_AT`, người đã đăng nhập không phải Admin ngoài danh sách cho phép bị chuyển `/countdown` (action/API: JSON 403 `{ code: "prelaunch" }`); từ `LAUNCH_AT`, `/countdown` chuyển `/` | `prelaunchGateStep` (`features/awards-portal/server/prelaunch-gate-step.ts`) gọi hàm thuần `decidePrelaunchRoute`; chạy cho cả khách và đường công khai |
 
-Role chỉ đọc DB (một lần mỗi request, memoized) khi vào `/admin/*`; request khác không tốn truy vấn DB. Onboarding (chưa chọn phòng ban) nằm ở `requireSunner()` chứ không ở proxy.
+Role chỉ đọc DB (một lần mỗi request, memoized) khi vào `/admin/*` hoặc khi đang prelaunch trên đường bị chặn của người đã đăng nhập; request khác, và mọi request sau `LAUNCH_AT`, không tốn truy vấn DB. Onboarding (chưa chọn phòng ban) nằm ở `requireSunner()` chứ không ở proxy.
 
 ### 403 của khu Admin do proxy trả
 
@@ -105,7 +105,7 @@ Hợp đồng đầy đủ (mã lỗi, shape input, phạm vi cú pháp Markdown
 | `POST /api/kudos/images/sign` | Cấp signed upload URL; ghi `kudo_image_uploads` | 413 (body > 4 KB), 429 `UPLOAD_LIMIT` (20 lượt chưa dùng / người / 24 giờ), 403 `WRITING_CLOSED` |
 | `GET /api/kudos/{id}/edit` | Nạp dữ liệu sửa, `Cache-Control: private, no-store`; `locked: true` khi Kudo là spam | 403 `FORBIDDEN`, 404 `NOT_FOUND` |
 
-- **Cửa ghi đóng từ `EVENT_END_AT`**: hai action và route ký ảnh tự kiểm lại mỗi lần gọi (`isEventWritingOpen`); `isKudoWritingOpen()` chỉ để server component truyền `writingOpen` cho `KudoComposerLauncher`.
+- **Cửa ghi mở trong `LAUNCH_AT ≤ now < EVENT_END_AT`** (`isEventWritingOpen`, `shared/config/event-window.ts`; cận `LAUNCH_AT` thêm ở phase 07): hai action và route ký ảnh tự kiểm lại mỗi lần gọi (`isEventWritingOpen`); `isKudoWritingOpen()` chỉ để server component truyền `writingOpen` cho `KudoComposerLauncher`.
 - **Route handler tự gác cổng bằng `requireApiSunner()`** (trả JSON 401/403, không redirect); proxy chỉ là lớp lạc quan. Body lỗi chỉ có `{ code, fieldErrors? }`, không chứa nội dung Kudo.
 - **Ảnh**: trình duyệt xin URL ký, tải thẳng lên bucket `kudo-images`, rồi gửi `imagePaths`. Khi ghi, server chỉ nhận đường dẫn mà chính người đó đã ký và object đã tồn tại. Đường dẫn không chứa id người gửi (Kudo ẩn danh không lộ tác giả qua URL ảnh).
 - **Lời nhắn** là Markdown rút gọn lưu nguyên văn, không HTML, không ảnh Markdown, không link tham chiếu. Server chỉ chặn ở bước ghi; renderer whitelist ở phase 05 mới là ranh giới an toàn.
@@ -147,6 +147,34 @@ Hợp đồng đầy đủ: `plans/261108-0048-saa-2025-kudos-platform/research/
 - **Quy tắc Campaign**: giai đoạn `ended | active | upcoming` tính ở server, lấy lại trong transaction ghi (không tin giai đoạn trình duyệt thấy). Đã `ended` thì không sửa/xoá (DEC-001: không có menu hàng); đang `active` thì không đổi giờ bắt đầu (DEC-002). Trùng khung giờ: `CampaignOverlapCheck` kiểm trước, đua nhau thì SQLSTATE `23P01` được ánh xạ về `OVERLAP`. Giờ nhập là `datetime-local` đọc theo `ADMIN_TIMEZONE`, lưu UTC qua `zonedDateTimeToUtc` (`shared/admin/timezone.ts`).
 - **UI**: nút tim lạc quan; trạng thái tim xác nhận lần cuối được chia sẻ giữa mọi bản sao của thẻ trên trang (`heart-summary-store.ts`) vì action không `revalidatePath`.
 - **Seam đã thật**: `enrich-heart-summary.ts` đọc `KudoHeartQuery`; Highlight xếp theo tim thô qua `HeartRankingQuery.rankKudoIds` (hình dạng API không đổi).
+
+## Cổng prelaunch và cổng thông tin (F006, đã implement ở phase 07)
+
+Quyết định: `plans/261108-0048-saa-2025-kudos-platform/spec/decision-log.md` (phiên 2026-11-17 và 2026-11-22). Cổng chỉ là bước 5 của proxy, không có layout hay route riêng.
+
+| Thành phần | Vai trò |
+|------------|---------|
+| `isPrelaunch(nowMs, launchAtMs)` | `nowMs < launchAtMs`; suy ra từ giờ máy chủ mỗi request, không lưu cờ (BR-002). Đúng `LAUNCH_AT` là đã mở |
+| `decidePrelaunchRoute` (`server/prelaunch-gate.ts`) | Hàm thuần: nhận giờ, `LAUNCH_AT`, đường dẫn, method, `isServerAction`, `isSignedIn` và `getRole` lười; trả `pass`, `redirect` hoặc `forbidden` |
+| `prelaunchGateStep` (`server/prelaunch-gate-step.ts`) | Cầu nối: đọc `env.LAUNCH_AT`, `Date.now()`, header `next-action`; chuyển quyết định thành `NextResponse` |
+
+Quyết định theo thứ tự:
+
+| Điều kiện | Kết quả |
+|-----------|---------|
+| Đã mở, `/countdown`, tải trang (GET/HEAD) | Chuyển `/` |
+| Đã mở, còn lại | Cho qua, không đọc DB |
+| Prelaunch, đường công khai (`/login`, `/auth/callback`, `/countdown`, `/access-denied`) | Cho qua, không đọc role |
+| Prelaunch, đã đăng nhập, `profiles.role = admin` | Cho qua (Admin xem mọi trang) |
+| Prelaunch, còn lại, tải trang | Chuyển `/countdown` |
+| Prelaunch, còn lại, Server Action / `/api/*` / method khác GET, HEAD | JSON 403 `{ code: "prelaunch" }` (redirect 307 sẽ làm `fetch` gửi lại POST tới `/countdown`) |
+
+- **Role fail closed**: lỗi tra role hoặc không có profile coi như không phải Admin.
+- **Proxy chỉ chặn đường dẫn**: Server Action giải theo id nên vẫn chạy khi gửi tới đường được phép. Ghi Kudo, tim và ký ảnh được chặn bằng `isEventWritingOpen` (mở từ `LAUNCH_AT`, kể cả Admin: Admin xem được trang trước giờ mở nhưng không ghi được). Chấp nhận còn chạy được: chọn phòng ban và đổi ngôn ngữ (chỉ ghi hồ sơ của chính người dùng); đăng xuất phải luôn mở.
+- **Giờ máy chủ cho trang**: `readRequestTimeMs()` (`request-time.ts`, gọi `connection()`) cấp "bây giờ" cho trang; trang đặt `instant = false`. `CountdownTimer` (client) nhận `targetIso` và `serverNowIso`, lưu độ lệch máy chủ một lần khi mount, cập nhật khi phút hiển thị đổi và khi tab hiện lại (`countdown-parts.ts`: `remainingParts`, `msUntilNextMinuteChange`). Về 0 trên `/countdown` thì `router.replace("/")`; nếu proxy vẫn thấy prelaunch (lệch giờ) sẽ chuyển lại `/countdown`.
+- **Một nguồn giải**: `AWARDS` (`data/awards-data.ts`) giữ slug (neo `/awards#<slug>`), số lượng, loại người nhận, giá trị VND; chữ nằm ở `messages/*.json` key `awardsPortal` nên BTC đổi chữ không đụng code. Homepage và `/awards` cùng đọc (BR-003).
+- **Font số đếm ngược**: DSEG7 Classic (SIL OFL 1.1), woff2 tự chứa trong `features/awards-portal/fonts/`, chỉ nạp ở component đếm ngược.
+- **`/rules`** vẽ thành khung phải 553px trên nền keyvisual làm tối; nút "Đóng" quay lại trang trước cùng origin, không có thì về `/`; "Viết KUDOS" tới `/kudos`.
 
 ## Tech Stack
 
@@ -207,7 +235,7 @@ Mỗi feature là một module; ranh giới = bảng nó ghi + hàm/component n�
 | F003_KudosAuthoring | `features/kudos-authoring/` (modal `KudoComposerModal`, server action `createKudo`/`updateKudo`, dịch vụ ký upload ảnh, `isKudoWritingOpen`), `features/sunner-search/` | `kudos` (khởi tạo `status=public`), `kudo_hashtags`, `kudo_images`, `kudo_image_uploads` | `hashtags`, `profiles` | `KudoComposerModal`, `KudoComposerLauncher`, `searchSunners`, `KudoInputSchema` / `KUDO_LIMITS` (module client-safe) |
 | F004_KudosFeed | `features/kudos-feed/` (`KudoPublicQuery`, `listHighlightKudos`, `KudoCard`, trang `/kudos` và `/kudos/[id]`, `GET /api/kudos`, `GET /api/kudos/highlight`) | — (chỉ đọc) | `kudos`, hashtag, ảnh, `kudo_hearts` (F005), `profiles`, `departments` | `KudoPublicQuery`, `KudoCard`, `AvatarHoverCard` host |
 | F005_KudosHearts | `features/kudos-hearts/` (`KudoHeartService/Query`, `HeartStatsQuery`, `HeartRankingQuery`, `HeartMultiplierResolver`, `KudoHeartButton`, `addHeartAction`/`removeHeartAction`) | `kudo_hearts` | `campaigns` qua `ActiveCampaignReader` | `KudoHeartQuery#summaryForKudos`, `HeartStatsQuery#receivedByUsers`/`receivedByUser`, `HeartRankingQuery`, `ActiveCampaignReader` (giao diện) |
-| F006_AwardsPortal | 5 trang tĩnh, `PrelaunchGate`, `awardsData`, `CountdownTimer` | — | — | `isPrelaunch(now)` |
+| F006_AwardsPortal | `features/awards-portal/` (5 trang `/countdown`, `/`, `/awards`, `/rules`, `/community-standards`; `decidePrelaunchRoute`/`prelaunchGateStep`; `AWARDS`; `CountdownTimer`) | — | — | `isPrelaunch(nowMs, launchAtMs)`, `decidePrelaunchRoute`, `AWARDS` |
 | F007_AdminModeration | `AdminKudoReview/Moderation/Export`, `KudoAdminQuery`, `OwnSpamKudoQuery`, `SpamAlertOverlay` | `kudos.status`, `kudos.moderated_by`, `kudos.moderated_at` | `kudo_hearts`, hashtag, `profiles` | `OwnSpamKudoQuery#listBySender`, `KudoSpamCard`, `CsvSerializer` |
 | F008_SpotlightBoard | `SpotlightBoardRegion`, `SpotlightPublicQuery`, trigger phát sự kiện, policy kênh | — (đối tượng DB: hàm + trigger + policy `realtime.messages`) | `kudos`, `profiles` | Vùng Spotlight nhúng vào Live board |
 | F009_HeroBadges | `HeroTierQuery`, `HeroBadge`, `HeroBadgeTooltip`, `tierFromCount` | — | `kudos` | `HeroTierQuery#getTiersByRecipientIds`, `HeroBadge`, `tierFromCount` |
@@ -248,7 +276,7 @@ Quy ước: mỗi bảng có đúng một feature chủ (tạo bảng + migratio
 | Hợp đồng | Chủ | Người dùng | Hình dạng / hành vi | Trạng thái |
 |----------|-----|------------|----------------------|------------|
 | `AdminGuard#requireAdmin` | F001 | F002 layout, F007, F011, F014, F015 | Đọc `profiles.role` từ DB mỗi request/action; không từ cookie; từ chối → 403 | Rõ |
-| `SessionProxy` + `isPrelaunch(now)` | F001 / F006 | Mọi route | Proxy làm mới session, chặn khách, trả 403 cho `/admin/*` (xem mục Session proxy); `isPrelaunch` là hàm thuần của F006 | Phần F001 đã implement; bước prelaunch chèn ở phase 07 (C-09) |
+| `SessionProxy` + `isPrelaunch(now)` | F001 / F006 | Mọi route | Proxy làm mới session, chặn khách, trả 403 cho `/admin/*` (xem mục Session proxy); `isPrelaunch` là hàm thuần của F006 | Đã implement: bước 5 chạy ở phase 07 (C-09) |
 | `KudoPublicQuery` | F004 | F012 (và mọi chỗ đọc Kudo công khai) | Chỉ `status = public`; che người gửi khi `is_anonymous` ngay ở server; tính `isOwner` ở server | Đã implement ở phase 05 (`list`, `findForViewer`, một cursor duy nhất); thiếu bộ lọc người nhận/người gửi cho F012 (C-05), index đã sẵn ở migration 0009 |
 | `KudoAdminQuery` | F007 | F007 (A1, A4) | Không lọc Public, không che ẩn danh; chỉ gọi sau `requireAdmin` | Rõ; chính sách hiển thị ẩn danh cho Admin còn mở (C-13) |
 | `OwnSpamKudoQuery#listBySender` | F007 | F012 | Chỉ Kudo spam của chính người gửi (từ session) | Rõ |
@@ -313,7 +341,7 @@ Danh sách để planner xử lý. Mức: **blocking** = phải chốt trước 
 | C-06 | non-blocking | F003, F004, F007 | Hai handler cùng `GET /api/sunners/search`: F003 A1 (`SunnerSearch#search`, có thể loại chính mình) và F004 A5 (`SunnerSearchHandler#search`, ô tìm profile theo tên/email). F007 dùng lại bản F003 nhưng cần tìm được cả chính mình | Một handler duy nhất, một chủ (đề xuất F001, bảng `profiles`), tham số `excludeSelf`; F003/F004/F007 cùng gọi **Phase 04**: F003 đã công bố `excludeSelf`; handler F004 A5 chưa làm. |
 | C-07 | blocking | F003, F004, F012 | `KudoComposerModal` chưa có tham số `recipient` điền sẵn và khoá (F012 A4, D008); F003 D014 ghi lối vào từ profile "chưa có thiết kế xác nhận"; ô "gửi lời cảm ơn" trên Live board nằm ở F003 hay F004 chưa rõ | F003 công bố props `{mode, recipient?, lockRecipient?}`; F004 chỉ nhúng **Phase 04**: modal đã có props `recipient`/`lockRecipient`; ô trên Live board là `KudoComposerLauncher` của F003 (còn lối vào từ profile chờ phase 12). |
 | C-08 | non-blocking | F001, F007, F014, F003, F010, F013 | Mã `DISC-001` đã dùng cho `profiles.role` (F001, F014 nhắc lại "tạm"); các spec khác để `kudos.status` (F003, F004, F007, F009, F015), `SecretBoxPrize.kind`, `SecretBox.status`, `Notification.type` là `DISC-### TBD` — nếu mỗi feature đánh số từ 001 khi reconcile sẽ va nhau (đặc biệt `role` vs `kudos.status`) | Cấp `DISC-###` một lần ở reconcile theo bảng toàn hệ thống; mỗi trường phân loại một mã, có một chủ (`profiles.role` → F001, `kudos.status` → F007) |
-| C-09 | blocking | F001, F006 | Hai cổng route chồng nhau: `SessionProxy` (F001 A5) chuyển khách tới Login, trong khi `PrelaunchGate` (F006 A1, allowlist login/countdown/awards) phục vụ cả khách. Danh sách đường dẫn công khai của proxy còn TBD (F001 §5.3 mục 3); F006 D001/D002 chưa chốt khách có xem Countdown/`/awards`; "người dùng thường bị chặn" ngụ ý Admin được vào trước giờ mở nhưng chưa ghi. Đích sau đăng nhập (F001 DEC-001) phụ thuộc F006 | Một điểm vào proxy duy nhất ghép hai bước theo thứ tự cố định: (1) allowlist công khai, (2) session, (3) `isPrelaunch` (F006 chỉ cấp hàm thuần); chốt Admin có bypass trước giờ mở hay không |
+| C-09 | blocking | F001, F006 | Hai cổng route chồng nhau: `SessionProxy` (F001 A5) chuyển khách tới Login, trong khi `PrelaunchGate` (F006 A1, allowlist login/countdown/awards) phục vụ cả khách. Danh sách đường dẫn công khai của proxy còn TBD (F001 §5.3 mục 3); F006 D001/D002 chưa chốt khách có xem Countdown/`/awards`; "người dùng thường bị chặn" ngụ ý Admin được vào trước giờ mở nhưng chưa ghi. Đích sau đăng nhập (F001 DEC-001) phụ thuộc F006 | Một điểm vào proxy duy nhất ghép hai bước theo thứ tự cố định: (1) allowlist công khai, (2) session, (3) `isPrelaunch` (F006 chỉ cấp hàm thuần); chốt Admin có bypass trước giờ mở hay không. **Đã giải ở phase 07**: proxy chạy session rồi bước 5; allowlist chỉ Login, Countdown, `/auth/callback`, `/access-denied` (không có `/awards`); Admin bypass |
 | C-10 | non-blocking | F003, F005, F008, F009, F010, F013, F015 | Kudo tự gửi cho chính mình: F003 để TBD; F009 và F013 loại `sender = recipient`; F005 cấm tự thả tim; F008, F015, F004, F010 không loại | Chốt ở F003: cấm tạo (loại khỏi kết quả tìm), bỏ các nhánh đặc biệt ở feature khác **Phase 04 đã chốt phần F003**: cấm tạo (CHECK `kudos_no_self_send`, lỗi `SELF_SEND` 422, picker gọi `excludeSelf=true`); các nhánh `sender = recipient` ở feature khác chưa gỡ. |
 | C-11 | non-blocking | F005, F010, F014 | F014 "Total Heart" = `COUNT(kudo_hearts ...)` nhưng ghi "định nghĩa F005"; F005/F010 dùng tổng `multiplier` (weighted). F014 còn tự viết truy vấn thay vì dùng `HeartStatsQuery` | Chốt định nghĩa (weighted hay thô) và dùng `HeartStatsQuery` |
 | C-12 | blocking | F009, F014 | F014 cột/bộ lọc Level qua `LevelQuery` chưa có cài đặt; Level chưa được định nghĩa; Hero tier của F009 là khái niệm phân cấp duy nhất hiện có | Chốt Level = Hero tier (dùng `HeroTierQuery`) hoặc bỏ cột Level khỏi phạm vi |

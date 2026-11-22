@@ -11,21 +11,21 @@ lang: vi
 **Screen**: SCR012_Homepage: Homepage SAA
 **Feature**: F006_AwardsPortal
 **Type**: composite
-**Route**: / (TBD (draft))
+**Route**: /
 **Generated**: 2026-11-08
 
 ## 1. Overview
 
 **Purpose:** Giới thiệu SAA 2025 cho Sunner đã đăng nhập: chủ đề, thời gian, địa điểm, các giải và Sun* Kudos, rồi đưa họ tới trang chi tiết.
 **Actors:** Sunner, Admin
-**Entry Conditions:** Đã có phiên đăng nhập và giờ máy chủ đã qua giờ mở.
+**Entry Conditions:** Đã có phiên đăng nhập và giờ máy chủ đã qua `LAUNCH_AT` (Admin vào được trước đó; người dùng thường trước giờ mở bị chuyển `/countdown`).
 **Exit Conditions:** Người dùng sang trang Hệ thống giải hoặc Sun* Kudos, hoặc rời qua header.
 
 ## 2. Screen Layout
 
 ### Layout Sketch
 
-Trang cuộn dọc: hero "ROOT FURTHER" ở đầu kèm đếm ngược và thông tin sự kiện, hai nút chính, bài chủ đề dài, mục "Hệ thống giải thưởng" với lưới 6 thẻ, banner Sun* Kudos, rồi footer. Header và footer do khung chung cấp (F002_AppShell). Chi tiết bố cục lưới và hình chưa đối chiếu từ frame thiết kế `[UNVERIFIED]`.
+Trang cuộn dọc: hero "ROOT FURTHER" ở đầu kèm đếm ngược và thông tin sự kiện, hai nút chính, bài chủ đề dài, mục "Hệ thống giải thưởng" với lưới 6 thẻ, banner Sun* Kudos, rồi footer. Header và footer do khung chung cấp (F002_AppShell). Keyvisual chạy dưới header trong suốt (Figma 2167:9026). Nút bút nổi (Figma 5022:15169) chưa làm, giữ F003 D014 và F002 D003 (decision-log 2026-11-17).
 
 ```
 ┌─────────────────────────────────────────┐
@@ -112,7 +112,7 @@ N/A — no validation rules or submit-side error feedback detected.
 
 | Condition | Type | Element(s) | Visible when | Hidden when | Notes |
 |-----------|------|------------|--------------|-------------|-------|
-| Lễ chưa bắt đầu | configuration | E02 | Giờ máy chủ trước giờ bắt đầu lễ | Sau giờ bắt đầu lễ | [NEEDS_DOMAIN_CONFIRMATION] theo D005 |
+| Lễ chưa bắt đầu | configuration | E02 | Giờ máy chủ trước `EVENT_AT` | Từ `EVENT_AT` (timer dừng ở 00) | Mốc là `EVENT_AT` cấu hình được (D005); nhãn "Sắp diễn ra" do `CountdownTimer` ẩn khi về 0 |
 
 ## 8. Navigation
 

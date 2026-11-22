@@ -106,7 +106,10 @@ CSV serializer (BOM + chặn formula injection), lọc theo khoảng ngày, help
 | Unit | `npm run test:unit` | `tests/unit/**`, Node thuần |
 | Integration | `npm run test:integration` | `tests/integration/**`, cần Supabase local, chạy tuần tự |
 | E2E | `npm run test:e2e` | Playwright, `tests/e2e/`, chạy trên `next dev`; cục bộ tối đa 3 worker (`playwright.config.ts`), vì chung một `next dev` biên dịch route theo yêu cầu |
+| E2E trước giờ mở | `npm run test:e2e:prelaunch` | `playwright.prelaunch.config.ts`: chỉ chạy `tests/e2e/awards-portal/prelaunch-gate.spec.ts` trên server riêng (`next build` + `next start -p 3100`, `LAUNCH_AT` = now + 30 ngày, không dùng lại server đang chạy); cần Supabase local. Cổng prelaunch theo `LAUNCH_AT` của server nên `next dev` thường không thấy được |
 | Status production | `npm run build` rồi `npm run test:prod` | `tests/prod/production-admin-403-status.ts`: bật `next start` ở cổng trống, kiểm status HTTP thật. Cần Supabase local |
+
+Bộ `npm run test:e2e` có `globalSetup` (`tests/e2e/global-setup-require-launched-server.ts`): nếu `/countdown` (chưa đăng nhập) trả 200 thì server còn trước `LAUNCH_AT`, chạy dừng ngay với thông báo rõ thay vì đỏ hàng loạt vì mọi trang bị chuyển sang `/countdown`. Đặt `LAUNCH_AT` trong quá khứ ở env local; config prelaunch bỏ bước này. Không chạy `test:e2e:prelaunch` cùng lúc với một `npm run build` khác (cùng thư mục `.next`).
 
 `test:prod` dành cho thứ chỉ lộ ở bản production, như status 403 của `/admin/*`: e2e chạy trên `next dev` nên không thấy được.
 

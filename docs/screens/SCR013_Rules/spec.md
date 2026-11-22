@@ -11,43 +11,44 @@ lang: vi
 **Screen**: SCR013_Rules: Thể lệ
 **Feature**: F006_AwardsPortal
 **Type**: atomic
-**Route**: /rules (TBD (draft))
+**Route**: /rules
 **Generated**: 2026-11-08
 
 ## 1. Overview
 
 **Purpose:** Cho Sunner đọc thể lệ: bậc huy hiệu Hero, luật Secret Box và Kudos Quốc Dân. Màn chỉ hiển thị chữ mô tả, luật do feature khác tính.
 **Actors:** Sunner, Admin
-**Entry Conditions:** Đã có phiên đăng nhập và giờ máy chủ đã qua giờ mở.
-**Exit Conditions:** Người dùng rời qua header hoặc liên kết trong trang.
+**Entry Conditions:** Đã có phiên đăng nhập và giờ máy chủ đã qua `LAUNCH_AT` (Admin vào được trước đó).
+**Exit Conditions:** Bấm "Đóng" (về trang trước cùng origin, không có thì về `/`), bấm "Viết KUDOS" (tới `/kudos`), hoặc rời qua header.
 
 ## 2. Screen Layout
 
 ### Layout Sketch
 
-Hero ở đầu, rồi các mục nội dung xếp dọc: huy hiệu Hero theo bậc, luật Secret Box, Kudos Quốc Dân. Header và footer do khung chung cấp (F002_AppShell). Bố cục và hình huy hiệu chưa đối chiếu từ frame `[UNVERIFIED]`.
+Khung bên phải rộng 553px (kín chiều ngang trên điện thoại) trên nền keyvisual Live board làm tối, giống trang chi tiết Kudo (Figma 3204:6051, quyết định 2026-11-17). Trong khung: tiêu đề "Thể lệ", bậc huy hiệu Hero, luật Secret Box, Kudos Quốc Dân, và hai nút "Đóng" / "Viết KUDOS" ở đáy. Header và footer do khung chung cấp (F002_AppShell).
 
 ```
-┌─────────────────────────────────────────┐
-│ R1: Hero                                │
-├─────────────────────────────────────────┤
-│ R2: Rule Content (scrollable)           │
-│   huy hiệu · Secret Box · Kudos Quốc Dân│
-└─────────────────────────────────────────┘
+┌──────────────────┬──────────────────────┐
+│ R1: keyvisual    │ R2: Rules Panel 553px│
+│ (làm tối)        │  Thể lệ              │
+│                  │  huy hiệu · Secret   │
+│                  │  Box · Kudos Quốc Dân│
+│                  │  [Đóng] [Viết KUDOS] │
+└──────────────────┴──────────────────────┘
 ```
 
 ### Layout Regions
 
 | Region ID | Name | Position | Scrollable | Key Components |
 |-----------|------|----------|------------|----------------|
-| R1 | Hero | static | no | TBD (draft) |
-| R2 | Rule Content | static | yes | TBD (draft) |
+| R1 | Background | static | no | `LiveBoardKeyvisualBackground` (`dimmed`) |
+| R2 | Rules Panel | static | no | `RulesPanel` (`features/awards-portal/components/rules-panel.tsx`) |
 
 ## 3. UI Elements
 
 | ID | Element | Type | Required | Default | Visibility | Action | Source | Format | Empty Behavior | Cross-ref |
 |----|---------|------|----------|---------|------------|--------|--------|--------|-----------------|-----------|
-| E01 | Hero và tiêu đề Thể lệ | image | — | — | Always | — | static | — | hidden | N/A |
+| E01 | Tiêu đề Thể lệ | message | — | — | Always | — | static | — | hidden | N/A |
 | E02 | Huy hiệu Hero: 1–4 Kudos là New, 5–9 là Rising, 10–20 là Super, trên 20 là Legend | list | — | 4 bậc | Always | — | static | — | hidden | N/A |
 | E03 | Luật Secret Box: 5 tim = 1 Secret Box, thu đủ 6 biểu tượng nhận quà bí ẩn | text | — | — | Always | — | static | — | hidden | N/A |
 | E04 | Kudos Quốc Dân: 5 Kudos nhiều tim nhất | text | — | — | Always | — | static | — | hidden | N/A |
@@ -58,12 +59,15 @@ Nội dung đầy đủ của từng mục chờ bản chữ từ BTC (D007); b�
 
 ### Available Actions
 
-N/A — no elements carry a discrete user-triggered action.
+| Action | Element | Trigger | Condition | Result on this screen | Source |
+|--------|---------|---------|-----------|------------------------|--------|
+| Đóng | nút "Đóng" | click | — | Về trang trước nếu có lịch sử cùng origin, không thì về `/` | decision-log 2026-11-17 |
+| Viết KUDOS | nút "Viết KUDOS" | click | — | Tới Live board `/kudos` | decision-log 2026-11-17 |
 
 ### Happy Path
 
-1. Người dùng mở trang và thấy hero ở R1.
-2. Người dùng cuộn R2 để đọc ba nhóm luật.
+1. Người dùng mở trang và thấy khung Thể lệ ở R2.
+2. Người dùng đọc ba nhóm luật rồi bấm "Đóng" hoặc "Viết KUDOS".
 
 ### Branches
 
@@ -90,12 +94,15 @@ N/A — no conditional UI detected.
 
 | From | Trigger there | Condition | Source |
 |------|----------------|-----------|--------|
-| TBD (draft) — SCR003_AppLayout | Liên kết điều hướng tới Thể lệ (vị trí chưa chốt) | — | TBD (draft) |
+| SCR-app-layout (footer) | Mục "Thể lệ" trong footer | Đã đăng nhập, sau `LAUNCH_AT` (Admin mọi lúc) | `features/app-shell/components/app-footer.tsx` |
 | external | Mở thẳng địa chỉ | Sau giờ mở | TBD (draft) |
 
 ### Exits
 
-N/A — this screen has no exits (terminal screen).
+| Action | Element | Condition | Destination | Result | Source |
+|--------|---------|-----------|-------------|--------|--------|
+| Đóng | nút "Đóng" | — | Trang trước, hoặc TBD (draft) — SCR012_Homepage | navigate | decision-log 2026-11-17 |
+| Viết KUDOS | nút "Viết KUDOS" | — | TBD (draft) — SCR008_KudosLiveBoardFeed | navigate | decision-log 2026-11-17 |
 
 ## 9. Accessibility
 

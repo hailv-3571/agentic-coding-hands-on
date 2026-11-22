@@ -11,30 +11,30 @@ lang: vi
 **Screen**: SCR011_CountdownPrelaunch: Countdown Prelaunch
 **Feature**: F006_AwardsPortal
 **Type**: atomic
-**Route**: /countdown (TBD (draft))
+**Route**: /countdown
 **Generated**: 2026-11-08
 
 ## 1. Overview
 
-**Purpose:** Cho người dùng vào trước giờ mở hệ thống thấy còn bao lâu nữa và đi xem thông tin giải.
-**Actors:** Khách chưa đăng nhập (xem D001), Sunner, Admin
-**Entry Conditions:** Giờ máy chủ chưa tới giờ mở và người dùng mở một trang không nằm trong danh sách cho phép.
-**Exit Conditions:** Đếm về 0 thì tự sang Homepage, hoặc người dùng bấm liên kết tới trang Hệ thống giải.
+**Purpose:** Cho người dùng vào trước giờ mở hệ thống thấy còn bao lâu nữa.
+**Actors:** Khách chưa đăng nhập, Sunner (Admin vượt cổng nên chỉ thấy khi tự mở `/countdown`)
+**Entry Conditions:** Giờ máy chủ chưa tới `LAUNCH_AT` và người dùng không phải Admin mở trang ngoài danh sách cho phép (`/login`, `/auth/callback`, `/countdown`, `/access-denied`) sau khi đã đăng nhập; trang công khai này khách xem được. Từ `LAUNCH_AT`, mở `/countdown` chuyển sang `/`.
+**Exit Conditions:** Đếm về 0 thì trang gọi `router.replace("/")`; proxy quyết định `/` dẫn tới đâu (nếu proxy vẫn thấy trước giờ mở do lệch giờ thì quay lại `/countdown`).
 
 ## 2. Screen Layout
 
 ### Layout Sketch
 
-Nền tối toàn màn hình theo phong cách hero, ở giữa là ba ô đếm ngược Ngày, Giờ, Phút, bên dưới là liên kết tới thông tin giải. Nút đổi ngôn ngữ do khung chung cấp (F002_AppShell, D002 của F002). Chi tiết hình nền và vị trí liên kết chưa đối chiếu từ frame thiết kế `[UNVERIFIED]`.
+Ảnh keyvisual mờ (opacity 50%) làm nền toàn màn hình, chạy dưới header trong suốt; ở giữa là tiêu đề "Sự kiện sẽ bắt đầu sau" và ba ô đếm ngược DAYS, HOURS, MINUTES. Không có liên kết nào (Figma 2268:35127 không vẽ; decision-log 2026-11-15). Nút đổi ngôn ngữ do khung chung cấp (F002_AppShell).
 
 ```
 ┌───────────────────────────────────────┐
-│ R1: Page Wrapper (hero background)    │
+│ R1: Page Wrapper (keyvisual mờ)       │
 │   ┌─────────────────────────────────┐ │
 │   │ R2: Countdown                   │ │
+│   │ Sự kiện sẽ bắt đầu sau          │ │
 │   │ [DAYS] [HOURS] [MINUTES]        │ │
 │   └─────────────────────────────────┘ │
-│   R3: Award Links                     │
 └───────────────────────────────────────┘
 ```
 
@@ -42,33 +42,29 @@ Nền tối toàn màn hình theo phong cách hero, ở giữa là ba ô đếm 
 
 | Region ID | Name | Position | Scrollable | Key Components |
 |-----------|------|----------|------------|----------------|
-| R1 | Page Wrapper | static | no | TBD (draft) |
-| R2 | Countdown | static | no | TBD (draft) |
-| R3 | Award Links | static | no | TBD (draft) |
+| R1 | Page Wrapper | static | no | `PortalKeyvisualBackground` (`/images/awards-portal/countdown-keyvisual.webp`) |
+| R2 | Countdown | static | no | `CountdownTimer` (`features/awards-portal/components/countdown-timer.tsx`), `size="page"`, font số DSEG7 Classic |
 
 ## 3. UI Elements
 
 | ID | Element | Type | Required | Default | Visibility | Action | Source | Format | Empty Behavior | Cross-ref |
 |----|---------|------|----------|---------|------------|--------|--------|--------|-----------------|-----------|
-| E01 | Tiêu đề sắp diễn ra | message | — | — | Always | — | static | — | — | N/A |
+| E01 | Tiêu đề "Sự kiện sẽ bắt đầu sau" (`awardsPortal.countdown.title`) | message | — | — | Always | — | static | — | — | N/A |
 | E02 | DAYS | display field | — | Giá trị từ máy chủ | Always | — | computed | số, ít nhất 2 chữ số | 00 | N/A |
 | E03 | HOURS | display field | — | Giá trị từ máy chủ | Always | — | computed | 2 chữ số | 00 | N/A |
 | E04 | MINUTES | display field | — | Giá trị từ máy chủ | Always | — | computed | 2 chữ số | 00 | N/A |
-| E05 | Liên kết thông tin giải | link | — | Enabled | Conditional | Mở trang Hệ thống giải | static | — | — | N/A |
 
 ## 4. User Actions
 
 ### Available Actions
 
-| Action | Element | Trigger | Condition | Result on this screen | Source |
-|--------|---------|---------|-----------|------------------------|--------|
-| Xem thông tin giải | E05 | click | Chỉ khi trang Hệ thống giải được phép trước giờ mở (D002) | Rời màn đếm ngược | TBD (draft) |
+N/A — màn chỉ hiển thị, không có thao tác nào (không có liên kết sang thông tin giải).
 
 ### Happy Path
 
 1. Người dùng vào hệ thống trước giờ mở và thấy ba ô đếm ngược ở R2.
-2. Mỗi phút trôi qua, số phút ở E04 giảm một đơn vị mà trang không tải lại.
-3. Khi cả ba ô về 00, trang tự rời sang Homepage.
+2. Mỗi khi phút hiển thị đổi, số phút ở E04 giảm một đơn vị mà trang không tải lại.
+3. Khi cả ba ô về 00, trang gọi `router.replace("/")`.
 
 ### Branches
 
@@ -81,10 +77,10 @@ Nền tối toàn màn hình theo phong cách hero, ở giữa là ba ô đếm 
 
 | State | Trigger | Visual Behavior | User Action Available | Source |
 |-------|---------|----------------|-----------------------|--------|
-| initial | Trang tải xong, JS chưa chạy | Ba ô hiện giá trị tính phía máy chủ | Bấm E05 | TBD (draft) |
-| ticking | Mỗi phút | Ô số đổi (hiệu ứng lật, tôn trọng giảm chuyển động) | Bấm E05 | TBD (draft) |
-| reached-zero | Còn lại bằng 0 | Chuyển sang Homepage | none | TBD (draft) |
-| image-error | Ảnh nền lỗi tải | Nền đơn sắc, số vẫn đọc được | Bấm E05 | TBD (draft) |
+| initial | Trang tải xong, JS chưa chạy | Ba ô hiện giá trị tính phía máy chủ | none | TBD (draft) |
+| ticking | Phút hiển thị đổi, hoặc tab hiện lại | Ô số đổi ngay, không có hiệu ứng chuyển động; tính lại từ giờ máy chủ + độ lệch đã lưu | none | TBD (draft) |
+| reached-zero | Còn lại bằng 0 | Hiện 00 00 00 (không bao giờ âm) và chuyển tới `/` | none | TBD (draft) |
+| image-error | Ảnh nền lỗi tải | Nền đơn sắc, số vẫn đọc được | none | TBD (draft) |
 
 ## 6. Validation & Feedback
 
@@ -92,9 +88,7 @@ N/A — no validation rules or submit-side error feedback detected.
 
 ## 7. Conditional UI
 
-| Condition | Type | Element(s) | Visible when | Hidden when | Notes |
-|-----------|------|------------|--------------|-------------|-------|
-| Trang Hệ thống giải được phép xem trước giờ mở | configuration | E05 | Quyết định D002 giữ mặc định | D002 đổi thành chỉ Countdown | [NEEDS_DOMAIN_CONFIRMATION] |
+N/A — no conditional UI detected.
 
 ## 8. Navigation
 
@@ -109,15 +103,14 @@ N/A — no validation rules or submit-side error feedback detected.
 
 | Action | Element | Condition | Destination | Result | Source |
 |--------|---------|-----------|-------------|--------|--------|
-| Xem thông tin giải | E05 | D002 giữ mặc định | TBD (draft) — SCR009_AwardsSystem | redirect | TBD (draft) |
 | Đếm về 0 | E02, E03, E04 | Còn lại bằng 0 | TBD (draft) — SCR012_Homepage | redirect | TBD (draft) |
 
 ## 9. Accessibility
 
 | Aspect | Status | Notes |
 |--------|--------|-------|
-| ARIA roles/labels | [EXPECTED] | Mỗi ô có nhãn đọc được, ví dụ "còn N ngày" |
-| Keyboard navigation | [EXPECTED] | E05 nhận focus bằng Tab, kích hoạt bằng Enter |
+| ARIA roles/labels | [EXPECTED] | Mỗi ô có nhãn đọc được, ví dụ "5 ngày 3 giờ 7 phút" trong vùng `aria-live="polite"`, chỉ đổi chữ khi phút đổi |
+| Keyboard navigation | [EXPECTED] | Không có phần tử tương tác |
 | Focus management | [EXPECTED] | Không có bẫy focus; chuyển trang tự động không cướp focus của người đang thao tác |
 | Screen reader compatibility | [EXPECTED] | Chỉ đọc lại số khi người dùng hỏi, không đọc mỗi phút |
 | Error announcement | [EXPECTED] | Không áp dụng; màn không có form |

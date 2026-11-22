@@ -1,0 +1,102 @@
+{
+  "commands": [
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "35 files, 269/269 passed (tester run, before the write-window change)",
+      "ts": "2026-11-22T02:00:00.000Z"
+    },
+    {
+      "command": "npx vitest run --project integration tests/integration/kudos-authoring tests/integration/kudos-hearts",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "11 files, 94/94 passed incl. new WRITING_CLOSED-before-LAUNCH_AT case (final code)",
+      "ts": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "command": "npx vitest run --project unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "40 files, 600/600 passed incl. prelaunch gate table (134), countdown-parts, awards-data, event-window RED->GREEN (final code)",
+      "ts": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code)",
+      "ts": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "0 problems (tester run); eslint on files changed afterwards: 0",
+      "ts": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "command": "npx playwright test",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "84 passed, 5 skipped (prelaunch-only) at 3 workers on a freshly restarted dev server (final code)",
+      "ts": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped (post-launch-only): user -> /countdown, Server Action 403 prelaunch, admin passes, guest /countdown + /login, countdown asks for / at zero (final code)",
+      "ts": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "command": "npx playwright test tests/e2e/smoke.spec.ts",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "2/2 with the new launched-server globalSetup on :3000 (final code)",
+      "ts": "2026-11-22T06:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped after globalSetup override in playwright.prelaunch.config.ts (final code)",
+      "ts": "2026-11-22T06:00:00.000Z"
+    },
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean after config change (final code)",
+      "ts": "2026-11-22T06:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "35 files, 270/270 passed on final code (after write-window change; closes O9)",
+      "ts": "2026-11-22T05:52:00.000Z"
+    },
+    {
+      "command": "npx playwright test tests/e2e/app-shell tests/e2e/smoke.spec.ts",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "23/23 incl. new footer Thể lệ -> /rules assertion (RED before the link, GREEN after; final code)",
+      "ts": "2026-11-22T06:25:00.000Z"
+    },
+    {
+      "command": "npx vitest run --project unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "40 files, 600/600 after footer change (final code)",
+      "ts": "2026-11-22T06:25:00.000Z"
+    },
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean after footer change (final code)",
+      "ts": "2026-11-22T06:25:00.000Z"
+    }
+  ]
+}

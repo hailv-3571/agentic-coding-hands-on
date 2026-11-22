@@ -11,7 +11,7 @@ lang: vi
 **Screen**: SCR010_CommunityStandards: Tiêu chuẩn cộng đồng
 **Feature**: F006_AwardsPortal
 **Type**: atomic
-**Route**: /community-standards (TBD (draft))
+**Route**: /community-standards
 **Generated**: 2026-11-08
 
 ## 1. Overview
@@ -25,7 +25,7 @@ lang: vi
 
 ### Layout Sketch
 
-Hero hoặc tiêu đề ở đầu, rồi nội dung dạng bài viết dài chia mục, có mục "Tiêu chuẩn bảo mật". Header và footer do khung chung cấp (F002_AppShell). Cách chia mục chưa đối chiếu từ frame `[UNVERIFIED]`.
+Hero hoặc tiêu đề ở đầu, rồi nội dung dạng bài viết dài chia mục, có mục "Tiêu chuẩn bảo mật". Header và footer do khung chung cấp (F002_AppShell). Dưới header trong suốt là keyvisual Live board và logo ROOT FURTHER (451×200), rồi nội dung chữ (Figma 1161:8944).
 
 ```
 ┌─────────────────────────────────────────┐

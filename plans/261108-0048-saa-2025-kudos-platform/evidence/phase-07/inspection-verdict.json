@@ -1,0 +1,64 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "Before LAUNCH_AT a signed-in non-admin on any path except /login, /auth/callback, /countdown, /access-denied is redirected to /countdown (page loads) or gets JSON 403 {code:prelaunch} (actions/API); admin passes everywhere; role lookup failure fails closed: by code reading of decidePrelaunchRoute (prelaunch-gate.ts:67-69, isAdmin catch returns false, session-proxy profileLookup returns null on error) and by test, prelaunch-gate.test.ts 'answers forbidden (never a redirect that would replay a POST)...', 'gates look-alikes of allowlisted paths', 'lets an admin's actions and API calls through before launch'; e2e prelaunch-gate.spec.ts (prelaunch run 5 passed/1 skipped, orchestrator). Residual W1 (choose-department/locale actions on allowlisted paths) accepted in decision-log, low impact",
+    "At/after LAUNCH_AT /countdown redirects to / for everyone and the proxy performs no role read: by test, prelaunch-gate.test.ts 'lets every request through after launch without a role lookup' and 'never redirects a Server Action posted to /countdown after launch'; e2e 'after LAUNCH_AT' group sends /countdown to / for guests and Sunners",
+    "Guests still reach /countdown, /login, /auth/callback, /access-denied before launch: by code reading (isPublicPath pass at prelaunch-gate.ts:67, PUBLIC_PATHS in public-paths.ts) and e2e 'shows a guest the countdown and the login page, and still sends / to /login'; /auth/callback and /access-denied by code reading only, no e2e",
+    "Countdown shows DAYS/HOURS/MINUTES from server time, ignores client clock skew, ticks per minute, never negative, navigates to / when it reaches zero; no link to /awards (decision 2026-11-15): by test, countdown-parts.test.ts and e2e 'counts down to LAUNCH_AT with no link to the awards, then asks for the home page once the clock passes it'; by code reading of use-server-clock-now.ts (server offset, minute-aligned timer, visibilitychange) and countdown-timer.tsx (redirect only when parts.done); client lags server by render-to-mount latency, safe direction",
+    "Homepage: hero, Coming soon + countdown to EVENT_AT (hidden label and 00 after it), event date from EVENT_AT, theme article, 6 award cards linking /awards#slug, ABOUT AWARDS/ABOUT KUDOS and Kudos banner links: by code reading of app/(app)/page.tsx, homepage-hero.tsx (pendingLabel hidden when parts.done) and e2e portal-pages.spec.ts (full e2e 84 passed/5 skipped, orchestrator); I did not view the screenshots pixel by pixel",
+    "Awards page: 6 blocks matching the SCR-awards-system table exactly (Signature two values), anchor menu active by scroll, click scrolls + updates hash, invalid hash stays at top: by test, awards-data.test.ts and by code reading of awards-data.ts against research/figma-awards-portal-spec.md rows (10/2/3/1/1/1; 7/15/7/10/5+8/15 M VND); awards-anchor-menu.tsx onSelect uses scrollIntoView + history.replaceState; e2e portal-pages.spec.ts",
+    "Rules and Community standards render static content (4 hero tiers, Secret Box, Kudos Quốc Dân, Tiêu chuẩn bảo mật) with no input/form/PII: by code reading of rules-panel.tsx, rules-kudos-rewards.tsx, community-standards-content.tsx (no form, input or user data) and e2e portal-pages.spec.ts",
+    "All copy vi + en via next-intl; desktop 1440 and mobile 375 without horizontal scroll: by script, awardsPortal key diff vi/en 121/121 with no difference; horizontal scroll by e2e portal-pages.spec.ts, screenshots exist under evidence/screenshots/phase-07 and were not pixel-compared by me",
+    "Shared write window open only for LAUNCH_AT <= now < EVENT_END_AT so prelaunch writes are refused even past the proxy (decision 2026-11-22): by test, tests/unit/shared/event-window.test.ts 'is closed before LAUNCH_AT...' and 'opens exactly at LAUNCH_AT (inclusive start)'; by code reading, create-kudo-action, update-kudo-action, images/sign route and kudo-heart-service all call isEventWritingOpen"
+  ],
+  "regressionChecked": [
+    "proxy matcher and step order: step 5 runs after 4/4b, guests reach it only on public paths; session cookies carried onto the gate answer via carrySessionCookies",
+    "no /countdown <-> / loop: client clock lags the server, proxy owns the post-launch redirect, cross-instance skew resolves in one hop",
+    "kudo create/update, image sign route and heart service all use isEventWritingOpen, so the LAUNCH_AT bound applies uniformly; unit 600/600 and integration kudos-authoring+hearts 94/94 per orchestrator",
+    "prelaunch Playwright config isolated: testMatch one spec, port 3100, no server reuse, globalSetup undefined; normal playwright.config.ts gains globalSetup tests/e2e/global-setup-require-launched-server.ts (W2 fix): I read it, it fetches /countdown with redirect manual and throws a clear message on 200 (before launch); smoke 2/2, prelaunch 5/1, negative run stopped with the message, per orchestrator, not re-run by me",
+    "W1 accepted and recorded in spec/decision-log.md (choose-department and locale actions run on allowlisted paths before launch, low impact); I did not re-read the decision-log entry text",
+    "client components do not import env or server-only modules; request-time.ts and the gate step are server-only",
+    "all new files under 200 lines, no temp specs left, no secrets in new sources"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Warning",
+      "category": "Security",
+      "location": "features/awards-portal/server/prelaunch-gate.ts:67",
+      "summary": "a prelaunch non-admin can POST any Server Action to an allowlisted path; choose-department/locale still run (kudo/heart writes blocked by the window); accepted and recorded in decision-log",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Warning",
+      "category": "Completeness",
+      "location": "playwright.config.ts:9",
+      "summary": "normal e2e suite needed LAUNCH_AT in the past with no fail-fast; fixed by globalSetup require-launched-server",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Craft",
+      "location": "features/kudos-hearts/components/kudo-heart-button.tsx:61",
+      "summary": "pre-launch closed window reports EVENT_ENDED to an admin",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Craft",
+      "location": "features/awards-portal/components/use-server-clock-now.ts:21",
+      "summary": "client lags server by render-to-mount latency; safe direction, document it",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

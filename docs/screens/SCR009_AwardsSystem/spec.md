@@ -11,21 +11,21 @@ lang: vi
 **Screen**: SCR009_AwardsSystem: Hệ thống giải
 **Feature**: F006_AwardsPortal
 **Type**: composite
-**Route**: /awards (TBD (draft))
+**Route**: /awards
 **Generated**: 2026-11-08
 
 ## 1. Overview
 
 **Purpose:** Cho Sunner xem từng hạng mục giải SAA 2025 với mô tả, số lượng và giá trị, và nhảy nhanh giữa các giải.
-**Actors:** Sunner, Admin; người dùng thường trước giờ mở nếu D002 giữ mặc định
-**Entry Conditions:** Đã có phiên đăng nhập; từ Homepage, từ header, hoặc từ màn đếm ngược.
+**Actors:** Sunner, Admin (người dùng thường trước giờ mở bị chuyển `/countdown`; `/awards` không nằm trong allowlist, decision-log 2026-11-17)
+**Entry Conditions:** Đã có phiên đăng nhập và đã qua `LAUNCH_AT` (Admin vào được trước đó); từ Homepage hoặc từ header/footer.
 **Exit Conditions:** Người dùng sang Sun* Kudos qua banner cuối trang hoặc rời qua header.
 
 ## 2. Screen Layout
 
 ### Layout Sketch
 
-Hero và tiêu đề "Hệ thống giải thưởng SAA 2025" ở đầu. Bên trái là menu neo 6 giải đứng yên khi cuộn; bên phải là 6 khối giải xếp dọc, mỗi khối có ảnh, tên, mô tả, số lượng, giá trị. Cuối trang là banner Sun* Kudos. Header và footer do khung chung cấp (F002_AppShell). Chi tiết bố cục ảnh trái/phải chưa đối chiếu từ frame `[UNVERIFIED]`.
+Hero và tiêu đề "Hệ thống giải thưởng SAA 2025" ở đầu. Bên trái là menu neo 6 giải đứng yên khi cuộn; bên phải là 6 khối giải xếp dọc, mỗi khối có ảnh, tên, mô tả, số lượng, giá trị. Cuối trang là banner Sun* Kudos. Header và footer do khung chung cấp (F002_AppShell). Ảnh các khối xen kẽ trái/phải, khối đầu ảnh bên trái (Figma 313:8436). `/awards#<slug>` cuộn tới đúng khối; hash không khớp thì trang ở đầu.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -122,7 +122,6 @@ N/A — no validation rules or submit-side error feedback detected.
 |------|----------------|-----------|--------|
 | TBD (draft) — SCR012_Homepage | Chi tiết của thẻ giải hoặc ABOUT AWARDS | — | TBD (draft) |
 | TBD (draft) — SCR003_AppLayout | Liên kết "Award Information" | — | TBD (draft) |
-| TBD (draft) — SCR011_CountdownPrelaunch | Liên kết thông tin giải | Trước giờ mở, D002 giữ mặc định | TBD (draft) |
 
 ### Exits
 

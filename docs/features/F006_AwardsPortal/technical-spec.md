@@ -49,12 +49,12 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-001, FR-402, FR-603 | — | § 4.4 |
-| **A1** | `PrelaunchGate#evaluate` (planned) | `GET` `/(mọi route khu Sunner, trước khi vào trang)` | FR-002, FR-601, FR-602, BR-002, DEC-001 | — *(read-only)* | § 3.1 |
-| **A2** | `CountdownPage#render` (planned) | `GET` `/countdown` | FR-201, FR-202, FR-203, FR-401, BR-001, DEC-002, US001_SeeCountdownBeforeLaunch | — *(read-only)* | § 3.1 |
-| **A3** | `HomePage#render` (planned) | `GET` `/` | FR-101, FR-102, FR-103, FR-104, FR-211, FR-212, FR-213, FR-214, FR-215, FR-216, BR-001, BR-003, US002_ViewHomepage | — *(read-only)* | § 3.2 |
-| **A4** | `AwardsSystemPage#render` (planned) | `GET` `/awards` | FR-301, FR-302, FR-303, FR-304, FR-305, FR-306, BR-003, US003_BrowseAwardCategories | — *(read-only)* | § 3.3 |
-| **A5** | `RulesPage#render` (planned) | `GET` `/rules` | FR-311, FR-312, US004_ReadRules | — *(read-only)* | § 3.4 |
-| **A6** | `CommunityStandardsPage#render` (planned) | `GET` `/community-standards` | FR-321, US005_ReadCommunityStandards | — *(read-only)* | § 3.4 |
+| **A1** | `decidePrelaunchRoute` (`features/awards-portal/server/prelaunch-gate.ts`, proxy step 5) | `GET` `/(mọi route khu Sunner, trước khi vào trang)` | FR-002, FR-601, FR-602, BR-002, DEC-001 | — *(read-only)* | § 3.1 |
+| **A2** | `CountdownPage` (`app/(public)/countdown/page.tsx`) | `GET` `/countdown` | FR-201, FR-202, FR-203, FR-401, BR-001, DEC-002, US001_SeeCountdownBeforeLaunch | — *(read-only)* | § 3.1 |
+| **A3** | `HomePage` (`app/(app)/page.tsx`) | `GET` `/` | FR-101, FR-102, FR-103, FR-104, FR-211, FR-212, FR-213, FR-214, FR-215, FR-216, BR-001, BR-003, US002_ViewHomepage | — *(read-only)* | § 3.2 |
+| **A4** | `AwardsPage` (`app/(app)/awards/page.tsx`) | `GET` `/awards` | FR-301, FR-302, FR-303, FR-304, FR-305, FR-306, BR-003, US003_BrowseAwardCategories | — *(read-only)* | § 3.3 |
+| **A5** | `RulesPage` (`app/(app)/rules/page.tsx`) | `GET` `/rules` | FR-311, FR-312, US004_ReadRules | — *(read-only)* | § 3.4 |
+| **A6** | `CommunityStandardsPage` (`app/(app)/community-standards/page.tsx`) | `GET` `/community-standards` | FR-321, US005_ReadCommunityStandards | — *(read-only)* | § 3.4 |
 
 **Rung set:** Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn, không ghi N/A.
 
@@ -74,8 +74,8 @@ flowchart LR
 
 | DEC | subtype | Condition | What the user sees | Source |
 |---|---|---|---|---|
-| **DEC-001** | flow | `now < LAUNCH_AT AND path NOT IN allowlist(login, countdown, awards)` | Chuyển tới Countdown (FR-601: người dùng thường bị chặn khỏi trang chưa mở) | TBD (draft) |
-| **DEC-001** | flow | `now < LAUNCH_AT AND path == "/awards"` | Trang Hệ thống giải (theo D002, chờ xác nhận) | TBD (draft) |
+| **DEC-001** | flow | `now < LAUNCH_AT AND user is not admin AND path NOT IN allowlist(/login, /auth/callback, /countdown, /access-denied)` | Tải trang: chuyển tới Countdown (FR-601). Server Action, `/api/*`, method khác GET/HEAD: JSON 403 `{ code: "prelaunch" }`. `/awards` không nằm trong allowlist (decision-log 2026-11-17, đè D002) | decision-log 2026-11-17 |
+| **DEC-001** | flow | `now < LAUNCH_AT AND user is admin` | Qua mọi trang như bình thường (D003); ghi dữ liệu vẫn đóng tới `LAUNCH_AT` (`isEventWritingOpen`) | decision-log 2026-11-22 |
 | **DEC-001** | flow | `now >= LAUNCH_AT AND path == "/countdown"` | Chuyển tới Homepage | TBD (draft) |
 | **DEC-001** | flow | `now >= LAUNCH_AT` | Mọi trang như bình thường | TBD (draft) |
 
@@ -190,11 +190,11 @@ flowchart LR
 
 | Component | Responsibility | Used in | File |
 |---|---|---|---|
-| `PrelaunchGate` (planned) | Quyết định chuyển hướng theo giờ mở; xuất `isPrelaunch(now)` | A1 | TBD (draft) |
-| `CountdownTimer` (planned) | Client component đếm ngược DAYS/HOURS/MINUTES, dùng chung Countdown và Homepage | A2, A3 | TBD (draft) |
-| `awardsData` (planned) | Một nguồn dữ liệu 6 giải: id, tên, mô tả, số lượng, giá trị, loại người nhận | A3, A4 | TBD (draft) |
-| `AwardAnchorMenu` (planned) | Menu neo dính, đánh dấu mục đang xem | A4 | TBD (draft) |
-| `KudosBanner` (planned) | Banner Sun* Kudos dùng ở Homepage và cuối trang Hệ thống giải | A3, A4 | TBD (draft) |
+| `decidePrelaunchRoute`, `isPrelaunch(nowMs, launchAtMs)` | Hàm thuần quyết định pass / redirect / 403 theo giờ mở và role; `prelaunchGateStep` nối vào proxy | A1 | `features/awards-portal/server/prelaunch-gate.ts`, `prelaunch-gate-step.ts` |
+| `CountdownTimer` | Client component đếm ngược DAYS/HOURS/MINUTES theo giờ máy chủ, dùng chung Countdown và Homepage; phép tính ở `remainingParts` | A2, A3 | `features/awards-portal/components/countdown-timer.tsx`, `countdown-parts.ts` |
+| `AWARDS` | Một nguồn dữ liệu 6 giải: slug, số lượng, loại người nhận, giá trị VND; tên và mô tả là key `awardsPortal` trong `messages/*.json` | A3, A4 | `features/awards-portal/data/awards-data.ts` |
+| `AwardsAnchorMenu` | Menu neo dính, đánh dấu mục đang xem | A4 | `features/awards-portal/components/awards-anchor-menu.tsx` |
+| `KudosBanner` | Banner Sun* Kudos dùng ở Homepage và cuối trang Hệ thống giải | A3, A4 | `features/awards-portal/components/kudos-banner.tsx` |
 
 ### 4.2 Data Model
 
@@ -240,10 +240,10 @@ None.
 ### 4.6 Configuration
 
 ```text
-LAUNCH_AT = TBD (draft)             # ISO 8601 có múi giờ; giờ mở hệ thống (A1, D004)
-EVENT_AT = TBD (draft)              # ISO 8601 có múi giờ; mốc đếm ngược Homepage (A3, D005)
-EVENT_TIMEZONE = Asia/Ho_Chi_Minh   # múi giờ hiển thị và so sánh
-COUNTDOWN_TICK_SECONDS = 60         # chu kỳ cập nhật timer (A2, A3)
+LAUNCH_AT = <env, xem .env.example>   # ISO 8601 có offset; giờ mở hệ thống (A1, D004); đúng LAUNCH_AT là đã mở
+EVENT_AT = <env, xem .env.example>    # ISO 8601 có offset; mốc đếm ngược Homepage (A3, D005)
+ADMIN_TIMEZONE = Asia/Ho_Chi_Minh     # múi giờ hiển thị ngày lễ trên Homepage (toAdminZone)
+# Timer không có cấu hình chu kỳ: cập nhật khi phút hiển thị đổi (A2, A3)
 ```
 
 ## 5. Verification & Technical Notes

@@ -20,8 +20,8 @@
 | Actor | Description | Primary goal |
 |-------|--------------|---------------|
 | Sunner | Nhân viên Sun* đã đăng nhập | Xem thông tin lễ trao giải, các giải, thể lệ, tiêu chuẩn cộng đồng |
-| Khách chưa đăng nhập | Người chưa có phiên | Xem màn đếm ngược trước giờ mở (xem D001) |
-| Admin | Sunner có thêm quyền quản trị | Xem cổng như Sunner; có được vào trước giờ mở hay không xem D003 |
+| Khách chưa đăng nhập | Người chưa có phiên | Xem màn đếm ngược trước giờ mở; trang khác dẫn tới Login (D001 đã chốt: Countdown công khai) |
+| Admin | Sunner có thêm quyền quản trị | Xem cổng như Sunner; vào được mọi trang trước giờ mở nhưng chưa ghi được Kudo hay tim tới giờ mở (D003 đã chốt, decision-log 2026-11-22) |
 
 ## 2. Functional Capabilities
 

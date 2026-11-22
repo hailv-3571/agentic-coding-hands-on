@@ -2,7 +2,7 @@
 phase: 07
 feature: F006
 priority: P1
-status: pending
+status: completed
 depends_on: [02, 03]
 file_ownership:
   - app/(public)/countdown/page.tsx
@@ -26,7 +26,7 @@ file_ownership:
 
 ## Overview
 - Priority: P1
-- Status: pending
+- Status: completed (2026-11-22). Delivered-vs-planned and open items: see Delivery Notes below.
 - Description: Prelaunch gate (pure `isPrelaunch` + proxy step with admin bypass), public Countdown page, Homepage, Hệ thống giải (sticky left anchor menu), static Thể lệ and Tiêu chuẩn cộng đồng pages, single awards data module.
 
 ## Key Insights
@@ -107,24 +107,74 @@ Delete
 11. E2E (env-driven `LAUNCH_AT`/`EVENT_AT` per test server; see Scope Contract), then `typecheck`, `lint`, unit + e2e green.
 
 ## Todo List
-- [ ] Next 16 docs read (proxy, dynamic rendering, images)
-- [ ] `isPrelaunch` / `decidePrelaunchRoute` + exhaustive unit tests
-- [ ] Proxy step (5) wired with admin bypass
-- [ ] `remainingParts` + tests
-- [ ] `awards-data.ts` + test
-- [ ] Figma extraction + image assets
-- [ ] Countdown page + timer
-- [ ] Homepage
-- [ ] Hệ thống giải with anchor menu
-- [ ] Thể lệ + Tiêu chuẩn cộng đồng
-- [ ] E2E gate + pages
+- [x] Next 16 docs read (proxy, dynamic rendering, images): proxy.md, distDir, next.md read (prelaunch report); `connection()` pattern in `request-time.ts`
+- [x] `isPrelaunch` / `decidePrelaunchRoute` + exhaustive unit tests: 120-cell table + request-kind cases, 134 gate tests green
+- [x] Proxy step (5) wired with admin bypass: `npm run test:e2e:prelaunch` exit 0, 5 passed / 1 skipped (final code)
+- [x] `remainingParts` + tests: `countdown-parts.test.ts` green; file lives in `features/awards-portal/countdown-parts.ts`, not `server/` (see drift D8)
+- [x] `awards-data.ts` + test: 6 slugs, vi/en keys 121/121, Signature has 2 values; numbers match SCR-awards-system
+- [x] Figma extraction + image assets: 21 webp + 8 svg in `public/images/awards-portal/`, DSEG7 woff2 under `features/awards-portal/fonts/`; pixel diff not run
+- [x] Countdown page + timer: `app/(public)/countdown/page.tsx`; redirect at zero verified on prelaunch server; desktop and mobile screenshots taken
+- [x] Homepage: `app/(app)/page.tsx`; `portal-pages.spec.ts` 12/12
+- [x] Hệ thống giải with anchor menu: position-based menu (drift D9); jump-to-top and hash tests pass
+- [x] Thể lệ + Tiêu chuẩn cộng đồng: Thể lệ drawn as 553px right panel (drift D1); both pages have no form or input
+- [x] E2E gate + pages: full e2e 84 passed / 5 skipped (exit 0, fresh dev server); prelaunch 5 passed / 1 skipped
 
 ## Success Criteria
-- SC-001..SC-005 of technical spec pass (gate both directions, client clock skew ignored, auto-switch at 0, one data source, no `<input>`/`<form>` on static pages).
-- Changing `LAUNCH_AT`/`EVENT_AT` in env (no code change) flips Countdown ↔ Homepage and retargets the Homepage countdown.
-- Admin reaches `/`, `/kudos`, `/admin/*` before launch; User redirected to `/countdown`; guest sees `/countdown` and `/login` only.
-- After launch no DB role lookup happens in the proxy (verified by unit test on step adapter: `getRole` not called).
-- Awards numbers match SCR-awards-system table exactly.
+- [x] SC-001..SC-005 (technical spec) covered: gate both directions (unit table + prelaunch e2e); client clock skew ignored (`page.clock` test, fails with offset set to 0); auto-switch at 0 (prelaunch e2e); one data source (`AWARDS`); no `<input>`/`<form>` on static pages (e2e).
+- [x] Changing `LAUNCH_AT`/`EVENT_AT` flips Countdown ↔ Homepage: evidenced by two env profiles (dev server with past `LAUNCH_AT`, prelaunch server with `LAUNCH_AT` = now + 30 d). No single test toggles env mid-run.
+- [x] Admin reaches `/` and `/admin/overview` before launch; User redirected to `/countdown`; guest sees `/countdown` and `/login` only (e2e). Admin on `/kudos` and the rest of `/admin/*` is covered by the unit table only.
+- [x] After launch no DB role lookup in the proxy: `getRole` not called (adapter unit test and pure-function test).
+- [x] Awards numbers match SCR-awards-system table (`awards-data.test.ts`; reviewer re-checked against research table).
+
+## Delivery Notes (2026-11-22)
+
+Evidence sources: `spec/decision-log.md` (sessions 2026-11-17, 2026-11-22), `reports/implementer-261117-phase-07-prelaunch-gate.md`, `reports/implementer-261117-phase-07-portal-pages.md`, `reports/tester-261122-phase-07-full-run.md`, `reports/reviewer-261122-phase-07.md`, `evidence/phase-07/temper-results.json`.
+
+Final verification (final code): unit 600/600 · integration 94/94 subset (kudos-authoring, hearts) · tsc 0 · lint 0 · full e2e 84 passed / 5 skipped · prelaunch e2e 5 passed / 1 skipped · review 0 critical, 2 warnings handled.
+
+### Delivered vs planned (drift log)
+| # | Planned | Delivered | Reason | Cost |
+|---|---------|-----------|--------|------|
+| D1 | Thể lệ as a page with a drawer | `/rules` drawn as 553px right panel on a darkened key visual, in normal page flow (min-height = viewport − header). "Đóng" goes back, "Viết KUDOS" goes to `/kudos` | Figma 3204:6051, decision 2026-11-17 | Footer follows the panel; no scroll drawer |
+| D2 | Floating pen / Kudos logo widget on Homepage | Deferred, not built | Figma 5022:15169; decision 2026-11-17 (F003 D014, F002 D003) | Open item O2 |
+| D3 | "Digital Numbers" countdown font | DSEG7 Classic (SIL OFL 1.1), self-hosted woff2, loaded only by the countdown digit component | Font missing; decision 2026-11-17 | License file added |
+| D4 | Prelaunch gate redirects every blocked request with 307 | Page loads redirect to `/countdown`. Server Actions, `/api/*` and non-GET get JSON 403 `{code:"prelaunch"}` | A 307 makes `fetch` replay the POST on `/countdown`; decision 2026-11-17 | Client code must handle a JSON 403 |
+| D5 | Second `next dev` for prelaunch e2e | `next build` + `next start -p 3100` via `playwright.prelaunch.config.ts` (`npm run test:e2e:prelaunch`) | `next dev` dir lock; a custom `distDir` dirties `tsconfig.json` | About 10 s build per run; shares `.next` with `test:prod` |
+| D6 | Write gate tied to the page gate | Write window `LAUNCH_AT ≤ now < EVENT_END_AT` (`isEventWritingOpen`), applied to Admin too. Reuses `WRITING_CLOSED` | Server Actions bypass the page gate; decision 2026-11-22 | Admin cannot write before launch; message wording open (O3) |
+| D7 | Allowlist `/login`, `/auth/callback`, `/countdown` | `/access-denied` added to the allowlist | Step 4b self-fetch needs it; decision 2026-11-15 | None |
+| D8 | `countdown-parts` in `server/` | `features/awards-portal/countdown-parts.ts` (pure, used by client and server). `request-time.ts` added for server-only `connection()` + `Date.now()` | Client bundle must import it; `react-hooks/purity` rejects `Date.now()` in a Server Component body | One extra file |
+| D9 | Anchor menu on IntersectionObserver | rAF scroll-position logic (last block past 25 % line) | IO fires no callback on jumps (Home, back-to-top), so the highlight went stale | Same behaviour; more scroll code |
+| D10 | Menu labels = award names | New `awards.<slug>.menu` keys | Figma shows "Signature 2025 Creator" and "MVP" | 6 extra keys |
+| D11 | Figma is desktop only | Phone sizes chosen for below `sm`/`md`/`xl` (countdown tiles 40×64, titles 32/40, banner stacks) | No mobile design | Not in Figma; design should look at it |
+| D12 | Normal e2e assumes launch has passed | Launched-server `globalSetup` (`tests/e2e/global-setup-require-launched-server.ts`) stops the run if guest `/countdown` returns 200 | Review W2 (2026-11-22) | A future `LAUNCH_AT` now fails fast with a clear message |
+| D13 | Prelaunch allowlisted paths open to all writes | Accepted: `choose-department` action and locale switch still run pre-launch via action id | Review W1, decision 2026-11-22: own profile only, sign-out and locale must stay open | Open item O5 |
+
+### Scope notes (not drift, but affects users)
+- First-login Sunners before launch land on `/countdown` and cannot reach `/onboarding/department` until launch. Consistent with "only Login + Countdown"; the onboarding flow waits until launch.
+- The gate is a convenience wall. Data protection stays in `requireSunner()` and write-window checks.
+- Ship-time docs: `docs/code-standards.md` needs the `test:e2e:prelaunch` row (not done, O13).
+
+### Open items carried forward
+Owner names are roles on this team. "Done when" is the check that closes the item.
+
+| ID | Item | Owner | Done when | Blocks |
+|----|------|-------|-----------|--------|
+| O9 | ~~Full integration suite after the write-window change~~ **Closed 2026-11-22:** `npm run test:integration` 35 files, 270/270, exit 0 on final code (recorded in `evidence/phase-07/temper-results.json`) | orchestrator | done | — |
+| O1 | BTC final copy for Thể lệ, Tiêu chuẩn cộng đồng, and English (current EN is a temporary translation, D007). Open since 2026-11-08 | BTC via user | BTC copy merged as JSON edits in `messages/*.json`; no code change | Final content sign-off |
+| O2 | Floating widget button (Figma 5022:15169) | user + BTC | BTC decides build or drop; decision recorded in decision log | Homepage completeness |
+| O3 | `WRITING_CLOSED` wording shown pre-launch ("Sự kiện đã kết thúc…") for admin or crafted requests | phase 04 owner + BTC copy | Pre-launch message key exists and an integration test asserts it | Copy only |
+| O4 | Heart button shows `EVENT_ENDED` to Admin pre-launch (review S1) | phase 06 owner | Neutral pre-launch reason and a test for it | Copy only |
+| O5 | `choose-department` action and any Server Action run pre-launch (review W1). Accepted 2026-11-22 | user (product) | Either recorded as accepted (done) or a guard in `choose-department-action` plus test if BTC wants it blocked | Policy only |
+| O6 | "Hoặc" in #2E3940 on #00101A is about 1.5:1, fails WCAG AA. Figma is authoritative | design + BTC | Colour confirmed or changed in Figma, decision logged | Accessibility |
+| O7 | Slack handle "duong.thi.thuy.an" in Tiêu chuẩn cộng đồng (FR-603, copy not user data) | BTC via user | Kept or removed as a JSON edit, decision logged | Privacy review |
+| O8 | Real-browser minute-tick latency near a boundary not measured (review S3 says the client lags the server by network and hydration time) | tester | Measured in a real browser at a minute boundary; numbers in `evidence/phase-07/` | Accuracy claim only |
+| O10 | FR-203 mutation check not run (reasoning only) | tester | Throwaway branch: test fails with `redirectOnZero` removed | Test trust |
+| O11 | Distinct log tag for role-lookup failures so an outage is not read as "admin blocked" (review S2) | phase 07 implementer | Log tag added, test asserts it | Ops clarity |
+| O12 | Note on client clock lag in `use-server-clock-now.ts` header (review S3) | phase 07 implementer | Comment present | None |
+| O13 | Docs drift: `docs/features/F006_AwardsPortal/technical-spec.md` still lists `/awards` as allowed pre-launch (DEC-001 TBD) and says the countdown links to `/awards`. `docs/development-roadmap.md` row 07 still reads "Chưa làm". `docs/project-changelog.md` has no phase 07 entry. `docs/code-standards.md` lacks the prelaunch test row | doc-writer, delivery-tracker | Grep shows no conflicting statement; roadmap and changelog updated | Documentation rule |
+| O14 | Next.js feedback candidate (`connection()` docs vs `react-hooks/purity` lint) drafted, not sent | user | Sent or dropped by user | None |
+
+- Phase 13/14 and phase 11 are unaffected. Admin bypass covers prelaunch rehearsal.
 
 ## Scope Contract
 - **Changed:** prelaunch gate (pure fn + proxy step), countdown logic, awards data module, 5 pages, `awardsPortal` messages, image assets.
