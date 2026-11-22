@@ -170,7 +170,8 @@ test.describe("Kudo detail", () => {
     await page.goto(`/kudos/${id}`);
     const detail = kudoDetailPanel(page, id);
     await expect(detail.getByText("Spam", { exact: true })).toBeVisible();
-    await expect(detail.getByText("Kudo này đã bị đánh dấu spam nên không thể sửa.")).toBeVisible();
+    // Phase 08 (decision-log 2026-11-22): the warning overlay replaced the edit-locked note.
+    await expect(detail.getByRole("note")).toContainText("Cảnh báo vi phạm tiêu chuẩn cộng đồng");
     await expect(detail.getByRole("button", { name: "Copy Link" })).toHaveCount(0);
     await expect(detail.getByRole("button", { name: "Chỉnh sửa Kudo" })).toHaveCount(0);
 

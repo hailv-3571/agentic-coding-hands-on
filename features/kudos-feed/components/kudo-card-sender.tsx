@@ -14,7 +14,7 @@ const textBlock = "flex w-full max-w-[235px] flex-col items-center gap-0.5 text-
 /** 64 px circular avatar with a white ring; a missing photo falls back to the initial. */
 const avatarFrame = "flex size-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-text-muted/30 text-on-primary";
 
-function NamedPerson({ person }: { person: KudoPersonView }) {
+function NamedPerson({ person, tabbable }: { person: KudoPersonView; tabbable: boolean }) {
   const href = `${APP_ROUTES.profile}/${person.id}`;
   return (
     <div className={column}>
@@ -23,7 +23,11 @@ function NamedPerson({ person }: { person: KudoPersonView }) {
         <UserAvatar name={person.name} avatarUrl={person.avatarUrl} />
       </Link>
       <div className={textBlock}>
-        <Link href={href} className={`max-w-full rounded text-title-medium font-bold wrap-anywhere text-on-primary hover:underline ${focusRing}`}>
+        <Link
+          href={href}
+          tabIndex={tabbable ? undefined : -1}
+          className={`max-w-full rounded text-title-medium font-bold wrap-anywhere text-on-primary hover:underline ${focusRing}`}
+        >
           {person.name}
         </Link>
         {person.department && (
@@ -53,17 +57,21 @@ function AnonymousSender({ sender }: { sender: KudoAnonymousSenderView }) {
   );
 }
 
-/** Info row of a card / the detail panel: sender | send arrow (py16, 32 px) | recipient. */
-export function KudoCardPeople({ sender, recipient }: { sender: KudoSenderView; recipient: KudoPersonView }) {
+/**
+ * Info row of a card / the detail panel: sender | send arrow (py16, 32 px) | recipient.
+ * `tabbable={false}` (the owner's spam Kudo under its overlay, phase 08 review W1) takes the profile
+ * links out of the Tab order; the names stay links for screen readers.
+ */
+export function KudoCardPeople({ sender, recipient, tabbable = true }: { sender: KudoSenderView; recipient: KudoPersonView; tabbable?: boolean }) {
   const t = useTranslations("kudosFeed.card");
   return (
     <div className="flex items-start justify-between">
-      {sender.anonymous ? <AnonymousSender sender={sender} /> : <NamedPerson person={sender} />}
+      {sender.anonymous ? <AnonymousSender sender={sender} /> : <NamedPerson person={sender} tabbable={tabbable} />}
       <span className="flex py-4">
         <KudoFeedIcon name="send" />
         <span className="sr-only">{t("sentTo")}</span>
       </span>
-      <NamedPerson person={recipient} />
+      <NamedPerson person={recipient} tabbable={tabbable} />
     </div>
   );
 }

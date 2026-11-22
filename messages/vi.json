@@ -274,9 +274,7 @@
       "heartsLabel": "lượt thả tim",
       "imageAlt": "Ảnh đính kèm {index}",
       "imageUnavailable": "Ảnh đính kèm {index} không tải được",
-      "openImage": "Mở ảnh đính kèm {index} trong thẻ mới",
-      "spamTag": "Spam",
-      "spamLocked": "Kudo này đã bị đánh dấu spam nên không thể sửa."
+      "openImage": "Mở ảnh đính kèm {index} trong thẻ mới"
     },
     "copyLink": {
       "label": "Copy Link",
@@ -543,6 +541,82 @@
         "Phạm vi Chia sẻ: Toàn bộ thông tin nhân sự và dự án trong hệ thống được bảo mật. Sunner vui lòng chỉ chia sẻ trong nội bộ Sun*."
       ],
       "contact": "Liên hệ Hỗ trợ: Mọi thắc mắc, Sunner vui lòng liên hệ đại diện BTC SAA: Slack duong.thi.thuy.an để được hỗ trợ."
+    }
+  },
+  "adminModeration": {
+    "metaTitle": "Review content",
+    "title": "Review content",
+    "export": {
+      "button": "Export",
+      "exporting": "Đang xuất…",
+      "tooLarge": "Có quá nhiều dòng để xuất. Hãy thu hẹp bộ lọc.",
+      "failed": "Không xuất được tệp. Vui lòng thử lại."
+    },
+    "dateRange": {
+      "group": "Khoảng ngày gửi",
+      "start": "Ngày bắt đầu",
+      "end": "Ngày kết thúc",
+      "reversed": "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc"
+    },
+    "filters": {
+      "region": "Bộ lọc Kudo",
+      "sender": "Người gửi",
+      "senderPlaceholder": "Chọn người gửi",
+      "receiver": "Người nhận",
+      "receiverPlaceholder": "Chọn người nhận",
+      "status": "Trạng thái",
+      "statusPlaceholder": "Chọn trạng thái",
+      "statusList": "Lọc theo trạng thái",
+      "all": "Tất cả",
+      "search": "Tìm theo nội dung",
+      "clear": "Xoá bộ lọc"
+    },
+    "filterError": {
+      "invalid_date_range": "Khoảng ngày không hợp lệ, đang hiện tất cả Kudo.",
+      "invalid_params": "Bộ lọc không hợp lệ, đang hiện tất cả Kudo."
+    },
+    "table": {
+      "caption": "Danh sách Kudo",
+      "id": "ID",
+      "sender": "Người gửi",
+      "receiver": "Người nhận",
+      "content": "Nội dung",
+      "hashtag": "Hashtag",
+      "heart": "Tim",
+      "heartSort": "Bấm để đổi thứ tự sắp xếp theo tim",
+      "status": "Trạng thái",
+      "actions": "Thao tác",
+      "anonymous": "Ẩn danh",
+      "anonymousNickname": "Gửi ẩn danh với biệt danh {nickname}",
+      "empty": "Không có Kudo nào phù hợp bộ lọc.",
+      "loadFailed": "Không tải được danh sách Kudo. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "status": {
+      "public": "Public",
+      "spam": "Spam"
+    },
+    "moderation": {
+      "markSpam": "Mark Spam",
+      "unSpam": "Un Spam",
+      "trigger": "{action} Kudo {id}",
+      "confirmMenu": "Xác nhận {action} Kudo {id}",
+      "markedSpam": "Đã đánh dấu Spam.",
+      "unSpammed": "Đã chuyển Kudo về Public.",
+      "alreadyChanged": "Kudo đã được cập nhật bởi Admin khác.",
+      "notFound": "Kudo không còn tồn tại.",
+      "failed": "Không cập nhật được trạng thái. Vui lòng thử lại."
+    },
+    "pagination": {
+      "label": "Phân trang",
+      "previous": "Trang trước",
+      "next": "Trang sau",
+      "page": "Trang {page}"
+    },
+    "ownerSpam": {
+      "tag": "Spam",
+      "warning": "Cảnh báo vi phạm tiêu chuẩn cộng đồng",
+      "hidden": "Kudo này đang bị tạm ẩn khỏi các trang công khai."
     }
   }
 }

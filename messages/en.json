@@ -274,9 +274,7 @@
       "heartsLabel": "hearts",
       "imageAlt": "Attached image {index}",
       "imageUnavailable": "Attached image {index} could not be loaded",
-      "openImage": "Open attached image {index} in a new tab",
-      "spamTag": "Spam",
-      "spamLocked": "This Kudo was marked as spam and can no longer be edited."
+      "openImage": "Open attached image {index} in a new tab"
     },
     "copyLink": {
       "label": "Copy Link",
@@ -543,6 +541,82 @@
         "Sharing scope: All personnel and project information in the system is confidential. Sunners, please share it only within Sun*."
       ],
       "contact": "Support: For any question, Sunners please contact the SAA Organizing Committee representative: Slack duong.thi.thuy.an for support."
+    }
+  },
+  "adminModeration": {
+    "metaTitle": "Review content",
+    "title": "Review content",
+    "export": {
+      "button": "Export",
+      "exporting": "Exporting…",
+      "tooLarge": "Too many rows to export. Narrow the filters.",
+      "failed": "Couldn’t export the file. Please try again."
+    },
+    "dateRange": {
+      "group": "Sent date range",
+      "start": "Start date",
+      "end": "End date",
+      "reversed": "The start date must be on or before the end date"
+    },
+    "filters": {
+      "region": "Kudo filters",
+      "sender": "Sender",
+      "senderPlaceholder": "Select Sender",
+      "receiver": "Receiver",
+      "receiverPlaceholder": "Select Receiver",
+      "status": "Status",
+      "statusPlaceholder": "Select Status",
+      "statusList": "Filter by status",
+      "all": "All",
+      "search": "Search by content",
+      "clear": "Clear filters"
+    },
+    "filterError": {
+      "invalid_date_range": "Invalid date range, showing all Kudos.",
+      "invalid_params": "Invalid filters, showing all Kudos."
+    },
+    "table": {
+      "caption": "Kudos",
+      "id": "ID",
+      "sender": "Sender",
+      "receiver": "Receiver",
+      "content": "Content",
+      "hashtag": "Hashtag",
+      "heart": "Heart",
+      "heartSort": "Click to change the heart sort order",
+      "status": "Status",
+      "actions": "Actions",
+      "anonymous": "Anonymous",
+      "anonymousNickname": "Sent anonymously as {nickname}",
+      "empty": "No Kudos match the filters.",
+      "loadFailed": "Couldn’t load the Kudos. Please try again.",
+      "retry": "Try again"
+    },
+    "status": {
+      "public": "Public",
+      "spam": "Spam"
+    },
+    "moderation": {
+      "markSpam": "Mark Spam",
+      "unSpam": "Un Spam",
+      "trigger": "{action} Kudo {id}",
+      "confirmMenu": "Confirm {action} Kudo {id}",
+      "markedSpam": "Marked as spam.",
+      "unSpammed": "Kudo is public again.",
+      "alreadyChanged": "Another admin has already updated this Kudo.",
+      "notFound": "This Kudo no longer exists.",
+      "failed": "Couldn’t update the status. Please try again."
+    },
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page {page}"
+    },
+    "ownerSpam": {
+      "tag": "Spam",
+      "warning": "Community standards violation warning",
+      "hidden": "This Kudo is hidden from public pages."
     }
   }
 }

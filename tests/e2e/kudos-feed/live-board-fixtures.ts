@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import type { Locator, Page } from "@playwright/test";
+import { KUDO_IMAGE_BUCKET } from "../../../features/kudos-authoring/kudo-authoring-limits";
 import { serviceClient } from "../../setup/local-sunner-accounts";
-import { expect, feedWindow, test, type KudoPair } from "../kudos-authoring/kudo-e2e-fixtures";
+import { expect, feedWindow, PNG_BYTES, test, type KudoPair } from "../kudos-authoring/kudo-e2e-fixtures";
 
 /**
  * F004 Live board e2e helpers on the local Supabase stack. Kudos are inserted with the service
@@ -18,6 +20,8 @@ export type FeedKudoSeed = {
   hashtags?: string[];
   anonymousNickname?: string;
   status?: "public" | "spam";
+  /** Real 1×1 PNGs uploaded to Storage and attached (the `kudoUsers` teardown removes them). */
+  images?: number;
 };
 
 function check<T>(result: { data: T; error: unknown }): T {
@@ -47,6 +51,11 @@ export async function seedFeedKudo(pair: KudoPair, seed: FeedKudoSeed): Promise<
       .single(),
   ) as { id: string };
   check(await serviceClient.from("kudo_hashtags").insert(tags.map((tag) => ({ kudo_id: kudo.id, hashtag_id: tag.id }))));
+  for (let position = 0; position < (seed.images ?? 0); position++) {
+    const path = `kudos/${randomUUID()}.png`;
+    check(await serviceClient.storage.from(KUDO_IMAGE_BUCKET).upload(path, PNG_BYTES, { contentType: "image/png" }));
+    check(await serviceClient.from("kudo_images").insert({ kudo_id: kudo.id, storage_path: path, position }));
+  }
   return kudo.id;
 }
 
