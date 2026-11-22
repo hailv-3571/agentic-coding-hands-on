@@ -6,6 +6,33 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-23 — Phase 12 (F012 Profile)
+
+Added
+- Trang `/profile` (của mình: header, icon, bảng thống kê, mục KUDOS mặc định "Đã gửi" / "Đã nhận") và `/profile/{userId}` (người khác: không có bảng thống kê, nút gửi Kudo mở hộp viết khoá người nhận, mục "Đã nhận"). Id của chính mình chuyển về `/profile`; id lạ hoặc sai dạng hiện "Không tìm thấy Sunner này." (404 mềm trên production như `/kudos/[id]`). Khoá `profile.*` (vi và en).
+- `GET /api/profile/{userId}/kudos?direction&cursor`: `{items, nextCursor?, counts:{received, sent?}}`, 10 Kudo mỗi trang. `sent` chỉ cho chính chủ (người khác → 403 trước mọi lần đọc); `senderId` luôn lấy từ session. Thứ tự lỗi: 401/403 → 400 → 404 id sai dạng → 403 → 404 không tồn tại. `private, no-store`, thân lỗi chỉ có `{code}`.
+- `GET /api/sunners/{userId}/card`: `{id, fullName, departmentName, heroTier, kudosReceived, kudosSent, canSendKudo}`, không email/role/avatar.
+- `KudoPublicQuery.count(filters)` (kèm type `KudoListFilters`) dùng chung `listConditions` với `list`: số đếm luôn khớp danh sách (BR-006), guard che ẩn danh áp cho mọi lần đếm.
+- `AvatarHoverCard`: thẻ nhanh theo Figma 2268:35101 (không avatar), mở sau 300 ms khi chuột vào avatar hoặc `:focus-visible` ở link tên; một thẻ mỗi trang; cảm ứng không mở; không bọc người gửi ẩn danh. Cầu Tab vào/ra thẻ trong portal, `aria-expanded`/`aria-controls` trên link tên. Bộ nhớ đệm theo trang, TTL 60 giây, xoá đệm của người nhận sau khi gửi Kudo từ thẻ hoặc nút trên profile.
+
+Changed
+- `kudo-card-sender.tsx` bọc khối người có tên bằng thẻ nhanh (tắt dưới lớp phủ spam của chủ bài); `kudo-feed-status-message.tsx` nhận `returnTo` tuỳ chọn cho link đăng nhập 401 (mặc định `/kudos`); `HeroBadge` thêm cỡ `hoverCard` (~164 px).
+- `ProfileQuery.getById` bọc `cache()` của React (một lần đọc mỗi lượt render).
+
+Decisions
+- ALG-001 làm trong SQL: phase 05 đã phục vụ "Đã gửi" (public + spam của mình) bằng một cursor `(created_at, id)`, nên không có hàm gộp riêng (sẽ chỉ là seam cho test). Kiểm ở integration: 16 Kudo, 4 spam xen kẽ, hai Kudo cùng thời điểm nằm hai bên ranh giới trang, trang 10 + 6, đúng thứ tự DB, không trùng không thiếu.
+- `kudosSent` của người khác chỉ đếm Kudo public không ẩn danh; spam không bao giờ được đếm; thẻ của chính mình đếm cả Kudo ẩn danh public của mình.
+- Người nhận khoá truyền cho hộp viết có `email: ""` (hộp chỉ dùng tên và id; DTO profile không có email).
+- Hộp "Gửi KUDO" trên thẻ cũng khoá người nhận (D008 áp cho cả thẻ).
+
+Chưa làm
+- Độ trễ 300 ms chưa có test trực tiếp (nên thêm assertion Resource Timing).
+- Lẫn chuột và bàn phím: focus trong thẻ A trong khi chuột mở thẻ B thì A đóng và focus rơi về `body`.
+- Gửi Kudo từ launcher ở Live board và số "đã gửi" của người xem chỉ làm mới bằng TTL (≤ 60 giây).
+- `tests/integration/profile/profile-pages.test.ts` trong kế hoạch được thay bằng e2e.
+- `docs/features/F012_Profile/` và `docs/screens/SCR021..SCR023` còn là bản nháp greenfield (tên handler dự kiến, `OwnSpamKudoQuery`, nội dung thẻ "avatar + mã phòng ban"); đồng bộ bằng `rebuild-spec --features F012`.
+- Dev-only: `next dev` (Turbopack) từng phục vụ route handler bằng bản cũ của `kudo-public-query.ts`, phải sửa một ký tự comment để biên dịch lại (comment đó còn trong file).
+
 ## 2026-11-23 — Phase 11 (F008 Spotlight Board)
 
 Added

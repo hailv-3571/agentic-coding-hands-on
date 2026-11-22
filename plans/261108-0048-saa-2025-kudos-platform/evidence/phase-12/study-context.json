@@ -1,0 +1,16 @@
+{
+  "task": "Phase 12 (F012 Profile): own and other profile pages composing existing blocks, profile kudos list endpoint with session-bound sender filter, hover-card endpoint, AvatarHoverCard on Kudo cards, composer prefilled with a locked recipient",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "direction=sent for another user is refused with 403 before any data read; the sender filter is always bound from the session",
+    "Received lists mask anonymous senders for everyone including the recipient; own sent list includes own spam (blurred overlay + orange tag) with anonymous masking intact",
+    "Counts equal what the lists show; merging public and own spam across pages never skips or duplicates",
+    "Hover card returns only safe fields; another user's sent count excludes anonymous kudos; never shown on anonymous senders",
+    "Endpoints answer 401 without session and are no-store",
+    "Own profile shows info, icon collection, stats panel and the Đã nhận / Đã gửi filter; other profile shows info, icons, the send pill (composer with locked recipient) and the received list; own id redirects to /profile; unknown id shows not-found",
+    "Hover card opens on hover/focus with delay, gold ring, Esc/leave closes, one at a time, touch navigates"
+  ],
+  "touchpoints": ["features/profile/", "app/(app)/profile/", "app/api/profile/", "app/api/sunners/[userId]/card/", "features/kudos-feed/server/kudo-public-query.ts", "features/kudos-feed/components/kudo-card-sender.tsx", "features/hero-badges/components/hero-badge.tsx", "messages/", "tests/"],
+  "blastRadius": ["KudoPublicQuery masking + counts used by feed", "Kudo card sender rendering on all hosts", "composer entry points"],
+  "contracts": ["GET /api/profile/[userId]/kudos?direction=received|sent", "GET /api/sunners/[userId]/card", "KudoPublicQuery.count"]
+}

@@ -66,6 +66,8 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-cam
 - Phân trang theo cursor mờ đục, giữ micro giây của `timestamptz`, giải mã nghiêm ngặt (`kudo-feed-cursor.ts`); route đọc trả 400 trước khi truy vấn.
 - Page gọi `notFound()` ngoài try/catch, cùng một kết quả cho mọi trường hợp "không thấy được"; trên production đây là soft 404.
 - Hiển thị Markdown của người dùng chỉ qua `features/kudos-feed/markdown/` (whitelist, `http(s)` không kèm credentials, ảnh là chữ, trần 5.000 đơn vị UTF-16).
+- Số đếm hiển thị cạnh một danh sách phải dùng đúng điều kiện lọc của danh sách đó (`KudoPublicQuery.count` dùng chung `listConditions` với `list`), không viết truy vấn đếm thứ hai; test đối chiếu số đếm với tổng các trang.
+- Bộ lọc theo người gửi trên dữ liệu có Kudo ẩn danh chỉ được lấy từ session, không nhận từ request (lọc người gửi của người khác lộ người gửi ẩn danh theo hiệu tập hợp); người xem khác chủ thì trả 403 trước mọi lần đọc (`features/profile/lib/profile-kudos-filter.ts`).
 - Chỗ giao cho phase sau để lại thành file "seam" với chữ ký cố định (`enrich-heart-summary.ts` đã viết lại ở phase 06; `enrich-hero-tier.ts` đã viết lại ở phase 09); phase sở hữu viết lại cả file, không rải logic ở nơi gọi.
 
 ## Ghi qua server action và Campaign (phase 06)

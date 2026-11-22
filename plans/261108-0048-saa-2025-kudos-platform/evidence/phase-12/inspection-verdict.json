@@ -1,0 +1,62 @@
+{
+  "score": 8,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "direction=sent for another user is refused with 403 before any data read; the sender filter is always bound from the session",
+    "Received lists mask anonymous senders for everyone including the recipient; own sent list includes own spam (blurred overlay + orange tag) with anonymous masking intact",
+    "Counts equal what the lists show; merging public and own spam across pages never skips or duplicates",
+    "Hover card returns only safe fields; another user's sent count excludes anonymous kudos; never shown on anonymous senders",
+    "Endpoints answer 401 without session and are no-store",
+    "Own profile shows info, icon collection, stats panel and the Đã nhận / Đã gửi filter; other profile shows info, icons, the send pill (composer with locked recipient) and the received list; own id redirects to /profile; unknown id shows not-found",
+    "Hover card opens on hover/focus with delay, gold ring, Esc/leave closes, one at a time, touch navigates [e2e: profile-hover-card.spec.ts:16,53,109,131; profile-hover-card-keyboard.spec.ts:31,77 (Tab into card, Send KUDO, aria-expanded/controls); the 300 ms open delay has no direct test]"
+  ],
+  "regressionChecked": [
+    "KudoPublicQuery.list unchanged in behavior: listConditions only retyped to KudoListFilters; count reuses it",
+    "Kudo card sender rendering: NamedPerson wrapped by AvatarHoverCard, anonymous sender path untouched, spam overlay disables card",
+    "KudoFeedStatusMessage returnTo defaults to the Live board, existing callers unaffected",
+    "HeroBadge new hoverCard size is additive",
+    "en/vi message key parity (0 diffs); new files all under 200 lines (largest 150)",
+    "indexes cover count and list filters (kudos_sender_id_created_at_id_idx, kudos_recipient_id_created_at_id_idx)",
+    "review-fix round: use-hover-card-keyboard.ts Tab bridge, sunner-card-cache.ts 60 s TTL + invalidateSunnerCard on composer onSaved, ProfileQuery.getById in react cache(); all files <200 lines (avatar-hover-card 172); 8 gates pass per implementer report"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  },
+  "findings": [
+    {
+      "severity": "Warning",
+      "category": "Accessibility",
+      "location": "features/profile/components/avatar-hover-card.tsx:78-147",
+      "summary": "card is portaled to body end and blurName closes it when focus leaves the name, so keyboard users cannot reach Send KUDO or the in-card link; card not linked via aria-describedby. Move focus into panel on Tab or document pointer-only send",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Warning",
+      "category": "Caching",
+      "location": "features/profile/components/use-sunner-card.ts:11-30",
+      "summary": "hover card cache lives for the whole page; on the long-lived Live board counts and canSendKudo go stale and a kudo sent from the card does not refresh them. Add a TTL or invalidate after send",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "features/profile/server/profile-kudos-list-service.ts:33",
+      "summary": "ProfileQuery.getById runs twice on the other-profile first render and 2 counts are recomputed on every page; indexed so cheap (getById now cache()d; per-page counts remain, cheap)",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Robustness",
+      "location": "features/profile/components/avatar-hover-card.tsx:149",
+      "summary": "composer mounted inside the card block is lost if the feed item remounts mid-compose",
+      "disposition": "Defer"
+    }
+  ]
+}

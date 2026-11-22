@@ -2,7 +2,7 @@
 phase: 12
 feature: F012
 priority: P2
-status: pending
+status: completed
 depends_on: [09, 10]
 file_ownership:
   - features/profile/**
@@ -24,7 +24,7 @@ file_ownership:
 - Upstream: 02 (`profiles`, `departments`, session helper), 04 (`KudoComposerModal`), 05 (`KudoPublicQuery`, `KudoCard`), 08 (`SpamKudoCard`, spam tag UI), 09 (`HeroTierQuery`, `HeroBadge`), 10 (`PersonalStatsPanel`, `IconCollection`)
 
 ## Overview
-- Priority: P2 · Status: pending
+- Priority: P2 · Status: completed
 - Two read-only pages (`/profile` own, `/profile/[userId]` other) + avatar hover card. Composes blocks owned by other phases; owns only page composition, the profile kudos list endpoint, the hover-card endpoint and `AvatarHoverCard`.
 
 ## Key Insights
@@ -105,27 +105,61 @@ Delete: none.
 11. i18n keys; tests per Scope Contract.
 
 ## Todo List
-- [ ] Read Next 16 docs (async params, redirect/notFound, route handlers)
-- [ ] Verify upstream contracts (05, 08, 04, 09, 10) — BLOCKED if missing
-- [ ] ProfileQuery, SunnerCardQuery
-- [ ] ALG-001 merge + unit tests
-- [ ] Counts query
-- [ ] Profile kudos route (401/403/404/400)
-- [ ] Own + other pages
-- [ ] Kudos section client component
-- [ ] AvatarHoverCard + wrap in KudoCard
-- [ ] Send-kudo button with locked composer
-- [ ] i18n, integration + e2e tests
+- [x] Read Next 16 docs (async params, redirect/notFound, route handlers)
+- [x] Verify upstream contracts (05, 08, 04, 09, 10): no BLOCKED. `KudoPublicQuery` already had `recipientId`/`senderId`/`includeOwnSpam`; only `count` was missing (added, see Delivery Notes)
+- [x] ProfileQuery, SunnerCardQuery
+- [x] ALG-001: done in SQL by phase 05's single `(created_at, id)` keyset; the planned in-process merge function was deliberately not written (test-only seam). Proven at integration
+- [x] Counts query (`profile-kudo-counts-query.ts`, plus `KudoPublicQuery.count`)
+- [x] Profile kudos route (401/403/404/400)
+- [x] Own + other pages
+- [x] Kudos section client component
+- [x] AvatarHoverCard + wrap in KudoCard (`kudo-card-sender.tsx`)
+- [x] Send-kudo button with locked composer
+- [x] i18n (`profile.*`, vi/en parity), unit + integration + e2e tests. `profile-pages.test.ts` (integration) replaced by e2e, see Open items
+- [x] Review-fix round: hover card keyboard bridge (W1), 60 s cache TTL + invalidation (W2), `getById` deduped with React `cache()`
 
 ## Success Criteria
-- SC: self via `/profile/{ownId}` → redirect `/profile`; unknown id → 404 page.
-- `direction=sent` for another user → 403, no body data; no request parameter can set `senderId`.
-- Anonymous kudo on recipient's "Đã nhận" and sender's own "Đã gửi": response JSON contains no sender id/name/avatar.
-- Own spam appears only in owner's "Đã gửi" with "Spam" tag; absent from the recipient's "Đã nhận".
-- Dropdown counts equal total items reachable by paginating to the end (both directions).
-- Paginating "Đã gửi" with spam interleaved yields every item exactly once in `(created_at,id)` desc order.
-- Other profile renders no stats panel; send button opens composer with recipient locked.
-- Hover card: one fetch per user per page; not attached to anonymous sender avatars.
+Evidence: implementer reports `plans/reports/implementer-261123-phase-12-profile.md` and `-review-fixes.md`; reviewer `plans/reports/reviewer-261123-phase-12.md` (0 critical / 0 high; W1, W2 fixed on re-review); `evidence/phase-12/{inspection-verdict,temper-results}.json` (SEALED, score 8); screenshots `evidence/screenshots/phase-12/` (own, other, hover card, keyboard focus; desktop 1440x900 + mobile 375x812).
+- [x] **Redirect / 404:** `/profile/{ownId}` redirects to `/profile`; unknown or malformed id shows "Không tìm thấy Sunner này.". Evidence: e2e `profile.spec.ts` ("your own id redirects...").
+- [x] **403 on sent-for-other, no request parameter sets `senderId`:** 403 before any existence read; unknown keys ignored by the schema. Evidence: integration `profile-kudos-route-guards`; unit `profile-kudos-filter`, `profile-kudos-request-schema`.
+- [x] **Anonymous masked for everyone:** no sender id/name/avatar in "Đã nhận" or the sender's own "Đã gửi". Evidence: integration `profile-kudos-route-lists`.
+- [x] **Own spam only in owner's "Đã gửi", tagged; absent from recipient's "Đã nhận":** Evidence: integration `profile-kudos-route-lists`; e2e `profile.spec.ts` (blurred overlay, Tab order).
+- [x] **Counts equal paginated totals (both directions):** `count` shares `listConditions` with `list`. Evidence: integration `profile-kudos-route-lists`.
+- [x] **Keyset across public + own spam, every item once, `(created_at, id)` desc:** 16 sent, 4 spam interleaved, tie straddling the 10-row boundary, pages 10 + 6, exact DB order. Evidence: integration `profile-kudos-route-lists`.
+- [x] **Other profile has no stats panel; send button opens composer locked:** the composer sends a real Kudo. Evidence: e2e `profile.spec.ts` ("other profile...").
+- [x] **Hover card: one fetch per user per page, not on anonymous avatars:** Evidence: e2e `profile-hover-card.spec.ts:16` (one request, one card at a time), `:109` (anonymous, no request).
+- [x] **Hover card opens on hover/focus, gold ring, Esc/leave closes, touch navigates; keyboard reach:** e2e `profile-hover-card.spec.ts:16,53,131`, `profile-hover-card-keyboard.spec.ts:31,77`. The 300 ms delay itself is not directly asserted (Open items).
+- [x] **Card payload whitelist:** `{id, fullName, departmentName, heroTier, kudosReceived, kudosSent, canSendKudo}`, no email/role. Evidence: integration `sunner-card-route`.
+- [x] **Cache:** 60 s TTL + invalidation after a locked-composer send. Evidence: unit `sunner-card-cache-ttl-and-invalidation` (4 tests); e2e `profile-hover-card.spec.ts:71`.
+- [x] **RED before code:** unit exit 1 (modules not found), integration exit 1, e2e 9/9 fail; review-fix round RED: unit 4/4, e2e 3 failed.
+- [x] **Gates on final code, each run alone:** `tsc` 0, lint 0, unit 804 (68 files), `db:reset` + integration 458 (71 files), e2e 129 passed / 5 skipped (pre-existing) / 0 failed, prelaunch e2e 5 passed / 1 skipped, `build` ok, `test:prod` all pass.
+- [x] **Reviewer:** 0 critical / 0 high; W1 and W2 fixed and re-reviewed; the reviewer asked for human sign-off (authz, privacy).
+- Risk sign-off: per the user's conditional pre-approval 2026-11-22, recorded at commit time.
+
+## Delivery Notes
+Drift from the plan text (decisions are in `spec/decision-log.md` § Session 2026-11-23, "mặc định, chờ user xem lại"):
+- **ALG-001 in SQL, one cursor.** Phase 05 serves own sent as `status IN (public, spam)` with a single `(created_at, id)` keyset, only when sender == viewer AND `includeOwnSpam`. `merge-own-spam-into-sent-page.ts` and its unit test were not created. The plan's references to `OwnSpamKudoQuery` and `SpamKudoCard` are stale.
+- **`KudoPublicQuery.count(filters)`** added in `features/kudos-feed/server/kudo-public-query.ts` (+ exported type `KudoListFilters`). Reuses the private `listConditions`, so counts equal lists by construction (BR-006) and the C-05 anonymity guard applies to every count. Throws `RangeError` on invalid filters.
+- **Counts:** profile `received` = public received; own `sent` = public sent + own spam (D006). Hover card `kudosSent` = public sent via `count({viewerId, senderId})`: another user's anonymous kudos are excluded (decision 2026-11-23), spam never counted; the own card counts own public anonymous (as the phase 10 panel).
+- **Hover card per Figma 2268:35101:** no avatar (Figma draws none); payload above; `canSendKudo` = not own card and writing open. Opens 300 ms after pointer enter or keyboard `:focus-visible` on the name link; closes on leaving block + card (150 ms grace), Esc, press elsewhere; one open per page; touch never opens. Non-modal `role="dialog"` in a body portal (the Highlight track is transformed and would clip it).
+- **Keyboard bridge + aria (review W1).** `use-hover-card-keyboard.ts` moves focus by hand: Tab from the name goes into the card (name link, "Gửi KUDO"), Shift+Tab/Esc back to the name, Tab off the last control closes the card and continues in page order. `aria-expanded`/`aria-controls` sit on the name link. After Esc or send the card stays shut until focus leaves the name.
+- **60 s cache + invalidation (review W2).** `sunner-card-cache.ts`: `SUNNER_CARD_TTL_MS = 60_000`, stale-while-revalidate, failures not cached; `invalidateSunnerCard(recipientId)` on `onSaved` of the locked composer (card button and profile pill). Live-board launcher sends and the viewer's own "sent" count rely on the TTL.
+- **Locked recipient `email: ""`.** The composer shows only the name and sends the id; profile DTOs never carry emails.
+- **Route order:** 401 -> 400 VALIDATION -> 404 malformed id -> 403 sent-for-other (before any existence read: no oracle) -> 404 unknown -> 200; `Cache-Control: private, no-store` on all answers, error bodies `{code}` only.
+- **Soft 404 / redirect.** Pages are blocking routes (`instant = false`) like `/kudos/[id]`; once the shell has streamed in production, the own-id redirect and unknown-id 404 are soft (decision 2026-11-16). `ProfileQuery.getById` is wrapped in React `cache()`.
+- **Edits outside `file_ownership`** (minimal, forced by the contracts): `features/kudos-feed/server/kudo-public-query.ts` (`count`), `features/kudos-feed/components/kudo-card-sender.tsx` (named person block wrapped in `AvatarHoverCard`, off under the owner's spam overlay; name link carries `data-hover-card-name`), `features/kudos-feed/components/kudo-feed-status-message.tsx` (optional `returnTo` for the 401 sign-in link, default `/kudos`), `features/hero-badges/components/hero-badge.tsx` (size `hoverCard`, about 164 px), `messages/{vi,en}.json` (`profile.*` only).
+- **Dev-server stale-module workaround.** Under `next dev` (Turbopack) route handlers served an old copy of `kudo-public-query.ts` (`KudoPublicQuery.count is not a function`) while pages had the new one; a one-character comment edit forced recompilation and remains in the file. Dev-only; production build is unaffected.
+- **Other profile caption** "Bộ sưu tập icon"; `IconCollection` unchanged. The stats panel's Suspense fallback is `null` (small layout shift, same as the Live board).
+
+## Open items
+- **300 ms open delay has no direct test.** Only the anonymous case waits past it. A Resource Timing assertion (request `startTime` minus pointer-enter >= 300 ms) would not be flaky.
+- **Mixed-input focus edge (not fixed):** focus inside card A while the mouse opens card B closes A and focus drops to body.
+- **Planned `tests/integration/profile/profile-pages.test.ts` was not written:** redirect, not-found and no-stats are covered by e2e (stronger layer).
+- **Stale references in specs:** `OwnSpamKudoQuery`, `SpamKudoCard`, `merge-own-spam-into-sent-page`, planned `ProfileKudosHandler`/`SunnerCardHandler` names, hover-card content "avatar + department code" in `spec/profile/` and `docs/features/F012_Profile/` (still the greenfield draft) and `docs/screens/SCR021..SCR023`: sync via `rebuild-spec --features F012`.
+- **Staleness the TTL still bounds (<= 60 s):** cards after a Live-board launcher send, the viewer's own "sent" count, `canSendKudo` at EVENT_END.
+- **Keyboard trade-off:** a keyboard user staying on a name >= 300 ms (plus load) gets 2 extra Tab stops; fast tabbing never opens the card.
+- **Low, unchanged:** `LockedRecipientComposer` mounts inside each card's block, so a feed remount mid-compose drops the modal; `listProfileKudos` recomputes 2 counts per "Tải thêm" page (indexed, cheap).
+- **Server-side validation of a locked recipient with empty email** was assumed unchanged from phase 04 and not re-read by the reviewer (e2e sends a real Kudo through it).
 
 ## Scope Contract — **full test set required** (authorization on data endpoints, anonymous-sender privacy, new public API contracts)
 - **Changed:** profile pages, `GET /api/profile/[userId]/kudos`, `GET /api/sunners/[userId]/card`, `features/profile/**`, `KudoCard` avatar wrap, i18n keys.

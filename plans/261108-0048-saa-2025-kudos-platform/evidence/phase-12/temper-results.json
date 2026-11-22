@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "804 passed (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations + seeds (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "458 passed (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npx playwright test --timeout 90000",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "129 passed, 5 skipped (prelaunch-only), 0 failed; hover specs x3 = 21/21 (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "ok (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "all checks passed (final code, after review fixes)",
+      "ts": "2026-11-23T10:00:00.000Z"
+    }
+  ]
+}
