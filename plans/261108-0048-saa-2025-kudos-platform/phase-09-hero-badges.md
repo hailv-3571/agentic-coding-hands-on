@@ -2,7 +2,7 @@
 phase: 09
 feature: F009
 priority: P2
-status: pending
+status: completed
 depends_on: [05]
 file_ownership:
   - features/hero-badges/**
@@ -24,7 +24,7 @@ resolves: [C-04 (tier source + tierFromCount for 13), C-12 (Level = Hero tier, c
 - Downstream consumers: 12 (profile), 13 (tier-up notification), 14 (admin Level column/filter)
 
 ## Overview
-- Priority: P2 · Status: pending · Runs in parallel with 06 (disjoint seam files).
+- Priority: P2 · Status: completed (2026-11-22) · Runs in parallel with 06 (disjoint seam files).
 - Computed-on-read Hero tier: number of DISTINCT senders of public kudos per recipient → tier. No stored column, no table, no recompute job (DEC-002).
 - Ships the ONE tier source (`HeroTierQuery`), the pure `tierFromCount`, and the shared `HeroBadge` + `HeroBadgeTooltip`. Hosts fetch tiers in batch and pass `tier` down; hosts never count or draw their own badge (FR-202).
 
@@ -88,20 +88,39 @@ Delete: none.
 8. Tests per Scope Contract; reviewer.
 
 ## Todo List
-- [ ] Next.js 16 docs read (component boundary, caching)
-- [ ] Index migration + EXPLAIN + down
-- [ ] Constants + tierFromCount (+boundary unit)
-- [ ] HeroTierQuery (counts, tiers, subquery) (+integration)
-- [ ] Figma tooltip copy → vi/en keys
-- [ ] HeroBadge + HeroBadgeTooltip
-- [ ] Rewrite 05 seams (enrich + slot)
-- [ ] Tests green, review
+- [x] Next.js 16 docs read (component boundary, caching): `05-server-and-client-components.md`, `08-caching.md`; no deviation
+- [x] Index migration + EXPLAIN + down: `0014_kudos_hero_tier_index` (+ `.down.sql`), index-only scan, 0.11-0.17 ms for 50 ids
+- [x] Constants + tierFromCount (+boundary unit): 6 tests
+- [x] HeroTierQuery (counts, tiers, subquery) (+integration): 11 tests, plus the EXPLAIN guard
+- [x] Figma tooltip copy → vi/en keys (`hero.<tier>.*`)
+- [x] HeroBadge + HeroBadgeTooltip: unit 14, e2e 3 (x3 repeat 9/9)
+- [x] Rewrite 05 seams (enrich + slot): integration 4 tests, phase 05 feed suite 35/35
+- [x] Tests green (7 gates, see implementer report)
+- [ ] Review: reviewer agent not yet run (orchestrator-owned step)
 
 ## Success Criteria
-- SC-001..SC-006 of technical spec pass.
-- Integration: 10 kudos from one sender → count 1; spam kudo not counted, un-spam restores tier on next read; anonymous sender counted; empty batch issues zero queries; 50-recipient page issues exactly one tier query.
-- Response/RSC payload for an anonymous kudo has no sender tier and no sender id; tier result contains no sender ids.
-- Phase 13 and 14 can import `tierFromCount` / `getTiersByRecipientIds` / `distinctSenderCountSubquery` without re-implementing thresholds (grep: thresholds defined once).
+Evidence: `plans/reports/implementer-261122-phase-09-hero-badges.md`; screenshots in `evidence/screenshots/phase-09/` (live board tooltip desktop + mobile, rules tiers desktop).
+- [x] SC-001..SC-006 pass: unit `tierFromCount` boundaries, integration counting rules, e2e tooltip hover/focus/Esc/tap/one-at-a-time.
+- [x] Integration: one sender 10 kudos → count 1; spam not counted and restored on next read; anonymous sender counted; self-row excluded; empty batch issues no query; a page issues one tier statement (phase 05 cursor test now expects 5 statements per page, + Hero tiers).
+- [x] Anonymous kudo: no sender `tier` field, no sender id in payload or lookup; tier result is names only.
+- [x] Thresholds defined once (`hero-tier-constants.ts`); phases 12-14 import from `features/hero-badges`.
+- Gates: `tsc` 0 errors, lint 0, unit 663, integration 341, e2e 100 passed / 5 skipped (prelaunch-gate, own config), build ok, `test:prod` 16 PASS.
+- Risk sign-off: per the user's conditional pre-approval 2026-11-22, recorded at commit time.
+
+## Delivery Notes
+Drift from the plan text:
+- `HeroTier` lives in `features/hero-badges/schemas/hero-tier.ts` (client-safe), not `server/`; phases 12-14 import it from there.
+- `getDistinctSenderCounts(ids, executor = db)` takes an optional `Db | DbTx` so phase 13 can read before/after inside the Kudo write transaction (C-04). `HeroTierQuery` is exported as an object.
+- Badge images reused from phase 07 (`public/images/awards-portal/hero-tag-*.webp`), not redrawn in CSS.
+- Ranges use an en-dash ("1–4", "5–9"); the Thể lệ page changed by two characters because it now shares the `hero.*` message source (`awardsPortal.rules.tiers` removed).
+- Files touched outside the ownership list: `kudo-card-sender.tsx` (phase 05: `tabbable`, `flex-wrap`, `@container`), `shared/db/schema/kudos.ts` (index line), `features/awards-portal/components/rules-kudos-rewards.tsx`, two phase 05 integration tests (new seam contract), `messages/{vi,en}.json`.
+- The partial index is used only while the pool keeps `prepare: false`; named prepared statements could fall back to the recipient feed index (correct, slower).
+- No Zod on ids: callers pass DB ids; a malformed uuid makes Postgres throw, the seam logs and renders without badges.
+
+## Open items
+- Reviewer agent not yet run on this phase.
+- D006: en tooltip copy pending BTC; Figma verbatim for vi. Tooltip wording "bạn" on someone else's badge kept as in Figma (orchestrator default, awaiting user review).
+- Spec BR-003 text still `[NEEDS_DOMAIN_CONFIRMATION]`; decision log settles it (counts). Sync via `rebuild-spec --features F009`.
 
 ## Scope Contract
 - **Changed:** `features/hero-badges/**`, two phase-05 seam files, partial index migration, `hero.*` i18n keys.

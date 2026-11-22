@@ -1,0 +1,53 @@
+{
+  "commands": [
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "no errors (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "663 passed (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "341 passed incl. distinct counting, spam/anonymous/self rules, batching, payload has no sender ids, migration up/down + index-only plan (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    },
+    {
+      "command": "npx playwright test --timeout 90000",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "100 passed, 5 skipped (prelaunch-only) incl. tooltip hover/focus/Esc/tap/press-inside (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled successfully (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "16/16 (final code, after review fix)",
+      "ts": "2026-11-22T15:00:00.000Z"
+    }
+  ]
+}

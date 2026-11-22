@@ -1,0 +1,17 @@
+{
+  "task": "Phase 09 (F009 Hero badges): computed-on-read Hero tier from distinct senders of public kudos, partial index migration, single batched HeroTierQuery + tierFromCount for phases 12/13/14, shared HeroBadge + HeroBadgeTooltip on Kudo cards and the Thể lệ page",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "tierFromCount maps 0,1,4,5,9,10,20,21 to null,new,new,rising,rising,super,super,legend and negative/NaN to null; thresholds defined once",
+    "Tier counts DISTINCT senders of public kudos only: spam excluded (un-spam restores), anonymous senders counted, self rows excluded",
+    "One batched query per page: empty batch issues no query, duplicate ids de-duplicated, >500 ids chunked; results keyed by requested ids only (no sender ids)",
+    "Anonymous kudo cards never show or look up a sender tier; the recipient badge shows normally",
+    "Migration adds the partial index (recipient_id, sender_id) WHERE status='public' with a working down script and the aggregate uses an index-only scan",
+    "HeroBadge renders nothing for null; tooltip opens on hover/focus/tap and closes on leave/blur/Esc/second tap with aria-describedby, one open at a time, inside the viewport at 375px",
+    "Seam failure logs and renders cards without badges",
+    "Thể lệ page reads the same hero.* copy and renders identically (apart from en-dash ranges)"
+  ],
+  "touchpoints": ["features/hero-badges/", "features/kudos-feed/server/enrich-hero-tier.ts", "features/kudos-feed/components/kudo-card-hero-badge-slot.tsx", "features/kudos-feed/components/kudo-card-sender.tsx", "db/migrations/0014*", "shared/db/schema/kudos.ts", "features/awards-portal/components/", "messages/", "tests/"],
+  "blastRadius": ["Live board feed/Highlight/detail cards", "Thể lệ page", "phases 12/13/14 consumers of HeroTierQuery", "kudos write path index maintenance"],
+  "contracts": ["tierFromCount(n)", "tierCountRange(tier)", "HeroTierQuery.getDistinctSenderCounts(ids, executor?)", "HeroTierQuery.getTiersByRecipientIds(ids)", "HeroTierQuery.distinctSenderCountSubquery()"]
+}

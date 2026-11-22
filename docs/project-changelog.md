@@ -6,6 +6,24 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-22 — Phase 09 (F009 Huy hiệu Hero)
+
+Added
+- `HeroTierQuery` (`getDistinctSenderCounts`, `getTiersByRecipientIds`, `distinctSenderCountSubquery`): cấp Hero tính khi đọc từ số người gửi khác nhau của Kudo public, một câu lệnh cho cả trang, không lưu cấp. Kudo ẩn danh được đếm; Kudo spam và Kudo tự gửi không.
+- `tierFromCount` và `tierCountRange` (ngưỡng 1 / 5 / 10 / 21, định nghĩa một lần), kiểu `HeroTier` ở `features/hero-badges/schemas/`.
+- `HeroBadge` và `HeroBadgeTooltip` (hover, focus, chạm; Esc đóng; mỗi lúc một tooltip) hiện trên mọi thẻ Kudo: Live board, Highlight, chi tiết, `/api/kudos`. Người gửi ẩn danh không có huy hiệu và không bị tra cấp.
+- Migration `0014_kudos_hero_tier_index` (kèm `.down.sql`): chỉ mục từng phần `(recipient_id, sender_id) WHERE status = 'public'`. 50 người nhận: index-only scan, 0.11-0.17 ms.
+- i18n `hero.<tier>.{label,tooltipTitle,tooltipBody}` (vi, en).
+
+Changed
+- `enrich-hero-tier.ts` và `kudo-card-hero-badge-slot.tsx` (seam phase 05) viết lại bằng dữ liệu thật; `kudo-card-sender.tsx` nhận `tabbable`, hiện huy hiệu cả khi không có phòng ban. Trang feed thêm một câu lệnh mỗi trang (4 thành 5).
+- Trang Thể lệ đọc `hero.*` và vẽ bằng `HeroBadge`; bỏ `awardsPortal.rules.tiers`. Khoảng số đổi "1-4", "5-9" thành "1–4", "5–9".
+
+Decisions
+- Ảnh huy hiệu dùng lại từ phase 07, không dựng lại bằng CSS. Tooltip giữ nguyên văn Figma, xưng "bạn" kể cả trên huy hiệu người khác (mặc định của orchestrator, chờ user xem lại).
+- `getDistinctSenderCounts` nhận executor tùy chọn để phase 13 đọc trước/sau trong transaction ghi Kudo (C-04). Phase 14 dùng `distinctSenderCountSubquery` và `tierCountRange` cho cột/bộ lọc Level (C-12).
+- Chỉ mục từng phần phụ thuộc pool `prepare: false`.
+
 ## 2026-11-22 — Phase 08 (F007 Kiểm duyệt của Admin & Kudo spam của chủ bài)
 
 Added

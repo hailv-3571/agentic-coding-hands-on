@@ -41,9 +41,9 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-601 | — | § 4.4 |
-| **A1** | `HeroTierQuery#getTiersByRecipientIds` (planned) | `server function` · — | FR-001, FR-002, FR-003, FR-602, BR-001, BR-002, BR-003, DEC-002, ALG-001, US001_SeeHeroBadge, US003_SeeTierFollowKudos | — *(read-only)* | § 3.1 |
-| **A2** | `HeroBadge#render` (planned) | — | FR-101, FR-201, FR-202, FR-603, DEC-001, US001_SeeHeroBadge | — *(read-only)* | § 3.2 |
-| **A3** | `HeroBadgeTooltip#toggle` (planned) | — | FR-401, FR-402, FR-403, DEC-003, US002_ReadHeroTierMeaning | — *(read-only)* | § 3.2 |
+| **A1** | `HeroTierQuery#getTiersByRecipientIds` (implemented, phase 09) | `server function` · — | FR-001, FR-002, FR-003, FR-602, BR-001, BR-002, BR-003, DEC-002, ALG-001, US001_SeeHeroBadge, US003_SeeTierFollowKudos | — *(read-only)* | § 3.1 |
+| **A2** | `HeroBadge#render` (implemented, phase 09) | — | FR-101, FR-201, FR-202, FR-603, DEC-001, US001_SeeHeroBadge | — *(read-only)* | § 3.2 |
+| **A3** | `HeroBadgeTooltip#toggle` (implemented, phase 09) | — | FR-401, FR-402, FR-403, DEC-003, US002_ReadHeroTierMeaning | — *(read-only)* | § 3.2 |
 
 ## 3. Actions
 

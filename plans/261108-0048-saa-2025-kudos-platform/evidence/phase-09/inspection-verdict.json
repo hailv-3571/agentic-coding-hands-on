@@ -1,0 +1,68 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "tierFromCount maps 0,1,4,5,9,10,20,21 to null,new,new,rising,rising,super,super,legend and negative/NaN to null; thresholds defined once: by code reading of tier-from-count.ts (highest-first find over TIER_MIN, isFinite guard, negatives fall to null) and hero-tier-constants.ts (1/5/10/21, only definition); tier-from-count.test.ts exists, not re-run by me",
+    "Tier counts DISTINCT senders of public kudos only: spam excluded (un-spam restores), anonymous senders counted, self rows excluded: by code reading of hero-tier-query.ts countsPublicSenders (status='public' AND sender_id<>recipient_id, countDistinct, no caching); hero-tier-query.test.ts exists, not re-run",
+    "One batched query per page: empty batch issues no query, duplicate ids de-duplicated, >500 ids chunked; results keyed by requested ids only (no sender ids): by code reading (Set dedup, zero statements for empty, slice by HERO_QUERY_MAX_IDS, select only recipient_id + count, Map/Record keyed by requested ids); statement-count test updated 4->5 in kudo-feed-cursor-pagination.test.ts",
+    "Anonymous kudo cards never show or look up a sender tier; the recipient badge shows normally: by code reading of enrich-hero-tier.ts (anonymous sender id never collected, sender object returned untouched, recipient enriched) and KudoCardPeople (AnonymousSender renders no badge slot); kudo-card-hero-tier.test.ts exists, not re-run",
+    "Migration adds the partial index (recipient_id, sender_id) WHERE status='public' with a working down script and the aggregate uses an index-only scan: by code reading of 0014 sql/down/journal/schema and the prepare:false client (predicate provable with bound params); hero-tier-query-plan.test.ts asserts Index Only Scan, hero-tier-index-migration.test.ts covers rollback, neither re-run",
+    "HeroBadge renders nothing for null; tooltip opens on hover/focus/tap and closes on leave/blur/Esc/second tap with aria-describedby, one open at a time, inside the viewport at 375px: by code reading of hero-badge.tsx, hero-badge-tooltip.tsx, active-hero-tooltip-store.ts, place-hero-tooltip.ts (16px clamp); unit tests and e2e hero-badge-tooltip.spec.ts exist, not re-run; screenshots not opened; a press inside the panel also closes it (L1)",
+    "Seam failure logs and renders cards without badges: by code reading of enrich-hero-tier.ts try/catch (console.error, returns input cards whose tier is null from the mask)",
+    "Thể lệ page reads the same hero.* copy and renders identically (apart from en-dash ranges): by code reading of rules-kudos-rewards.tsx (HeroBadge size rules, hero.*.tooltipTitle/tooltipBody) and en/vi key parity script (no missing keys, old awardsPortal.rules.tiers has no remaining references); not seen in a browser by me"
+  ],
+  "regressionChecked": [
+    "feed/Highlight/detail card path: kudo-card-enrichment.ts is the only caller of enrichHeroTier; statement count and recipient tier asserts in the two phase 05 tests changed as the seam goes live, assertions not weakened",
+    "kudo-card-sender.tsx: a department-less person with a tier now renders the row; anonymous branch unchanged; @container added to the text block only",
+    "kudos write path: one extra partial btree index, small table pre-launch",
+    "spam overlay: badge tabbable=false under isSpam, matching phase 08 W1 handling",
+    "new source files all under 200 lines (largest 111), largest test 137"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Warning",
+      "category": "Accessibility",
+      "location": "features/hero-badges/components/hero-badge-tooltip.tsx:44-46",
+      "summary": "press-elsewhere handler exempts only the trigger, so a press or tap inside the tooltip panel closes it; also ignore targets inside the panel (getElementById(tooltipId))",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Process",
+      "location": "features/kudos-feed/components/kudo-card-sender.tsx:11-17",
+      "summary": "edits outside phase 09 file_ownership (kudo-card-sender, rules page, schema, messages, two phase 05 tests); justified, record them in the phase file",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Accessibility",
+      "location": "features/hero-badges/components/hero-badge-tooltip.tsx:41",
+      "summary": "Esc handler does not stopPropagation; a card inside a dialog would close both on Esc; unproven, no such host in this diff",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Migration",
+      "location": "db/migrations/0014_kudos_hero_tier_index.sql:7",
+      "summary": "plain CREATE INDEX locks kudos writes during build; fine pre-launch, use CONCURRENTLY outside the drizzle transaction on a busy database",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Craft",
+      "location": "features/hero-badges/components/hero-badge-tooltip-panel.tsx:44",
+      "summary": "placement effect depends on [anchor] only; no re-place if the panel resizes while open",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}

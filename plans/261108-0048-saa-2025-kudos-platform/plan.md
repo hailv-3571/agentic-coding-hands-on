@@ -55,7 +55,7 @@ Tên file kebab-case, mỗi file code < 200 dòng.
 | 06 | [Hearts & x2 campaigns](phase-06-kudos-hearts-and-campaigns.md) | F005, F011 | P1 | 05 | completed |
 | 07 | [Awards portal & prelaunch](phase-07-awards-portal.md) | F006 | P1 | 02, 03 | completed |
 | 08 | [Admin moderation](phase-08-admin-moderation.md) | F007 | P1 | 04 | completed |
-| 09 | [Hero badges](phase-09-hero-badges.md) | F009 | P2 | 05 | pending |
+| 09 | [Hero badges](phase-09-hero-badges.md) | F009 | P2 | 05 | completed |
 | 10 | [Secret Box rewards](phase-10-secret-box-rewards.md) | F010 | P2 | 06 | pending |
 | 11 | [Spotlight board (realtime)](phase-11-spotlight-board-realtime.md) | F008 | P2 | 05, 08 | pending |
 | 12 | [Profile](phase-12-profile.md) | F012 | P2 | 09, 10 | pending |

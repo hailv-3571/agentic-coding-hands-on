@@ -65,7 +65,7 @@ Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-cam
 - Phân trang theo cursor mờ đục, giữ micro giây của `timestamptz`, giải mã nghiêm ngặt (`kudo-feed-cursor.ts`); route đọc trả 400 trước khi truy vấn.
 - Page gọi `notFound()` ngoài try/catch, cùng một kết quả cho mọi trường hợp "không thấy được"; trên production đây là soft 404.
 - Hiển thị Markdown của người dùng chỉ qua `features/kudos-feed/markdown/` (whitelist, `http(s)` không kèm credentials, ảnh là chữ, trần 5.000 đơn vị UTF-16).
-- Chỗ giao cho phase sau để lại thành file "seam" với chữ ký cố định (`enrich-heart-summary.ts` đã viết lại ở phase 06; `enrich-hero-tier.ts` chờ phase 09); phase sở hữu viết lại cả file, không rải logic ở nơi gọi.
+- Chỗ giao cho phase sau để lại thành file "seam" với chữ ký cố định (`enrich-heart-summary.ts` đã viết lại ở phase 06; `enrich-hero-tier.ts` đã viết lại ở phase 09); phase sở hữu viết lại cả file, không rải logic ở nơi gọi.
 
 ## Ghi qua server action và Campaign (phase 06)
 

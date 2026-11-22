@@ -148,3 +148,17 @@ Danh sách đầy đủ ở `system/architecture.md` § Consistency Check (C-01�
 - (test 2026-11-22) Chưa đo coverage (chưa cài `@vitest/coverage-v8`; cài thêm là đổi dependency, cần user đồng ý). Phase 12 thêm e2e thứ tự Tab cho thẻ spam ở Profile "Đã gửi".
 - (2026-11-22) User nhắn "làm tiếp toàn bộ các bước sau nhé, không cần dừng lại" → orchestrator làm tiếp các bước bàn giao; **ký duyệt rủi ro phase 08 vẫn hỏi riêng** (không suy ra chữ ký từ câu nhắn chung).
 - (2026-11-22) User **ký duyệt rủi ro phase 08** (câu trả lời trực tiếp "Ký duyệt và commit") — migration 0013, ghi `kudos.status`, phân quyền admin, người gửi ẩn danh chỉ Admin thấy.
+
+## Session 2026-11-22 — Run phases 09–14 continuously (user)
+- Q: Ký duyệt rủi ro các phase 09–14? → A: **Ký trước có điều kiện** (user chọn 2026-11-22): mỗi phase chỉ coi là đã ký và được commit vào main (không push) khi đủ cả ba: toàn bộ kiểm thử xanh trên code cuối, review 0 critical, cổng kiểm chứng chỉ còn chờ chữ ký. Thiếu một điều → dừng hỏi user.
+- Q: Chỗ trống / vênh giữa Figma và đặc tả? → A: **Orchestrator tự chọn phương án đề xuất** (bám Figma, giữ quyết định cũ, ít rủi ro), ghi vào decision log với nhãn "orchestrator mặc định, chờ user xem lại"; đổi quyết định nghiệp vụ đã chốt hoặc ảnh hưởng bảo mật thì vẫn hỏi (user chọn 2026-11-22).
+
+## Session 2026-11-22 — Phase 09 Figma vs plan (orchestrator mặc định, chờ user xem lại)
+- Badge Hero dùng lại ảnh xuất từ Figma ở phase 07 (`public/images/awards-portal/hero-tag-*.webp`) cho mọi cỡ (thẻ 109×19, tooltip 218×38) thay vì dựng lại bằng CSS; alt = tên bậc. *(orchestrator mặc định, chờ user xem lại)*
+- Tooltip giữ nguyên văn Figma (xưng "bạn" kể cả trên huy hiệu người khác); chữ dùng chung với trang Thể lệ (một nguồn message); thống nhất gạch ngang "–" trong khoảng số. *(orchestrator mặc định, chờ user xem lại)*
+
+## Session 2026-11-22 — Phase 10 Figma vs plan (orchestrator mặc định, chờ user xem lại)
+- Ảnh kết quả quà tặng trong Figma (2995:15754) là áo phông có logo thương hiệu bên thứ ba → **không dùng**; quà hiển thị bằng hộp mở phát sáng + tên quà; ảnh riêng cho từng quà có thể thêm sau qua catalog. *(orchestrator mặc định, chờ user xem lại)*
+- Nền modal dùng lớp phủ chung `rgba(0,16,26,0.8)` của app thay cho ảnh nền tối 20% trong Figma. Icon Secret Box dùng lại ảnh huy hiệu đã xuất ở phase 07. Khối "10 Sunner có sự thăng hạng mới nhất" (ẩn trong Figma) ngoài phạm vi. *(orchestrator mặc định, chờ user xem lại)*
+- (review 2026-11-22) Phase 09 sửa ngoài file_ownership, chấp nhận vì là hệ quả bắt buộc: `kudo-card-sender.tsx` (badge + `tabbable` dưới lớp phủ spam, badge cho người không có phòng ban), trang Thể lệ đọc `hero.*` (bỏ `awardsPortal.rules.tiers`), dòng index trong `shared/db/schema/kudos.ts`, hai test tích hợp phase 05 (seam mặc định cũ: tier của r1 giờ là "new", feed 5 câu lệnh thay vì 4). Index thường (không CONCURRENTLY) khoá ghi `kudos` lúc tạo — chấp nhận trước giờ mở.
+- (2026-11-22) Phase 09 đủ 3 điều kiện ký trước của user (kiểm thử toàn bộ xanh trên code cuối sau vòng sửa review; review 0 critical; cổng chỉ chờ chữ ký) → **áp dụng chữ ký có điều kiện user đã cho ngày 2026-11-22** và commit.
