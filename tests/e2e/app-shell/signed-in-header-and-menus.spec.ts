@@ -25,6 +25,8 @@ test.describe("signed-in header and footer", () => {
 
     const footer = page.getByRole("contentinfo");
     await expect(footer.getByRole("link", { name: "Tiêu chuẩn chung" })).toBeVisible();
+    // Only inbound link to the Thể lệ page (decision 2026-11-22; the Figma widget button is deferred).
+    await expect(footer.getByRole("link", { name: "Thể lệ" })).toHaveAttribute("href", "/rules");
     await expect(footer).toContainText("Bản quyền thuộc về Sun* © 2025");
   });
 });

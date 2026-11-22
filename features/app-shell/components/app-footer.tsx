@@ -27,6 +27,7 @@ export async function AppFooter({ variant = "full" }: AppFooterProps) {
     { href: APP_ROUTES.home, label: t("nav.aboutSaa") },
     { href: APP_ROUTES.awards, label: t("nav.awardInfo") },
     { href: APP_ROUTES.kudos, label: t("nav.kudos") },
+    { href: APP_ROUTES.rules, label: t("nav.rules") },
     { href: APP_ROUTES.communityStandards, label: t("nav.communityStandards") },
   ];
 
