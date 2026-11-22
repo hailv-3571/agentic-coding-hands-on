@@ -47,11 +47,11 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-601, FR-602 | — | § 4.4 |
-| **A1** | `AdminKudoReview#list` (planned) | `GET` `/api/admin/kudos` | FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-402, FR-407, FR-603, BR-002, DEC-001, US001_ReviewKudoList, US002_FilterSearchKudos | — *(read-only)* | § 3.1 |
-| **A2** | `AdminKudoModeration#markSpam` (planned) | `server action` | FR-001, FR-002, FR-401, FR-403, FR-404, FR-406, FR-408, BR-001, BR-003, SM-001, INT-001, US003_MarkKudoSpam | `kudos` | § 3.2 |
-| **A3** | `AdminKudoModeration#unSpam` (planned) | `server action` | FR-001, FR-002, FR-401, FR-403, FR-404, FR-406, BR-001, BR-003, SM-001, US004_UnSpamKudo | `kudos` | § 3.2 |
-| **A4** | `AdminKudoExport#download` (planned) | `GET` `/api/admin/kudos/export` | FR-203, FR-204, FR-205, FR-206, FR-405, FR-604, BR-002, BR-004, DEC-002, US005_ExportKudos | — *(read-only; trả tệp)* | § 3.3 |
-| **A5** | `OwnSpamKudoQuery#listBySender` (planned) | `GET` `/api/kudos/mine/spam` | FR-301, FR-302, FR-303, FR-304, FR-603, BR-005, DEC-003, US006_OwnerSeesSpamAlert | — *(read-only)* | § 3.4 |
+| **A1** | `KudoAdminQuery.list` (`app/api/admin/kudos/route.ts`, trang `/admin/review`) | `GET` `/api/admin/kudos` | FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-402, FR-407, FR-603, BR-002, DEC-001, US001_ReviewKudoList, US002_FilterSearchKudos | — *(read-only)* | § 3.1 |
+| **A2** | `markKudoSpam` (`kudo-moderation-actions.ts`) | `server action` | FR-001, FR-002, FR-401, FR-403, FR-404, FR-406, FR-408, BR-001, BR-003, SM-001, INT-001, US003_MarkKudoSpam | `kudos` | § 3.2 |
+| **A3** | `unSpamKudo` (`kudo-moderation-actions.ts`) | `server action` | FR-001, FR-002, FR-401, FR-403, FR-404, FR-406, BR-001, BR-003, SM-001, US004_UnSpamKudo | `kudos` | § 3.2 |
+| **A4** | `KudoAdminQuery.listForExport` + `serializeAdminKudoCsv` (`app/api/admin/kudos/export/route.ts`) | `GET` `/api/admin/kudos/export` | FR-203, FR-204, FR-205, FR-206, FR-405, FR-604, BR-002, BR-004, DEC-002, US005_ExportKudos | — *(read-only; trả tệp)* | § 3.3 |
+| **A5** | *chưa có endpoint riêng*: phase 08 làm phần hiển thị (`SpamAlertOverlay`, `KudoSpamTag`); danh sách đọc qua `KudoPublicQuery` (`findForViewer`, `includeOwnSpam`) | — | FR-301, FR-302, FR-303, FR-304, FR-603, BR-005, DEC-003, US006_OwnerSeesSpamAlert | — *(read-only)* | § 3.4 |
 
 **Rung set** theo template: Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn. **State** bỏ trong bản nháp vì chưa có nguồn xác nhận; vòng đời nằm ở SM-001 (§ 4.3).
 
@@ -197,15 +197,15 @@ flowchart LR
 
 | Component | Responsibility | Used in | File |
 |---|---|---|---|
-| `AdminKudoReview` (planned) | Điểm vào đọc trang Review content | A1 | TBD (draft) |
-| `AdminKudoModeration` (planned) | Server action Mark Spam / Un Spam (chung một service ghi `status`) | A2, A3 | TBD (draft) |
-| `AdminKudoExport` (planned) | Route handler stream CSV | A4 | TBD (draft) |
-| `KudoAdminQuery` (planned) | Truy vấn Drizzle dùng chung: lọc AND, sắp xếp, đếm, nối hồ sơ/hashtag/tim; **không** lọc Public, **không** che ẩn danh | A1, A4 | TBD (draft) |
-| `AdminKudoFilterSchema` (planned) | Schema Zod chung cho tham số lọc của A1 và A4 | A1, A4 | TBD (draft) |
-| `OwnSpamKudoQuery` (planned) | Truy vấn Kudo spam theo người gửi | A5 | TBD (draft) |
-| `KudoSpamCard`, `SpamAlertOverlay` (planned) | Biến thể thẻ và lớp cảnh báo cho chủ bài | A5 | TBD (draft) |
-| `AdminGuard#requireAdmin` *(F001 A7)* | Kiểm role Admin đọc từ DB; F007 chỉ gọi lại, không tự kiểm role | A1-A4 | TBD (draft) |
-| `SunnerSearch#search` *(F003 A1)* | Tìm người cho dropdown Sender / Receiver, dùng lại | A1 (FE) | TBD (draft) |
+| `AdminReviewPage` | Điểm vào đọc trang Review content (`requireAdmin()` rồi bảng + người đã chọn) | A1 | `app/admin/review/page.tsx` |
+| `KudoModerationService`, `markKudoSpam`, `unSpamKudo` | Server action Mark Spam / Un Spam, chung một service ghi `status` | A2, A3 | `features/admin-moderation/server/kudo-moderation-service.ts`, `features/admin-moderation/server/kudo-moderation-actions.ts` |
+| `serializeAdminKudoCsv` | Route handler trả CSV (một chuỗi, không stream) qua serializer chung | A4 | `features/admin-moderation/server/admin-kudo-export.ts`, `app/api/admin/kudos/export/route.ts` |
+| `KudoAdminQuery` | Truy vấn Drizzle dùng chung: lọc AND, sắp xếp, đếm, nối hồ sơ/hashtag/tim; **không** lọc Public, **không** che ẩn danh | A1, A4 | `features/admin-moderation/server/kudo-admin-query.ts`, `admin-kudo-where-builder.ts`, `admin-kudo-row-select.ts` |
+| `parseAdminKudoFilter` | Parser tham số lọc chung của trang, A1 và A4 | A1, A4 | `features/admin-moderation/schemas/admin-kudo-filter-schema.ts` |
+| `OwnSpamKudoQuery` *(không có)* | Chưa cài đặt; `KudoPublicQuery` (F004) trả Kudo spam của chính người gửi | A5 | `features/kudos-feed/server/kudo-public-query.ts` |
+| `SpamAlertOverlay`, `KudoSpamTag` | Lớp cảnh báo và nhãn "Spam" cho chủ bài, đặt trong `KudoCard` và `KudoDetailView` (không có `KudoSpamCard` riêng) | A5 | `features/admin-moderation/components/spam-alert-overlay.tsx`, `kudo-spam-tag.tsx` |
+| `requireAdmin`, `requireAdminApi` | Kiểm role Admin đọc từ DB; `requireAdmin` của F001 cho trang và action, `requireAdminApi` trả JSON 401/403 cho route handler | A1-A4 | `features/admin-moderation/server/admin-api-guard.ts` |
+| `SunnerSearchCombobox` *(F003)* | Tìm người cho dropdown Sender / Receiver, dùng lại | A1 (FE) | `features/admin-moderation/components/review-person-filter.tsx` |
 
 ### 4.2 Data Model
 
@@ -323,14 +323,13 @@ granted_boxes: không đụng tới (không clawback)
 ### 4.6 Configuration
 
 ```text
-ADMIN_REVIEW_PAGE_SIZE = 10        # số dòng mỗi trang bảng Review content (A1) — đề xuất, D010
-EXPORT_MAX_ROWS = 10000            # trần số dòng của một lần Export (A4) — đề xuất, D007
-REVIEW_SEARCH_MAX_LENGTH = 100     # độ dài tối đa ô Search by content (A1, A4)
-ADMIN_TIMEZONE = Asia/Ho_Chi_Minh  # cách cắt ngày của bộ lọc (A1, A4)
-EXPORT_CSV_BOM = true              # thêm BOM UTF-8 để Excel đọc đúng tiếng Việt (A4)
+ADMIN_KUDO_PAGE_SIZE = 10          # hằng số trong kudo-admin-query.ts, số dòng mỗi trang bảng Review content (A1), D010
+EXPORT_MAX_ROWS = 10000            # env (.env.example), trần số dòng của một lần Export (A4), D007; đọc EXPORT_MAX_ROWS + 1 dòng
+SEARCH_MAX_LENGTH = 100            # maxLength của ô Search by content (client); server nhận q tối đa ADMIN_KUDO_QUERY_MAX_LENGTH = 200
+ADMIN_TIMEZONE = Asia/Ho_Chi_Minh  # env, cách cắt ngày của bộ lọc và giờ trong CSV (A1, A4)
 ```
 
-Giá trị nghiệp vụ nhìn thấy được (cỡ trang, trần Export, độ dài ô tìm) cũng ghi ở functional-spec § 13; phần kỹ thuật (múi giờ, BOM) chỉ ở đây.
+Giá trị nghiệp vụ nhìn thấy được (cỡ trang, trần Export, độ dài ô tìm) cũng ghi ở functional-spec § 13. BOM UTF-8 do serializer chung (`shared/admin/csv-serializer.ts`) luôn thêm, không phải cấu hình.
 
 **Client behavior:** trạng thái chờ của nút Mark Spam / Un Spam / Export và dropdown tìm người, xem [`../../screens/SCR014_AdminReviewContent/spec.md`](../../screens/SCR014_AdminReviewContent/spec.md); lớp cảnh báo cho chủ bài xem [`../../screens/SCR015_SpamAlertOverlay/spec.md`](../../screens/SCR015_SpamAlertOverlay/spec.md).
 
@@ -420,7 +419,7 @@ Giá trị nghiệp vụ nhìn thấy được (cỡ trang, trần Export, độ
 
 ### 5.4 Source References
 
-Chưa có mã nguồn — xem `## 7. User Stories` trong `functional-spec.md` để biết hành vi dự kiến. Bảng tham chiếu sẽ được điền ở bước đối chiếu sau khi implement.
+Đã implement ở phase 08: xem cột File ở § 4.1, migration `db/migrations/0013_kudos_moderation_columns.sql` và `shared/db/schema/kudos.ts` (`moderated_by`, `moderated_at`). Phần còn lại của file này (§ 3 và § 5.2-5.3) vẫn là bản nháp trước khi code, chờ `rebuild-spec`.
 
 #### Data Flow
 

@@ -6,6 +6,46 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-22 — Phase 08 (F007 Kiểm duyệt của Admin & Kudo spam của chủ bài)
+
+Added
+- Trang `/admin/review` (Review content): bảng mọi Kudo, cả Public lẫn Spam, 10 dòng mỗi trang, mới nhất trước hoặc theo tim. Lọc theo khoảng ngày (cắt theo `ADMIN_TIMEZONE`), người gửi, người nhận, trạng thái; tìm theo nội dung không phân biệt hoa thường và dấu (`public.f_unaccent`). Bộ lọc nằm trên URL; `?page` quá cuối được kẹp về trang cuối.
+- `KudoAdminQuery` (`list`, `listForExport`) và một bộ dựng `WHERE` dùng chung cho bảng, đếm và Export. Admin thấy người gửi thật của Kudo ẩn danh kèm nhãn "Ẩn danh" (C-13, phía admin). Module tách hẳn khỏi `KudoPublicQuery`, không dùng chung mapper.
+- Mark Spam và Un Spam (`markKudoSpam`, `unSpamKudo`): một `UPDATE kudos ... WHERE id AND status = :from RETURNING` trong một transaction, nên lệnh trùng hoặc đua nhau chỉ đổi đúng một lần (bên còn lại nhận `changed: false`). Chỉ lần public → spam thật sự ghi `KudoMarkedSpam{kudoId, ownerId, moderatedAt}` vào outbox cùng transaction (producer của C-01); Un Spam không phát sự kiện. Bấm mục trong popover là xác nhận, không nhập lý do.
+- `GET /api/admin/kudos` (JSON, cùng tham số với trang) và `GET /api/admin/kudos/export` (CSV `kudos-{yyyyMMdd-HHmm}.csv`, UTF-8 BOM, chặn công thức qua serializer phase 01). Mã lỗi: 401 `unauthorized`, 403 `forbidden` (trước khi đọc tham số), 400 `invalid_params` / `invalid_date_range`, 422 `export_too_large`, 500 `unexpected`. Mọi phản hồi `Cache-Control: private, no-store`.
+- `requireAdminApi()` (`features/admin-moderation/server/admin-api-guard.ts`): cổng admin cho route handler, trả JSON thay vì redirect.
+- Migration `0013_kudos_moderation_columns` (kèm `.down.sql`): `kudos.moderated_by` (FK `profiles`, `ON DELETE SET NULL`) và `kudos.moderated_at`; CHECK một chiều `moderated_by IS NULL OR moderated_at IS NOT NULL`. Chỉ lưu lần kiểm duyệt gần nhất, không có bảng lịch sử.
+- Chủ bài thấy Kudo spam của mình (trang chi tiết `/kudos/{id}`, và thẻ ở Profile "Đã gửi" khi phase 12 làm): nội dung làm mờ, lớp cảnh báo "Cảnh báo vi phạm tiêu chuẩn cộng đồng" không đóng được, nhãn "Spam" cam. Chữ vẫn nằm trong DOM cho trình đọc màn hình; mọi phần tử dưới lớp phủ bỏ khỏi thứ tự Tab (`tabIndex=-1`, ảnh chi tiết không còn là link), chỉ "Đóng" nhận focus.
+- i18n `adminModeration.*` (vi, en). `/admin/review` thêm vào `npm run test:prod`.
+
+Changed
+- Lớp phủ trên thay ghi chú "khoá sửa" của phase 05. Bỏ khoá `kudosFeed.card.spamTag` và `kudosFeed.card.spamLocked`.
+- `KudoBodyMarkdown` và `KudoCardPeople` nhận `tabbable` để giữ link khỏi thứ tự Tab.
+- Docblock `shared/admin/export-limit.ts`: đọc tối đa `EXPORT_MAX_ROWS + 1` dòng rồi gọi `assertWithinExportLimit`.
+
+Decisions
+- Figma thắng plan: huy hiệu Public viền và chữ xanh `#3174C6`, Spam vàng; nhãn "Spam" của chủ bài cam `#FF8104`.
+- Live board không liệt kê Kudo spam của chính người viết (giữ phase 05; `includeOwnSpam` chưa có nơi gọi). Thẻ làm mờ hiện ở trang chi tiết bây giờ và ở Profile "Đã gửi" ở phase 12.
+- Số tim trong bảng admin là số thô (D010), dùng `heartCountsSubquery` của phase 06; không tạo seam riêng. Không tạo wrapper `unaccent` mới (đã có từ migration 0007). Không thêm index: đo ở 10k Kudo, trang danh sách dưới 15 ms, tìm có dấu khoảng 95 ms.
+- Export đọc một lần tối đa `EXPORT_MAX_ROWS + 1` dòng; có dòng thừa thì 422, không tạo tệp, nên Kudo chèn thêm giữa chừng không đẩy tệp quá trần.
+
+Security
+- Vai trò admin đọc từ DB mỗi request; trang, hai route và hai action đều gọi guard trước khi đọc tham số hay ghi. Lỗi admin API chỉ có `{ code }`, không kèm dữ liệu Kudo. Người gửi thật chỉ có trong `AdminKudoRow`, sau guard.
+- `q` tối đa 200 ký tự, ký tự `%`, `_`, `\` được escape; giá trị luôn đi qua tham số SQL.
+
+Tests
+- Tester: unit 649/649, integration 317/317, e2e đầy đủ 93 qua, 5 bỏ qua, 0 lỗi; `test:e2e:prelaunch` 5 qua, 1 bỏ qua; `test:prod` 13/13. Chưa đo coverage (chưa cài `@vitest/coverage-v8`).
+- User ký duyệt rủi ro phase 08 (2026-11-22).
+- Review phase 08: 0 critical. Hai warning (thứ tự Tab dưới lớp phủ, phân trang không kẹp) và S1 (Export đọc có giới hạn) đã sửa theo decision-log.
+
+Deferred
+- Chưa có e2e cho en-locale và mobile của màn Review content; e2e thứ tự Tab cho thẻ spam ở Profile "Đã gửi" thuộc phase 12.
+- `KudoMarkedSpam` đã vào outbox nhưng chưa có bộ tiêu thụ (F013, phase 13).
+- Không có lý do kiểm duyệt và không có lịch sử (D004, D008).
+
+Docs
+- Quyết định ở `spec/decision-log.md` (phiên 2026-11-22, Phase 08). `docs/system/architecture.md` có mục "Kiểm duyệt của Admin (F007)". F007 `technical-spec.md` sửa theo hàng; SCR014, SCR015 cập nhật. `functional-spec.md` và phần nháp còn lại của `technical-spec.md` chờ `rebuild-spec`.
+
 ## 2026-11-22 — Phase 07 (F006 Cổng giải thưởng & cổng prelaunch)
 
 Added

@@ -99,6 +99,9 @@ Tailwind 4, token màu/font khai báo trong `@theme` ở `app/globals.css` (lấ
 
 CSV serializer (BOM + chặn formula injection), lọc theo khoảng ngày, helper múi giờ `Asia/Ho_Chi_Minh` (`ADMIN_TIMEZONE`), giới hạn export (`EXPORT_MAX_ROWS`). Dùng lại, không viết bản riêng cho từng feature.
 
+- **Route handler admin** (`GET /api/admin/*`): gọi `requireAdminApi()` (`features/admin-moderation/server/admin-api-guard.ts`) đầu tiên, trước khi đọc tham số; trả JSON `{ code }` (401 `unauthorized`, 403 `forbidden`), không redirect. Mọi phản hồi `Cache-Control: private, no-store`. Trang và Server Action admin vẫn dùng `requireAdmin()`.
+- **Export CSV**: đọc tối đa `EXPORT_MAX_ROWS + 1` dòng trong một lần, gọi `assertWithinExportLimit(rows.length)`; ném `ExportLimitExceededError` thì trả 422 và không tạo tệp. Bộ lọc của bảng, đếm và Export dùng chung một bộ dựng `WHERE` để ba nơi không lệch nhau.
+
 ## Test
 
 | Lớp | Lệnh | Ghi chú |

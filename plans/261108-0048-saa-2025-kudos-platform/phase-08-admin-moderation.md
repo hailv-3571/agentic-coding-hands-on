@@ -2,7 +2,7 @@
 phase: 08
 feature: F007
 priority: P1
-status: pending
+status: completed
 depends_on: [04]
 file_ownership:
   - app/admin/review/**
@@ -26,7 +26,7 @@ resolves: [C-01 (KudoMarkedSpam producer), C-08 (kudo_status naming), C-13 (admi
 - Upstream: phase-01 (`DomainEventOutbox#add` + `KudoMarkedSpam` payload type, `shared/admin/{csv-serializer,date-range-filter,timezone,export-limit}`, `ADMIN_TIMEZONE`, `EXPORT_MAX_ROWS`), phase-02 (`requireAdmin()` in `shared/auth/admin-guard.ts`, `profiles`), phase-03 (`app/admin/layout.tsx` guard + top bar route `/admin/review`), phase-04 (`kudos` with `status kudo_status NOT NULL DEFAULT 'public'`, `kudo_hashtags`, `GET /api/sunners/search`)
 
 ## Overview
-- Priority: P1 · Status: pending
+- Priority: P1 · Status: completed (delivered 2026-11-22; risk signed off by the user 2026-11-22)
 - Admin › Review content: table of ALL kudos (public + spam), filters Sender / Receiver / Status / date range, content search (case + diacritic insensitive), Heart sort, numbered pagination (10/page, newest first), Mark Spam / Un Spam with confirm popover, CSV Export of the current filter.
 - Owns the moderation write path (`public ↔ spam`) + `moderated_by` / `moderated_at` columns, and the owner-facing spam UI (orange "Spam" tag + Alert Overlay "Cảnh báo vi phạm tiêu chuẩn cộng đồng") consumed by phases 05/12.
 - Out of scope: auto-flag, Reject/third state, moderation history table (D008), notification delivery (phase 13 consumes the outbox event).
@@ -101,28 +101,30 @@ Modify: none outside ownership. Delete: none.
 11. Tests (Scope Contract), then reviewer.
 
 ## Todo List
-- [ ] Next 16 docs (server actions, file responses, forbidden)
-- [ ] Figma node mapping + extraction
-- [ ] Migration `moderated_by/moderated_at` + unaccent wrapper + down
-- [ ] Filter schema + where builder (+unit)
-- [ ] `KudoAdminQuery` + heart seam
-- [ ] Moderation service + actions (conditional UPDATE + outbox in tx)
-- [ ] `/api/admin/kudos` + export route (422 over limit)
-- [ ] Review page, filters, table, popover, pagination, export button, states
-- [ ] `KudoSpamTag`, `SpamAlertOverlay`, `SpamKudoCard`
-- [ ] i18n keys
-- [ ] Integration + e2e green (full safety-critical set)
+- [ ] Next 16 docs (server actions, file responses, forbidden) — NOT evidenced: no report records reading `node_modules/next/dist/docs/`; behaviour is covered by tests. Owner to record or waive.
+- [x] Figma node mapping + extraction — 4 of 9 node ids cited in decision log (722:16251, 773:26295, 773:26373, 3127:24672); the other 5 are not recorded in reports.
+- [x] Migration `moderated_by/moderated_at` + down — `0013_kudos_moderation_columns` (+ `.down.sql`). Reuses `public.f_unaccent`; no wrapper (drift D2).
+- [x] Filter schema + where builder (+unit) — unit 26/26.
+- [x] `KudoAdminQuery` — heart seam NOT created; `heartCountsSubquery` used directly (drift D1).
+- [x] Moderation service + actions (conditional UPDATE + outbox in tx) — integration 7/7 for service.
+- [x] `/api/admin/kudos` + export route (422 over limit) — single bounded read (drift D9).
+- [x] Review page, filters, table, popover, pagination, export button, states — no `error.tsx` (query failure shows `loadError`, drift D14).
+- [x] `KudoSpamTag`, `SpamAlertOverlay` — built.
+- [x] ~~`SpamKudoCard`~~ dropped — `KudoCard` handles `isSpam` (drift D7).
+- [x] i18n keys — `adminModeration.*` vi 56/56, en 56/56.
+- [x] Integration + e2e green (full safety-critical set) — coverage NOT measured (no provider installed).
 
 ## Success Criteria
-- SC-001..SC-00x of technical spec § 5.1 pass.
-- Mark Spam flips exactly one row public→spam, sets `moderated_by`=admin, `moderated_at`; Un Spam reverses; repeat call returns `changed:false`, `moderated_*` unchanged, no second outbox row.
-- 10 concurrent Mark Spam on one kudo → 1 UPDATE, 1 `KudoMarkedSpam` outbox row, 0 errors.
-- Outbox row rolls back when the tx fails (forced error after UPDATE leaves status public).
-- After Mark Spam: kudo absent from `/api/kudos`, highlight, detail (404 for non-author); author sees it with Spam tag + overlay; `kudo_hearts` row count unchanged; after Un Spam it reappears.
-- Non-admin: `/admin/review` → 403 page; `GET /api/admin/kudos[/export]` → 403; direct server-action call → forbidden, status unchanged.
-- Anonymous kudo: admin row shows real sender + "Ẩn danh"; grep of every non-admin response (feed, detail, profile, 403 bodies) contains no sender id/name/email.
-- Search "nguyen" matches "Nguyễn"; "DUOC" matches "được"; filters AND; `to` date includes 23:59 +07; table total == export row count for same params.
-- Export of a cell `=HYPERLINK(...)` opens as text; > `EXPORT_MAX_ROWS` → 422, no file.
+- [x] SC-001..SC-00x of technical spec § 5.1 — mapped through tester acceptance criteria 1–9 (`tester-261122-phase-08-full-run.md`). The § 5.1 numbering itself was not re-checked line by line.
+- [x] Mark Spam flips exactly one row public→spam, sets `moderated_by`/`moderated_at`; Un Spam reverses; repeat returns `changed:false`, `moderated_*` unchanged, no second outbox row. Evidence: `kudo-moderation-service.test.ts:36,46,79,89`; `admin-access.test.ts:134`; e2e `review-content.spec.ts:92,136`.
+- [x] 10 concurrent Mark Spam → 1 change, 1 `KudoMarkedSpam` outbox row, 0 errors. Evidence: `kudo-moderation-service.test.ts:54`.
+- [x] Outbox row rolls back when the tx fails. Evidence: `kudo-moderation-service.test.ts:66`.
+- [x] After Mark Spam: gone from `/api/kudos`, Highlight, and detail for non-authors; `kudo_hearts` unchanged; Un Spam restores. Evidence: `spam-visibility.test.ts:56`; `kudo-public-query.test.ts:107-116`.
+- [x] Author sees own spam with Spam tag + blurred overlay on the **detail page only** (amended 2026-11-22: the author-on-Live-board half is dropped; Live board never lists spam). Evidence: e2e `owner-spam-view.spec.ts:32,47,61`. Profile "Đã gửi" view waits for phase 12.
+- [x] Non-admin: `/admin/review` → 403 page (guest 307 to login); `GET /api/admin/kudos[/export]` → 403 (guest 401); direct server-action call → refused, status unchanged. Evidence: `admin-access.test.ts:69-77,115-131`; e2e `review-content.spec.ts:40`; `test:prod` 16/16 incl. `/admin/review`.
+- [~] Anonymous kudo: admin row shows real sender + "Ẩn danh"; non-admin responses carry no sender id/name/email. Evidence: `kudo-admin-query.test.ts:60,95`; `admin-refusal-hides-anonymous-sender.test.ts` (401/403 bodies and page); `spam-visibility.test.ts:74`; `admin-kudo-export-route.test.ts:81`. Partial: profile responses await phase 12.
+- [~] Search "nguyen" matches "Nguyễn"; "DUOC" matches "được"; filters AND; `to` includes 23:59 +07. Evidence: `kudo-admin-query.test.ts:89,99,122,129`. Not evidenced: "table total == export row count" as a named assertion.
+- [x] Export of `=HYPERLINK(...)` opens as text; > `EXPORT_MAX_ROWS` → 422, no file. Evidence: `admin-kudo-export.test.ts:98`; `admin-kudo-export-route.test.ts:54,66,81,88`.
 
 ## Scope Contract
 - **Changed:** `features/admin-moderation/**`, `/admin/review`, `/api/admin/kudos/**`, migration (`moderated_*`, `unaccent`), i18n keys.
@@ -152,11 +154,53 @@ Rollback: revert phase files; down migration drops `moderated_by`, `moderated_at
 - Search input length-capped + LIKE-escaped; all SQL parameterized via Drizzle.
 
 ## Next Steps
-- Phase 06 (or whoever lands after 06) rewrites `admin-kudo-heart-counts.ts` to `HeartStatsQuery`-consistent raw counts (D010: no x2).
+- ~~Phase 06 rewrites `admin-kudo-heart-counts.ts`~~ VOID: no seam file exists (see Delivery Notes D1). Heart column reads `heartCountsSubquery` directly.
 - Phase 11 trigger fires on `UPDATE OF status` — no-op transitions update 0 rows so no event.
 - Phase 12 renders `SpamKudoCard`; phase 13 consumes `KudoMarkedSpam`; phase 14 overview reuses `admin-kudo-where-builder` status counts.
 
 ## Unresolved
-1. Heart seam owner: phase 06 file ownership does not list `features/admin-moderation/server/admin-kudo-heart-counts.ts` — controller should add it to 06 (or 14).
-2. Phase 12 still references `OwnSpamKudoQuery#listBySender` (08) + ALG-001 merge; phase 05 replaced it with `KudoPublicQuery.list({includeOwnSpam})`. This phase follows 05 and does NOT create `OwnSpamKudoQuery`; phase 12 needs reconciling. Also spec D003 (owner detail 404) vs phase 05 (owner sees read-only spam detail) — phase 05 / brief win.
-3. Drizzle `kudos` table file is owned by phase 04; adding `moderated_by/moderated_at` columns to it needs either phase 04 to declare them (nullable, unused) or a coordinated one-line edit — controller to decide.
+1. RESOLVED (2026-11-22): no heart seam file. `heartCountsSubquery` (phase 06) is used directly; D010 raw counts.
+2. RESOLVED by phase 05: `OwnSpamKudoQuery` is not created. `KudoPublicQuery.list({includeOwnSpam})` (phase 05 line 64) replaces it. The stale "Phase 12" reference to `OwnSpamKudoQuery#listBySender` + ALG-001 in `spec/profile/technical-spec.md` is phase 12's to reconcile, not this phase's. Spec D003 (owner detail 404) vs phase 05 (owner sees read-only spam detail): phase 05 / brief wins.
+3. RESOLVED: the two columns were added to `shared/db/schema/kudos.ts` by the backend implementer (drift D16). Nothing else in phase 04's schema changed.
+
+## Delivery Notes (2026-11-22)
+
+**Evidence:** `spec/decision-log.md` § Session 2026-11-22 — Phase 08; `reports/implementer-261122-phase-08-moderation-backend.md`, `-moderation-ui.md`, `-review-fixes.md`; `reports/reviewer-261122-phase-08.md`; `evidence/phase-08/temper-results.json`. Screenshots in `evidence/screenshots/phase-08/` (desktop 1440, mobile 375).
+
+**Final gates (final code, after review fixes):** tsc 0 · lint 0 · unit 649/649 · integration 322/322 · e2e 97 passed / 5 skipped (prelaunch-only, by design) / 0 failed · build 0 · test:prod 16/16.
+- `reports/tester-261122-phase-08-full-run.md` on disk records the PRE-review-fix run (integration 317, e2e 93, prod 13/13). The figures above supersede it.
+- Coverage: NOT measured. `@vitest/coverage-v8` is not installed; installing it is a dependency change and needs user approval.
+
+**Review:** 0 critical. W1 (focus under overlay) and W2 (pager clamp) fixed; S1 (bounded export read) fixed; S2 (LIKE escape tests) and S3 (dead keys, docblock) done. S4 (`z.uuid()` rejects non-RFC test ids) left as-is; reviewer judged it fine for `gen_random_uuid()` ids.
+
+**Risk sign-off: given by the user on 2026-11-22** (explicit answer "Ký duyệt và commit"; decision log). Evidence gate SEALED.
+
+**Drift from the original plan** (step · reason · cost):
+- D1. No heart seam file (`admin-kudo-heart-counts.ts`); `heartCountsSubquery` used directly. Reason: decision 2026-11-22, D010 raw counts, phase 06 already landed. Cost: none. Plan Next Steps bullet voided.
+- D2. Reuse `public.f_unaccent` (0007); no `immutable_unaccent` wrapper. Reason: already exists and IMMUTABLE-safe in use. Cost: none.
+- D3. No new index on `kudos (created_at, id)`. Reason: EXPLAIN on 10k synthetic kudos + 10k hearts (rolled back): newest page 3.6 ms, page 500 14 ms, count 1.8 ms, heart sort 8.6 ms, diacritic search 94 ms; all under the 300 ms budget. Cost: revisit if the table grows well past 10k.
+- D4. Badge colours from Figma, not the plan: Public blue `#3174C6` (plan said green), Spam yellow. Reason: decision 2026-11-22, Figma wins. Cost: contrast open (see below).
+- D5. Mark Spam / Un Spam popover is one item; the click confirms. Reason: D004, no reason field. Cost: none.
+- D6. Owner spam view: orange tag `#FF8104` plus blurred, non-closable overlay on the **detail page only**. Live board never lists spam, including the author's own. Reason: decision 2026-11-22 (superseded the plan's author-on-Live-board criterion and the UI agent's suggested `KudoPublicQuery` change, which was rejected). Cost: the Live-board half of the criterion is dropped; the owner view on Profile arrives in phase 12.
+- D7. No `SpamKudoCard` wrapper; `KudoCard` renders `isSpam` itself. Reason: no duplicate component. Cost: one fewer file; phase 12 reuses `KudoCard`.
+- D8. Focus under the overlay: `tabIndex=-1` on links, not `inert`, so screen readers still read the text. Detail images are no longer links. Cost: a screen reader's browse mode can still activate those links (accepted).
+- D9. Export is one bounded read of `EXPORT_MAX_ROWS + 1`; an extra row → 422 `export_too_large`, no file. Reason: review S1, and the count query is gone. Cost: the whole CSV is built in memory (≤ 10k rows). The plan's 1000-row batch streaming was not built (KISS).
+- D10. vi column and filter labels in Vietnamese ("Người gửi", "Người nhận", "Nội dung", …); en uses Figma English. Reason: D013. Cost: vi headers differ from the Figma text. Messages-only to flip.
+- D11. Layout: content width 1152 px (Figma 1280); ID column 96 px (fits 8-char id, D011); Actions 112 px; gold border on the current page; native date inputs. Reason: the admin frame is 1152 px. Cost: visual deviations from Figma, listed in the UI report.
+- D12. Search cap: UI 100 chars, server 200 chars. Spec E08 says 100. Cost: mismatch open (see below).
+- D13. `changed:false` shows a notice ("Kudo đã được cập nhật bởi Admin khác."). The spec says silent handling. Cost: open (see below).
+- D14. No `app/admin/review/error.tsx`. Query failure reaches the screen as `loadError` with retry. Reason: no error-boundary pattern in the app. Cost: none known.
+- D15. ESLint `no-restricted-imports` (block `features/admin-moderation/server` from `features/kudos-feed`) NOT added. Reason: `eslint.config.mjs` is outside the phase's ownership. Masking is covered by `spam-visibility.test.ts` instead. Cost: no static guard against a future import leak. OPEN risk.
+- D16. Files outside the phase's ownership changed: `features/kudos-feed/components/{kudo-card,kudo-detail-view,kudo-card-sender,kudo-body-markdown}.tsx`; `tests/e2e/kudos-feed/kudo-card-and-detail.spec.ts` (one assertion); `shared/db/schema/kudos.ts` (two columns); `shared/admin/export-limit.ts` (docblock); `tests/prod/production-admin-403-status.ts` (+3 checks). Reason: the owner view lives in phase 05 components; the schema columns are the phase 08 migration. Cost: ownership boundary crossed; each change is small.
+- D17. Dead message keys `kudosFeed.card.spamTag` and `spamLocked` removed (vi and en). Reason: no code or test uses them. Cost: none.
+- D18. `OwnSpamKudoQuery` not created; phase 05 `KudoPublicQuery.list({includeOwnSpam})` is used. Reason: phase 05 already landed. Cost: none in this phase; phase 12 must follow suit.
+
+**Open at close** (owner and path to clear; full list in `reports/delivery-tracker-261122-phase-08-sync.md`):
+- Coverage: user approves installing `@vitest/coverage-v8`, then run and record the numbers.
+- Phase 12 Tab-order e2e for the spam card on Profile "Đã gửi": phase 12 owner.
+- Contrast: Public badge `#3174C6` on `#00070C` ≈ 4.3:1, below AA 4.5:1 for 14 px text. Kept at the Figma value. Owner: UI implementer, with the user to decide.
+- Search cap mismatch (100 UI vs 200 server): owner: main agent to align the value.
+- `changed:false` notice vs the spec's silent handling: user to confirm the product intent.
+- ESLint import guard (D15): main agent, needs `eslint.config.mjs` ownership.
+- Plan drift in phase 12 file (`OwnSpamKudoQuery`, ALG-001): phase 12 owner.
+- Next 16 docs todo: not evidenced; owner records or waives.

@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "empty DB, migrations incl. 0013 applied, seeds (tester run)",
+      "ts": "2026-11-22T10:30:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped (tester run; proxy unchanged by phase 08)",
+      "ts": "2026-11-22T10:30:00.000Z"
+    },
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "46 files, 649/649 (final code)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "322/322 incl. transitions, concurrency, outbox rollback, access matrix, anonymous-sender refusal bodies, bounded export 422, LIKE escaping (final code)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    },
+    {
+      "command": "npx playwright test",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "97 passed, 5 skipped (prelaunch-only), 0 failed (final code)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "16/16 incl. /admin/review guest 307, member 403, admin 200 (final code)",
+      "ts": "2026-11-22T12:30:00.000Z"
+    }
+  ]
+}

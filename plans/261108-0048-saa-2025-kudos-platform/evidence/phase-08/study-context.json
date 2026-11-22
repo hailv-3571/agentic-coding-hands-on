@@ -1,0 +1,30 @@
+{
+  "task": "Phase 08 (F007 Admin moderation): moderated_by/moderated_at migration, Admin Review content list (filters, diacritic search, pagination, heart sort), Mark Spam / Un Spam with conditional UPDATE and KudoMarkedSpam outbox in the same transaction, JSON list and CSV export routes, owner spam view (orange Spam tag + blurred non-closable warning overlay on the detail page)",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "Mark Spam flips one row public->spam and sets moderated_by/moderated_at; Un Spam reverses; a repeat call returns changed:false with moderated_* unchanged and no second outbox row",
+    "10 concurrent Mark Spam on one kudo produce 1 UPDATE, 1 KudoMarkedSpam outbox row and 0 errors; the outbox row rolls back with the transaction",
+    "Non-admin: /admin/review is the 403 page; GET /api/admin/kudos and /export answer 403 (401 without session); direct server-action calls are refused and leave status unchanged",
+    "Anonymous kudo: the admin row shows the real sender with an Ẩn danh chip; no non-admin response exposes the real sender",
+    "Filters Sender/Receiver/Status/date range AND together, any change resets to page 1; search is case and diacritic insensitive with LIKE escaping; the to-date includes 23:59 in ADMIN_TIMEZONE; 10 per page newest first; heart sort with id tiebreak",
+    "CSV export uses the same filter/order as the table (row count equal), BOM + formula guard, 422 above EXPORT_MAX_ROWS",
+    "After Mark Spam the kudo is gone from the public feed/Highlight and its detail is not-found for others; the author sees its detail blurred under the warning overlay with the orange Spam tag; hearts rows untouched; Un Spam restores it",
+    "The Live board never lists spam, including the author's own (decision 2026-11-22)",
+    "Review content screen matches Figma 722:16251 (table, filters, popover confirm, badges, pagination) in vi and en at desktop and mobile"
+  ],
+  "touchpoints": [
+    "db/migrations/0013_kudos_moderation_columns*", "shared/db/schema/kudos.ts", "features/admin-moderation/", "app/admin/review/",
+    "app/api/admin/kudos/", "features/kudos-feed/components/kudo-card.tsx", "features/kudos-feed/components/kudo-detail-view.tsx",
+    "messages/", "public/images/admin-moderation/", "tests/"
+  ],
+  "blastRadius": [
+    "every public read path filtering kudos.status (feed, Highlight, detail, hearts stats; later 09-11)",
+    "phase 13 consumer of KudoMarkedSpam", "phase 12 Profile reuses KudoCard spam view", "phase 04 edit path must refuse spam kudos"
+  ],
+  "contracts": [
+    "AdminKudoRow / AdminKudoPage / ReviewContentScreenProps (features/admin-moderation/schemas/admin-kudo-row.ts)",
+    "markKudoSpam(kudoId) / unSpamKudo(kudoId) -> KudoModerationResult",
+    "KudoMarkedSpam payload {kudoId, ownerId, moderatedAt}",
+    "GET /api/admin/kudos[?params] JSON; GET /api/admin/kudos/export CSV or 422 {code:export_too_large}"
+  ]
+}

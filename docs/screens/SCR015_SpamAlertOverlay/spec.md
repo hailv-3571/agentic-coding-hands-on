@@ -11,21 +11,21 @@ lang: vi
 **Screen**: SCR015_SpamAlertOverlay: Thẻ Kudo spam và Alert Overlay cảnh báo vi phạm
 **Feature**: F007_AdminModeration
 **Type**: atomic
-**Route**: Không có route riêng — hiển thị trong danh sách "Đã gửi" trên profile của chính chủ bài (màn do F012 sở hữu; TBD (draft))
+**Route**: Không có route riêng. Hiển thị trên trang chi tiết `/kudos/{id}` của chính chủ bài (đã implement ở phase 08) và trên thẻ trong danh sách "Đã gửi" của profile (F012, phase 12; `KudoCard` đã mang sẵn lớp phủ). Live board không liệt kê Kudo spam nên không có lớp phủ ở đó
 **Generated**: 2026-11-08
 
 ## 1. Overview
 
 **Purpose:** Cho chủ bài thấy Kudo của mình đang bị tạm ẩn khỏi các trang công khai và lý do chung: vi phạm tiêu chuẩn cộng đồng.
 **Actors:** Chủ bài (Sunner gửi Kudo đó)
-**Entry Conditions:** Đã đăng nhập, mở danh sách "Đã gửi" trong profile của chính mình và có Kudo đang ở trạng thái Spam.
+**Entry Conditions:** Đã đăng nhập, mở trang chi tiết Kudo của chính mình (hoặc, từ phase 12, danh sách "Đã gửi" trong profile) và Kudo đang ở trạng thái Spam.
 **Exit Conditions:** Chủ bài cuộn tiếp, đổi bộ lọc danh sách hoặc rời profile; không có thao tác nào kết thúc riêng ở lớp cảnh báo.
 
 ## 2. Screen Layout
 
 ### Layout Sketch
 
-Một thẻ Kudo ở dạng biến thể "KUDO spam" (cùng bố cục thẻ Kudo, đã làm mờ) trong danh sách "Đã gửi"; thẻ "Spam" màu cam nằm góc trên bên phải thẻ; lớp Alert Overlay phủ lên thẻ với dòng "Cảnh báo vi phạm tiêu chuẩn cộng đồng". Cách lớp phủ che thẻ (toàn thẻ hay một dải) chưa đối chiếu với frame thiết kế `[UNVERIFIED]`.
+Một thẻ Kudo ở dạng biến thể "KUDO spam" (cùng bố cục thẻ Kudo, đã làm mờ) trong danh sách "Đã gửi"; thẻ "Spam" màu cam nằm góc trên bên phải thẻ; lớp Alert Overlay phủ lên thẻ với dòng "Cảnh báo vi phạm tiêu chuẩn cộng đồng". Lớp phủ che toàn bộ thẻ (Figma 3127:24672): nội dung bên dưới làm mờ, phủ xám `rgba(87,87,87,.7)`, tam giác cảnh báo ở giữa kèm dòng chữ trắng. Nhãn "Spam" và nút "Đóng" (trên trang chi tiết) nằm trên lớp mờ.
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -50,11 +50,11 @@ Một thẻ Kudo ở dạng biến thể "KUDO spam" (cùng bố cục thẻ Kud
 
 | ID | Element | Type | Required | Default | Visibility | Action | Source | Format | Empty Behavior | Cross-ref |
 |----|---------|------|----------|---------|------------|--------|--------|--------|-----------------|-----------|
-| E01 | Thẻ "Spam" | display field | — | — | Always | — | static | thẻ màu cam ở góc trên bên phải | — | TBD (draft) |
+| E01 | Thẻ "Spam" | display field | — | — | Always | — | static | màu cam `#FF8104`, viền `#EAEAEA`, góc trên bên phải | — | `KudoSpamTag` |
 | E02 | Nội dung Kudo (người gửi, người nhận, thời gian, tiêu đề, lời nhắn, hashtag) | display field | — | — | Always | — | API field | giống thẻ Kudo thường, làm mờ | dash | TBD (draft) |
-| E03 | Cảnh báo vi phạm tiêu chuẩn cộng đồng | message | — | — | Always | — | static | chữ cảnh báo trong lớp phủ | — | N/A |
+| E03 | Cảnh báo vi phạm tiêu chuẩn cộng đồng | message (`role="note"`) | — | — | Always | — | static | tam giác cảnh báo và chữ trắng đậm trong lớp phủ; kèm câu ẩn cho trình đọc màn hình "Kudo này đang bị tạm ẩn khỏi các trang công khai." | — | `SpamAlertOverlay` |
 
-Thẻ này không có nút tim, Copy Link hay sửa (nên không có phần tử tương tác).
+Thẻ này không có nút tim, Copy Link hay sửa. Lớp phủ không có nút đóng (D012, user chọn 2026-11-22). Trên trang chi tiết chỉ còn "Đóng" (về Live board) là phần tử tương tác.
 
 ## 4. User Actions
 
@@ -95,7 +95,7 @@ N/A — no validation rules or submit-side error feedback detected.
 | Condition | Type | Element(s) | Visible when | Hidden when | Notes |
 |-----------|------|------------|--------------|-------------|-------|
 | Chỉ chủ bài thấy biến thể spam | auth | E01, E02, E03 | Người xem là người gửi và Kudo đang Spam | Mọi trường hợp khác (người khác không nhận dữ liệu) | Nếu lớp phủ bị bỏ qua phía trình duyệt, người khác vẫn không có dữ liệu để xem |
-| Lớp cảnh báo có đóng được không | hardcoded-id | E03 | Cố định trên thẻ (mặc định đề xuất) | — | [NEEDS_DOMAIN_CONFIRMATION] D012 ở functional-spec |
+| Lớp cảnh báo có đóng được không | hardcoded-id | E03 | Cố định trên thẻ, không đóng được | — | D012 đã chốt: không đóng (decision-log 2026-11-22) |
 
 ## 8. Navigation
 
@@ -114,11 +114,11 @@ N/A — this screen has no exits (terminal screen).
 | Aspect | Status | Notes |
 |--------|--------|-------|
 | ARIA roles/labels | [EXPECTED] | Thẻ "Spam" và dòng cảnh báo có chữ đọc được, không chỉ dựa vào màu cam |
-| Keyboard navigation | [EXPECTED] | Thẻ không có phần tử tương tác nên không thêm điểm dừng Tab |
+| Keyboard navigation | [EXPECTED] | Link dưới lớp phủ (hồ sơ, link trong lời nhắn, "Xem chi tiết") có `tabIndex=-1`, ảnh ở trang chi tiết không còn là link; chỉ "Đóng" nhận focus. Không dùng `inert` để trình đọc màn hình vẫn đọc được chữ |
 | Focus management | [EXPECTED] | Lớp cảnh báo không bẫy focus |
-| Screen reader compatibility | [EXPECTED] | Cảnh báo được đọc cùng nội dung thẻ, báo rõ thẻ đang bị tạm ẩn |
+| Screen reader compatibility | [EXPECTED] | Lớp phủ được dựng trước nội dung thẻ nên cảnh báo được đọc trước; chữ của thẻ vẫn nằm trong DOM |
 | Error announcement | [EXPECTED] | Lỗi tải danh sách được đọc tự động |
 
 ## 10. Responsive Behavior
 
-N/A — no responsive behavior found in source.
+Trên điện thoại chữ cảnh báo nhỏ hơn (22/28 thay cho 32/40); tam giác rộng khoảng 48% thẻ.

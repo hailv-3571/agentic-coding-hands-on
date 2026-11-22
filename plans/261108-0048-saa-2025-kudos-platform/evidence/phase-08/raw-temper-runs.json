@@ -1,0 +1,13 @@
+[
+  { "command": "curl -s -o /dev/null -w \"%{http_code} %{time_starttransfer}\" http://localhost:3000/login", "exitCode": 0, "summary": "dev server :3000 healthy: HTTP 200, TTFB 0.20 s (not killed, not started by this run)" },
+  { "command": "npx tsc --noEmit -p .", "exitCode": 0, "summary": "typecheck clean" },
+  { "command": "npm run lint", "exitCode": 0, "summary": "eslint clean, no findings" },
+  { "command": "npm run test:unit", "exitCode": 0, "summary": "unit: 46 files, 649/649 passed, 0 failed (4.5 s test time)" },
+  { "command": "npm run db:reset", "exitCode": 0, "summary": "supabase db reset from empty, drizzle migrate applied incl. 0013, seeds applied (departments=6, hashtags=8)" },
+  { "command": "npm run test:integration", "exitCode": 0, "summary": "integration: 42 files, 317/317 passed, 0 failed (run alone, 83 s)" },
+  { "command": "npx playwright test", "exitCode": 0, "summary": "e2e full on dev :3000, 3 workers: 93 passed, 5 skipped (prelaunch-gate by design), 0 failed, first attempt, no retries" },
+  { "command": "npm run test:e2e:prelaunch", "exitCode": 0, "summary": "prelaunch gate on own server :3100: 5 passed, 1 skipped by design, 0 failed" },
+  { "command": "npm run build", "exitCode": 0, "summary": "production build clean, no warnings or deprecations in log" },
+  { "command": "npm run test:prod", "exitCode": 0, "summary": "production 403 status checks: 13/13 passed; does not cover /admin/review (ad-hoc probe below)" },
+  { "command": "ad-hoc probe: next start -p 3200 + GET /admin/review (guest, member, admin)", "exitCode": 0, "summary": "guest 307 to /login?next=%2Fadmin%2Freview; member 403 with no >ADMIN< frame and no kudo ids/emails in body (body carries admin i18n strings only; DB had 0 spam kudos so data check is weak); admin 200" }
+]

@@ -1,0 +1,77 @@
+{
+  "score": 8,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "Mark Spam flips one row public->spam and sets moderated_by/moderated_at; Un Spam reverses; a repeat call returns changed:false with moderated_* unchanged and no second outbox row: by code reading of kudo-moderation-service.ts:21-42 (conditional UPDATE WHERE id AND status=:from, outbox only when a row returned and to is spam, no-op path only re-reads) and by tests kudo-moderation-service.test.ts 'flips public -> spam...', 'is idempotent...', 'flips spam -> public...'; not re-run by me",
+    "10 concurrent Mark Spam on one kudo produce 1 UPDATE, 1 KudoMarkedSpam outbox row and 0 errors; the outbox row rolls back with the transaction: by code reading (row lock + READ COMMITTED re-check of status=:from; DomainEventOutbox.add takes the same tx) and by tests 'lets 10 concurrent calls write once...' and 'rolls the status change and the outbox row back...'; not re-run by me",
+    "Non-admin: /admin/review is the 403 page; GET /api/admin/kudos and /export answer 403 (401 without session); direct server-action calls are refused and leave status unchanged: by code reading (page.tsx:41 requireAdmin first, both route handlers call requireAdminApi before parsing any param, actions call requireAdmin before the uuid parse, role read from DB per call via resolveAdminAccess) and by tests admin-access.test.ts 'redirects a guest to /login and changes nothing', 'answers 403 to a user and to a demoted admin, and changes nothing'; proxy step 4b by code reading only; the 403 page not seen in a browser by me",
+    "Anonymous kudo: the admin row shows the real sender with an Ẩn danh chip; no non-admin response exposes the real sender: by code reading (real sender only in admin-moderation DTOs reachable after requireAdmin/requireAdminApi; error bodies {code} only; no caching anywhere: grep of use cache/unstable_cache/revalidateTag found none; admin routes Cache-Control private,no-store), screenshot review-content-desktop-1440x900.png shows the chip, and tests kudo-admin-query.test.ts 'shows the real sender of an anonymous spam kudo...' and spam-visibility.test.ts 'masks the anonymous sender (and the moderator) in every public read after moderation'",
+    "Filters Sender/Receiver/Status/date range AND together, any change resets to page 1; search is case and diacritic insensitive with LIKE escaping; the to-date includes 23:59 in ADMIN_TIMEZONE; 10 per page newest first; heart sort with id tiebreak: by code reading of admin-kudo-where-builder.ts (and(), f_unaccent both sides, escape of backslash % _, half-open range via adminDateRangeSchema), review-url-params applyFilterPatch (page reset), admin-kudo-row-select.ts (every order ends id DESC) and tests kudo-admin-query.test.ts ('combines sender, receiver and status', 'reads from/to as whole days in ADMIN_TIMEZONE...', 'ignores diacritics and case...', 'treats % and _ as literal...') and kudo-admin-query-paging.test.ts; backslash literal untested (S2); pager highlight wrong for an out-of-range page (W2)",
+    "CSV export uses the same filter/order as the table (row count equal), BOM + formula guard, 422 above EXPORT_MAX_ROWS: by code reading (export route uses parseAdminKudoFilter + buildAdminKudoWhere + selectAdminKudoRows with the same sort; phase 01 serializeCsv adds BOM, quoting, formula guard; assertWithinExportLimit -> 422 {code:export_too_large}) and by tests admin-kudo-export-route.test.ts, admin-kudo-export.test.ts, kudo-admin-query-paging.test.ts 'counts and lists every matching row, in table order, without paging'; count and list are two statements (S1)",
+    "After Mark Spam the kudo is gone from the public feed/Highlight and its detail is not-found for others; the author sees its detail blurred under the warning overlay with the orange Spam tag; hearts rows untouched; Un Spam restores it: by code reading (kudo-public-filters eq status public; kudo-public-query detail visible only for public or own spam; no hearts write in the service) and by test spam-visibility.test.ts 'hides a spam kudo from others (admins included), keeps it for its owner, keeps hearts, and Un Spam restores it'; overlay and tag by screenshot owner-spam-detail-desktop-1440x900.png and e2e owner-spam-view.spec.ts; keyboard focus still reaches links under the overlay (W1)",
+    "The Live board never lists spam, including the author's own (decision 2026-11-22): by code reading, includeOwnSpam (kudo-public-query.ts:33,51) is declared but no caller in features/ or app/ passes it, and feed/Highlight use eq(status,'public'); I did not read an e2e of the board with an own spam kudo",
+    "Review content screen matches Figma 722:16251 (table, filters, popover confirm, badges, pagination) in vi and en at desktop and mobile: I compared review-content-desktop-1440x900.png against admin-review-content-722-16251.png (columns, filters, badges, pager, Export match); mobile, en and popover screenshots exist but I did not open them; adminModeration keys 56/56 identical vi vs en by script"
+  ],
+  "regressionChecked": [
+    "public read paths filtering kudos.status (feed, Highlight, detail) unchanged by the diff; spam-visibility integration covers them by test name",
+    "KudoCard/KudoDetailView: only isSpam branches changed, non-spam markup gained `relative` only; edit-locked note replaced by overlay and the one e2e assertion updated accordingly",
+    "phase 04 edit path refuses spam (SPAM_LOCKED test in spam-visibility.test.ts, not re-run)",
+    "migration 0013: nullable columns, FK ON DELETE SET NULL, CHECK moderated_by IS NULL OR moderated_at IS NOT NULL; down drops constraints then columns, IF EXISTS; journal when 1795339188973 > 0012's 1794845445547; no new index justified by the EXPLAIN note; rollback verified by moderation-migration.test.ts per its header, not re-run",
+    "all new source files under 200 lines (largest review-table 112, row-select 111; largest test 179); no temp specs under tests/e2e/admin-moderation (2 specs)",
+    "no secrets or env reads in client components; admin DTO modules server-only or imported only by guarded pages"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "findings": [
+    {
+      "severity": "Warning",
+      "category": "Accessibility",
+      "location": "features/kudos-feed/components/kudo-detail-view.tsx:32-41",
+      "summary": "spam overlay blocks the pointer but not the keyboard: image links and the card's 'Xem chi tiet' link stay Tab-reachable under the blur (WCAG 2.4.11); make interactive children inert/non-focusable while isSpam, keep Dong above",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Warning",
+      "category": "Logic",
+      "location": "features/admin-moderation/components/review-content-screen.tsx:97",
+      "summary": "pagination receives unclamped view.page while the server clamps rows to the last page; ?page=99 shows no current page and Previous goes to 98; pass Math.min(view.page, data.pageCount)",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Performance",
+      "location": "features/admin-moderation/server/kudo-admin-query.ts:46-48",
+      "summary": "export does count() then unbounded listAll(); add limit EXPORT_MAX_ROWS+1 and answer 422 on overflow",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Testing",
+      "location": "features/admin-moderation/server/admin-kudo-where-builder.ts:17",
+      "summary": "backslash escaping in the LIKE pattern is untested; add literal and trailing backslash cases",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Craft",
+      "location": "features/admin-moderation/components/spam-alert-overlay.tsx:5",
+      "summary": "docblock mentions Live board card though the board never lists spam; kudosFeed.card.spamLocked/spamTag look dead; align comment and drop keys",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Suggestion",
+      "category": "Validation",
+      "location": "features/admin-moderation/schemas/admin-kudo-filter-schema.ts:52-53",
+      "summary": "zod 4 z.uuid() rejects non-RFC ids as invalid_params; fine for gen_random_uuid, use z.guid() if hand-made ids can exist",
+      "disposition": "Defer"
+    }
+  ],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  }
+}
