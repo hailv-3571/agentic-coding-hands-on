@@ -12,7 +12,10 @@ export class ExportLimitExceededError extends Error {
   }
 }
 
-/** Call with the filtered row count before streaming an admin CSV export. */
+/**
+ * Call with an admin CSV export's row count before building the file. Read at most
+ * EXPORT_MAX_ROWS + 1 rows and pass their number: the extra row trips the limit in the same read.
+ */
 export function assertWithinExportLimit(count: number): void {
   if (!Number.isInteger(count) || count < 0) {
     throw new RangeError(`Export row count must be a non-negative integer, received ${count}`);

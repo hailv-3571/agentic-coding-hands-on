@@ -43,6 +43,10 @@ export const kudos = pgTable(
     /** Shown instead of the sender's name; set exactly when `is_anonymous` (CHECK). */
     anonymousNickname: varchar("anonymous_nickname", { length: 30 }),
     status: kudoStatus("status").notNull().default("public"),
+    /** Admin of the latest Mark Spam / Un Spam (phase 08, D008); null once that profile is deleted. */
+    moderatedBy: uuid("moderated_by").references(() => profiles.id, { onDelete: "set null" }),
+    /** Time of the latest moderation; set whenever `moderated_by` is (CHECK, migration 0013). */
+    moderatedAt: timestamp("moderated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

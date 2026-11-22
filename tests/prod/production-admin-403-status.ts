@@ -117,6 +117,10 @@ function checksFor(member: string, admin: string): Check[] {
     },
     { name: "member / → 200", path: "/", cookie: member, status: 200 },
     { name: "admin /admin/overview → 200 admin frame", path: "/admin/overview", cookie: admin, status: 200, body: />ADMIN</ },
+    // Phase 08 Admin › Review content sits behind the same gate.
+    { name: "guest /admin/review → login", path: "/admin/review", status: 307, location: "/login?next=%2Fadmin%2Freview" },
+    { name: "member /admin/review → 403 page", path: "/admin/review", cookie: member, status: 403, body: forbiddenPage },
+    { name: "admin /admin/review → 200 review screen", path: "/admin/review", cookie: admin, status: 200, body: /^(?=[\s\S]*>ADMIN<)[\s\S]*>Review content</ },
     // S-N1 / S-N3: path variants and RSC requests never hand a member the admin frame.
     { name: "member //admin/overview → 308", path: "//admin/overview", cookie: member, status: 308, location: "/admin/overview", notBody: adminFrame },
     { name: "member /admin/ → 308", path: "/admin/", cookie: member, status: 308, location: "/admin", notBody: adminFrame },
