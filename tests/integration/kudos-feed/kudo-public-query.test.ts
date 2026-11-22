@@ -100,7 +100,8 @@ describe("KudoPublicQuery.list — anonymous sender (FR-602)", () => {
       department: { id: dept.alice, code: "CEVC2" },
       tier: null,
     });
-    expect(card.recipient).toEqual({ id: r1.id, name: "Recipient One", avatarUrl: null, department: { id: dept.r1, code: "CEVC3" }, tier: null });
+    // Hero tier (phase 09 seam): r1 has 2 distinct public senders (alice, bob) → "new"; alice has none.
+    expect(card.recipient).toEqual({ id: r1.id, name: "Recipient One", avatarUrl: null, department: { id: dept.r1, code: "CEVC3" }, tier: "new" });
   });
 });
 

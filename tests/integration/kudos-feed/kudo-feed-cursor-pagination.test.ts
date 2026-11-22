@@ -97,10 +97,10 @@ describe("KudoPublicQuery statement count (no N+1)", () => {
     }
   }
 
-  it("issues the same four statements (rows, tags, images, hearts) for a page of 10 and a page of 6", async () => {
+  it("issues the same five statements (rows, tags, images, hearts, Hero tiers) for a page of 10 and a page of 6", async () => {
     const tenWithTags = await statementsFor(() => KudoPublicQuery.list({ viewerId: sender.id, locale: "vi", recipientId: sameInstant.id }));
     const sixWithImages = await statementsFor(() => KudoPublicQuery.list({ viewerId: sender.id, locale: "vi", recipientId: microApart.id }));
-    expect([tenWithTags, sixWithImages]).toEqual([4, 4]);
+    expect([tenWithTags, sixWithImages]).toEqual([5, 5]);
   });
 
   it("issues one statement for an empty page", async () => {

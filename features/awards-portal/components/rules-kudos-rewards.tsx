@@ -1,14 +1,8 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import { HeroBadge } from "@/features/hero-badges/components/hero-badge";
+import { HERO_TIERS } from "@/features/hero-badges/schemas/hero-tier";
 import { bodyBold, smallBold } from "./portal-styles";
-
-/** Hero tier tags: 2x Figma exports (file size below), drawn ≈126×22 CSS px. */
-const HERO_TIERS = [
-  { key: "new", width: 255, height: 47 },
-  { key: "rising", width: 255, height: 47 },
-  { key: "super", width: 253, height: 44 },
-  { key: "legend", width: 255, height: 47 },
-] as const;
 
 /** Secret Box icons, 80 wide with the name baked into the image (2x files). */
 const SECRET_BOX_BADGES = [
@@ -21,27 +15,22 @@ const SECRET_BOX_BADGES = [
 ] as const;
 
 /**
- * The 4 Hero tiers (pl 20; tag + "Có 1-4 người gửi Kudos cho bạn" Bold 16/24, then the
- * description Bold 14/20 justified). Display only: the tags are Figma images (decision-log
- * 2026-11-17), alt = tier name.
+ * The 4 Hero tiers (pl 20; tag + "Có 1–4 người gửi Kudos cho bạn" Bold 16/24, then the
+ * description Bold 14/20 justified). Display only. Tag and copy are the phase 09 Hero badge's own:
+ * `HeroBadge` (Figma tag images, decision-log 2026-11-17, alt = tier name) and the shared `hero.*`
+ * messages its tooltip reads, so the rules and the tooltip can never drift (decision-log 2026-11-22).
  */
 export async function RulesHeroTierList() {
-  const t = await getTranslations("awardsPortal.rules.tiers");
+  const t = await getTranslations("hero");
   return (
     <ul className="flex flex-col gap-4">
       {HERO_TIERS.map((tier) => (
-        <li key={tier.key} className="flex flex-col gap-1 pl-5">
+        <li key={tier} className="flex flex-col gap-1 pl-5">
           <p className="flex flex-wrap items-center gap-2">
-            <Image
-              src={`/images/awards-portal/hero-tag-${tier.key}.webp`}
-              alt={t(`${tier.key}.name`)}
-              width={tier.width}
-              height={tier.height}
-              className="h-auto w-[126px]"
-            />
-            <span className={bodyBold}>{t(`${tier.key}.senders`)}</span>
+            <HeroBadge tier={tier} size="rules" />
+            <span className={bodyBold}>{t(`${tier}.tooltipTitle`)}</span>
           </p>
-          <p className={`${smallBold} text-justify`}>{t(`${tier.key}.description`)}</p>
+          <p className={`${smallBold} text-justify`}>{t(`${tier}.tooltipBody`)}</p>
         </li>
       ))}
     </ul>

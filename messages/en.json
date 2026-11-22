@@ -303,6 +303,28 @@
       "UNEXPECTED": "Couldn't update, please try again"
     }
   },
+  "hero": {
+    "new": {
+      "label": "New Hero",
+      "tooltipTitle": "1–4 people sent you Kudos",
+      "tooltipBody": "Your journey of spreading goodness begins – the first thanks and recognition have found their way to you."
+    },
+    "rising": {
+      "label": "Rising Hero",
+      "tooltipTitle": "5–9 people sent you Kudos",
+      "tooltipBody": "You are growing in your teammates’ hearts through your kindness and dedication."
+    },
+    "super": {
+      "label": "Super Hero",
+      "tooltipTitle": "10–20 people sent you Kudos",
+      "tooltipBody": "You have become a trusted and beloved icon, someone always ready to help and remembered by many teammates."
+    },
+    "legend": {
+      "label": "Legend Hero",
+      "tooltipTitle": "More than 20 people sent you Kudos",
+      "tooltipBody": "You have become a legend – someone who leaves an unforgettable mark on the team with your heart and your actions."
+    }
+  },
   "adminCampaigns": {
     "metaTitle": "Setting",
     "title": "Setting",
@@ -476,28 +498,6 @@
       "title": "Rules",
       "receiversTitle": "KUDOS RECEIVERS: HERO BADGES FOR POSITIVE IMPACT",
       "receiversIntro": "Depending on how many teammates send you Kudos, you will earn the matching Hero badge, shown right next to your profile name",
-      "tiers": {
-        "new": {
-          "name": "New Hero",
-          "senders": "1-4 people sent you Kudos",
-          "description": "Your journey of spreading goodness begins – the first thanks and recognition have found their way to you."
-        },
-        "rising": {
-          "name": "Rising Hero",
-          "senders": "5-9 people sent you Kudos",
-          "description": "You are growing in your teammates’ hearts through your kindness and dedication."
-        },
-        "super": {
-          "name": "Super Hero",
-          "senders": "10–20 people sent you Kudos",
-          "description": "You have become a trusted and beloved icon, someone always ready to help and remembered by many teammates."
-        },
-        "legend": {
-          "name": "Legend Hero",
-          "senders": "More than 20 people sent you Kudos",
-          "description": "You have become a legend – someone who leaves an unforgettable mark on the team with your heart and your actions."
-        }
-      },
       "sendersTitleLead": "KUDOS SENDERS: ",
       "sendersTitle": "COLLECT ALL 6 ICONS, GET A MYSTERY GIFT",
       "sendersBody": "Every Kudos you send is posted on the system and receives ❤️ from the Sunner community. For every 5 ❤️, you open 1 Secret Box, with a chance to get one of the 6 exclusive SAA icons.",

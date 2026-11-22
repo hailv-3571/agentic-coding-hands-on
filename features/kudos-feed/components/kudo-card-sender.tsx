@@ -8,9 +8,13 @@ import { KudoCardHeroBadgeSlot } from "./kudo-card-hero-badge-slot";
 import { KudoFeedIcon } from "./kudo-feed-icon";
 import { focusRing } from "./kudo-feed-styles";
 
-/** One side of the info row: flex-col, centred, gap 13; text block up to 235 wide, gap 2. */
+/**
+ * One side of the info row: flex-col, centred, gap 13; text block up to 235 wide, gap 2. The text
+ * block is a size container: the Hero badge slot drops its dot when the block is too narrow for
+ * "code · badge" on one line (phones), so the badge wraps alone under the code.
+ */
 const column = "flex min-w-0 flex-1 basis-0 flex-col items-center gap-[13px]";
-const textBlock = "flex w-full max-w-[235px] flex-col items-center gap-0.5 text-center";
+const textBlock = "@container flex w-full max-w-[235px] flex-col items-center gap-0.5 text-center";
 /** 64 px circular avatar with a white ring; a missing photo falls back to the initial. */
 const avatarFrame = "flex size-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-text-muted/30 text-on-primary";
 
@@ -30,10 +34,10 @@ function NamedPerson({ person, tabbable }: { person: KudoPersonView; tabbable: b
         >
           {person.name}
         </Link>
-        {person.department && (
-          <p className="flex items-center justify-center gap-2.5 text-title-small font-bold text-text-muted">
-            {person.department.code}
-            <KudoCardHeroBadgeSlot tier={person.tier} />
+        {(person.department || person.tier) && (
+          <p className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-title-small font-bold text-text-muted">
+            {person.department?.code}
+            <KudoCardHeroBadgeSlot tier={person.tier} afterDepartment={Boolean(person.department)} tabbable={tabbable} />
           </p>
         )}
       </div>

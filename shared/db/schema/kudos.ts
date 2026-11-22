@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -63,6 +64,9 @@ export const kudos = pgTable(
       index("kudos_status_created_at_id_idx").on(table.status, ...feedOrder()),
       index("kudos_recipient_id_created_at_id_idx").on(table.recipientId, ...feedOrder()),
       index("kudos_sender_id_created_at_id_idx").on(table.senderId, ...feedOrder()),
+      // Hero tier aggregate (phase 09, migration *_kudos_hero_tier_index): COUNT(DISTINCT sender_id)
+      // per recipient over public kudos reads only this index.
+      index("kudos_public_recipient_sender_idx").on(table.recipientId, table.senderId).where(sql`${table.status} = 'public'`),
     ];
   },
 ).enableRLS();

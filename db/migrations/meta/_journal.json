@@ -99,6 +99,13 @@
       "when": 1795339188973,
       "tag": "0013_kudos_moderation_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795351878129,
+      "tag": "0014_kudos_hero_tier_index",
+      "breakpoints": true
     }
   ]
 }
