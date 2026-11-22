@@ -667,5 +667,24 @@
       "ownedMany": "{name}, quantity {quantity}",
       "missing": "{name}, not collected yet"
     }
+  },
+  "spotlight": {
+    "title": "SPOTLIGHT BOARD",
+    "total": "{count, number} KUDOS",
+    "searchLabel": "Search names on the Spotlight Board",
+    "searchPlaceholder": "Search",
+    "noMatch": "No matching names",
+    "empty": "No Kudos to celebrate yet.",
+    "nameLabel": "{name}, {count, number} Kudos",
+    "tickerLabel": "Latest Kudos",
+    "tickerLine": "<time>{at}</time> <who>{name}</who> received a new Kudos",
+    "enterFullscreen": "Enter full screen",
+    "exitFullscreen": "Exit full screen",
+    "fullscreenFailed": "Could not open the board in full screen.",
+    "reconnecting": "Reconnecting…",
+    "liveFailed": "Live updates stopped.",
+    "retry": "Try again",
+    "loadFailed": "Could not load the Spotlight Board. Please try again.",
+    "loading": "Loading…"
   }
 }

@@ -667,5 +667,24 @@
       "ownedMany": "{name}, số lượng {quantity}",
       "missing": "{name}, chưa có"
     }
+  },
+  "spotlight": {
+    "title": "SPOTLIGHT BOARD",
+    "total": "{count, number} KUDOS",
+    "searchLabel": "Tìm tên trong Spotlight Board",
+    "searchPlaceholder": "Tìm kiếm",
+    "noMatch": "Không tìm thấy tên nào",
+    "empty": "Chưa có Kudos nào để vinh danh.",
+    "nameLabel": "{name}, {count, number} Kudos",
+    "tickerLabel": "Kudos mới nhất",
+    "tickerLine": "<time>{at}</time> <who>{name}</who> đã nhận được một Kudos mới",
+    "enterFullscreen": "Phóng to bảng",
+    "exitFullscreen": "Thu nhỏ bảng",
+    "fullscreenFailed": "Không thể phóng to bảng.",
+    "reconnecting": "Đang kết nối lại…",
+    "liveFailed": "Không cập nhật được trực tiếp.",
+    "retry": "Thử lại",
+    "loadFailed": "Không tải được Spotlight Board. Vui lòng thử lại.",
+    "loading": "Đang tải…"
   }
 }
