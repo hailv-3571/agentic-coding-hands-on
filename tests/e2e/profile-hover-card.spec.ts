@@ -92,6 +92,7 @@ test.describe("Avatar hover card", () => {
     await pickHashtags(dialog, ["#BE A TEAM"]);
     await dialog.getByRole("button", { name: "Gửi", exact: true }).click();
     await expect(dialog).toBeHidden();
+    await expect(page.getByRole("status").filter({ hasText: "Đã gửi Kudo thành công!" })).toBeVisible();
 
     // Review W2: the sent Kudo drops the cached card, so the next open asks again and counts it. The
     // send refreshes the page and realtime updates follow; one landing during the open delay moves
