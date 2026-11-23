@@ -18,7 +18,7 @@ messages/             # vi.json, en.json
 tests/                # unit/, integration/ (Supabase local), e2e/ (Playwright)
 ```
 
-Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,admin-moderation,app-shell,auth,awards-portal,hero-badges,kudos-authoring,kudos-feed,kudos-hearts,secret-box-rewards,spotlight-board,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
+Hiện có: `shared/{admin,auth,config,db,events,i18n,ui}`, `features/{admin-campaigns,admin-moderation,admin-overview,admin-users,app-shell,auth,awards-portal,hero-badges,kudos-authoring,kudos-feed,kudos-hearts,notifications,profile,secret-box-rewards,spotlight-board,sunner-search}`, `db/`, `messages/`, `tests/`. Feature mới tạo thư mục riêng dưới `features/` ở phase của nó.
 
 ## Quy tắc chung
 
@@ -117,10 +117,13 @@ Tailwind 4, token màu/font khai báo trong `@theme` ở `app/globals.css` (lấ
 
 ## Admin utility (`shared/admin`)
 
-CSV serializer (BOM + chặn formula injection), lọc theo khoảng ngày, helper múi giờ `Asia/Ho_Chi_Minh` (`ADMIN_TIMEZONE`), giới hạn export (`EXPORT_MAX_ROWS`). Dùng lại, không viết bản riêng cho từng feature.
+CSV serializer (BOM + chặn formula injection), lọc theo khoảng ngày, helper múi giờ `Asia/Ho_Chi_Minh` (`ADMIN_TIMEZONE`), giới hạn export (`EXPORT_MAX_ROWS`), tên tệp CSV (`adminCsvFilename`, `admin-csv-filename.ts`) và định dạng ngày giờ admin (`formatAdminDateTime`, `admin-date-time-format.ts`). Dùng lại, không viết bản riêng cho từng feature.
+
+- **Helper cắt ngang nhiều trang admin đặt ở `shared/admin/`, không ở feature đầu tiên cần tới.** Route của feature này không import `server/*` của feature kia (phase 14 đã chuyển hai helper trên ra khỏi `features/admin-users/` vì route Overview dùng chung). Còn lại: `features/admin-moderation/server/admin-kudo-export.ts` có `adminKudoExportFilename` trùng `adminCsvFilename`, sẽ gọi qua khi phase 08 được sửa tiếp.
 
 - **Route handler admin** (`GET /api/admin/*`): gọi `requireAdminApi()` (`features/admin-moderation/server/admin-api-guard.ts`) đầu tiên, trước khi đọc tham số; trả JSON `{ code }` (401 `unauthorized`, 403 `forbidden`), không redirect. Mọi phản hồi `Cache-Control: private, no-store`. Trang và Server Action admin vẫn dùng `requireAdmin()`.
 - **Export CSV**: đọc tối đa `EXPORT_MAX_ROWS + 1` dòng trong một lần, gọi `assertWithinExportLimit(rows.length)`; ném `ExportLimitExceededError` thì trả 422 và không tạo tệp. Bộ lọc của bảng, đếm và Export dùng chung một bộ dựng `WHERE` để ba nơi không lệch nhau.
+- **Truy vấn báo cáo admin nhiều phép gộp trên nhiều nghìn dòng**: đo `EXPLAIN ANALYZE` ở quy mô 5k người / 100k Kudo và giữ test ngưỡng (ví dụ `tests/integration/admin-users/admin-report-query-plan.test.ts`, 500 ms). Khi planner chọn nested loop vì ước lượng sai, bọc đọc trong transaction với `SET LOCAL enable_nestloop = off` (phạm vi một transaction, không rò qua pool) như `UserAdminQuery`, thay vì chép lại SQL của feature khác.
 
 ## Test
 

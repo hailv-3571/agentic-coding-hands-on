@@ -1,6 +1,6 @@
 ---
 title: SAA 2025 Kudos Platform
-status: in-progress
+status: completed
 created: 2026-11-08
 spec:
   - docs/features/F001_Auth/
@@ -60,7 +60,7 @@ Tên file kebab-case, mỗi file code < 200 dòng.
 | 11 | [Spotlight board (realtime)](phase-11-spotlight-board-realtime.md) | F008 | P2 | 05, 08 | completed |
 | 12 | [Profile](phase-12-profile.md) | F012 | P2 | 09, 10 | completed |
 | 13 | [Notifications](phase-13-notifications.md) | F013 | P2 | 06, 08, 09, 10 | completed |
-| 14 | [Admin users & overview](phase-14-admin-users-and-overview.md) | F014, F015 | P2/P3 | 08, 09, 10 | pending |
+| 14 | [Admin users & overview](phase-14-admin-users-and-overview.md) | F014, F015 | P2/P3 | 08, 09, 10 | completed (signed off 2026-11-23) |
 
 Song song được: 02 ∥ 03 · 07 ∥ 04 · 08 ∥ 05 (sau 04) · 09 ∥ 06. (10 và 11 cùng sửa file chung của phase 01 nên chạy tuần tự.)
 

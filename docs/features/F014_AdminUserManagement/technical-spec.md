@@ -40,6 +40,19 @@ flowchart LR
     A4 -.đọc.-> T2
 ```
 
+> **Thực tế implement (phase 14, 2026-11-23) — đọc trước khi đối chiếu tên "planned" bên dưới.** Mã nguồn thắng khi lệch.
+>
+> | Spec nói | Mã thực tế |
+> |---|---|
+> | A1 `GET /api/admin/users` | **Không có endpoint danh sách.** `app/admin/users/page.tsx` là server component, đọc `searchParams` qua `parseUserListParams` rồi gọi `UserAdminQuery.listPage` (YAGNI) |
+> | A2 filter options | `UserFilterOptionsQuery.get` (`features/admin-users/server/user-filter-options-query.ts`); lỗi đọc → dropdown rỗng, không phải `loadError` |
+> | A3 `AdminUserRole#setRole` | Server action `setUserRoleAction` (`set-user-role-action.ts`) → `UserRoleService.setRole`. Lỗi trả **trong thân** `{ ok: false, error }` theo C-18, không phải mã HTTP: `NOT_FOUND`, `SELF_DEMOTE`, `ENV_ADMIN`, `LAST_ADMIN`, `FORBIDDEN` |
+> | A4 `GET /api/admin/users/export` | Có đúng như spec (`app/api/admin/users/export/route.ts`); 401/403 JSON trước khi đọc tham số, 400 `invalid_params`, 422 `export_too_large`, `Cache-Control: private, no-store` |
+> | `LevelQuery` (D001) | **Không có.** Level = hạng Hero (C-12): `HeroTierQuery.distinctSenderCountSubquery` + `tierCountRange` + `tierFromCount` của F009; tim = `heartCountsSubquery` của F005 trên Kudo public gửi bởi người đó |
+> | `AdminUserFilterSchema` | `parseUserListParams` (`schemas/user-list-params-schema.ts`); tham số URL `page, unit, level, role, q, sort, dir`; `sort` ∈ `sent, received, hearts, level, badges, six_badges_at, last_login_at`; `unit` là uuid hoặc `none` (id phòng ban là uuid, không phải số) |
+> | `role_updated_by/at` | Migration `0022_profiles_role_audit` (+ `.down.sql`), cột nullable, FK tự tham chiếu `ON DELETE SET NULL` |
+> | Hằng cấu hình | `ADMIN_USER_PAGE_SIZE = 20` và `USER_SEARCH_MAX_LENGTH = 100` là hằng trong mã, **không phải biến môi trường**; chỉ `ADMIN_TIMEZONE`, `EXPORT_MAX_ROWS`, `ADMIN_EMAILS` đọc từ env (đã có sẵn; phase 14 không thêm biến mới) |
+
 ## 2. Action Index
 
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
@@ -364,26 +377,35 @@ Giá trị nghiệp vụ nhìn thấy được (cỡ trang, trần Export, độ
 
 ### 5.2 Assumptions
 
-- *(A1-A4)* Next.js 16 có thể khác kiến thức cũ (route handler, server action, cơ chế làm mới trang); chưa đọc `node_modules/next/dist/docs/` ở bước này, cần xác nhận API trước khi implement, tên handler chỉ là dự kiến. `[UNVERIFIED]`
-- *(A1, A4)* Các bảng `kudos`, `kudo_hearts`, `user_icons`, `mystery_gift_awards` có các cột nêu ở § 4.2 theo spec của F003, F005, F010; F014 chỉ đọc. `[INFERRED]` từ spec các feature đó, chưa đối chiếu mã.
-- *(A3)* F001 sở hữu `profiles` và chấp nhận F014 thêm `role_updated_by`, `role_updated_at` bằng migration của F014. `[INFERRED]`
-- *(A3)* Menu thao tác dòng chỉ có đổi role ("Set as Admin" / "Set as User"); thiết kế chưa chụp menu này. `[INFERRED]`
+- *(A1-A4)* Đã đọc `node_modules/next/dist/docs/` ở phase 14 (route handler trả tệp, `searchParams` là Promise, prop `retry` của `error.tsx`); các điểm vào dùng đúng API đó.
+- *(A3)* Menu dòng chỉ có "Set as Admin" / "Set as User"; Figma không vẽ menu, xác nhận, nhãn "Admin · env" nên các phần này dựng theo token phase 06/08. `[INFERRED]`
+- *(tiếng Anh)* Văn bản tiếng Anh và tiêu đề CSV tiếng Anh là bản nháp, chờ BTC. `[UNVERIFIED]`
 
 ### 5.3 Unresolved Questions
 
-1. **Level trong SQL** *(A1, A2, A4)*: `LevelQuery` phải trả một subquery `(user_id, level)` để lọc và sắp xếp ở SQL; nếu quy tắc Level cuối cùng không biểu diễn được trong SQL thì phải đổi cách phân trang cho cột này (D001).
-2. **Tổng tim theo lô** *(A1, A4)*: `HeartStatsQuery#receivedByUser` của F005 chạy theo từng người; trang cần dạng gộp theo lô hoặc nối thẳng `kudo_hearts` như BR-005. Cần F005 chốt có cung cấp biến thể theo lô không, và cột tổng tim có chỉ mục hay đếm sẵn không.
-3. **Hiệu năng gộp** *(A1, A4)*: bốn phép gộp theo người dùng kèm sắp xếp theo cột gộp có chịu được số Sunner dự kiến không; có cần bảng thống kê vật chất hoá hay chỉ mục `kudos(sender_id, status)`, `kudos(recipient_id, status)`?
-4. **Tìm không dấu** *(A1, A4)*: `ILIKE` đủ không, hay cần `unaccent`/`pg_trgm` (D009)?
-5. **Hàm ghi CSV dùng chung** *(A4)*: F007 cũng ghi CSV (BOM, vô hiệu công thức, trần dòng); nên có một hàm dùng chung thay vì hai bản — F007 hay F002 sở hữu hàm đó?
-6. **Thứ tự migration với F001** *(A3)*: F001 tạo luôn `role_updated_by`, `role_updated_at` hay F014 có migration riêng?
-7. **Khoá giao dịch** *(A3)*: `FOR UPDATE` trên các dòng Admin đủ, hay dùng khoá tư vấn (advisory lock) cho đơn giản; số Admin nhỏ nên chi phí khoá không đáng kể.
-8. **Làm mới sau ghi** *(A3)*: nếu có cache trang Admin, cần huỷ cache nào khi đổi role.
-9. **Người dùng không có hồ sơ** *(A1)*: người có tài khoản đăng nhập nhưng chưa có `profiles` (F001 tạo hồ sơ bằng trigger) không xuất hiện trong bảng; chấp nhận được vì F001 tạo hồ sơ cùng lúc với tài khoản.
+Đã giải quyết ở phase 14: Level trong SQL (dùng mảnh SQL của F009, khớp bằng test parity với `HeroTierQuery`), tổng tim theo lô (`heartCountsSubquery`), tìm không dấu (`public.f_unaccent`, migration 0007), CSV dùng chung (`shared/admin/csv-serializer.ts`), thứ tự migration (F014 có migration riêng 0022), khoá giao dịch (`FOR UPDATE` các dòng admin theo thứ tự id).
+
+Còn mở:
+
+1. **Xác nhận với BTC**: chặn hạ quyền admin trong `ADMIN_EMAILS` (409 `ENV_ADMIN`), tiêu đề CSV tiếng Anh, bản tiếng Anh.
+2. **Hiệu năng**: truy vấn đọc hết tim của Kudo public mỗi trang/lần export (233 ms ở 5k user / 100k Kudo, tăng tuyến tính); xét lại khi dữ liệu gấp 10 lần. Mỗi lần đọc chạy trong transaction với `SET LOCAL enable_nestloop = off` vì ước lượng sai số dòng của `f_unaccent(...) ILIKE` làm planner chọn nested loop (15,7 s, sau sửa 48 ms).
+3. **Nhiễu trạng thái (Low)**: admin vừa bị hạ trong lúc thao tác có thể nhận `ok: true`, `ENV_ADMIN` hoặc `LAST_ADMIN` trước `FORBIDDEN`; không ghi được gì. Hoãn.
+4. **Test**: `test:prod` chưa phủ `/admin/users` và route export; chưa đo coverage; test kế hoạch truy vấn (ngưỡng 500 ms) có thể chập chờn trên CI chậm; `user-role-concurrency` hạ mọi admin khác trong DB dùng chung đến `afterAll`, không chạy cùng Playwright.
 
 ### 5.4 Source References
 
-Chưa có mã nguồn — xem `## 7. User Stories` trong `functional-spec.md` để biết hành vi dự kiến. Bảng tham chiếu sẽ được điền ở bước đối chiếu sau khi implement.
+Mã nguồn (phase 14):
+
+| Vùng | Đường dẫn |
+|---|---|
+| Trang | `app/admin/users/{page,loading,error}.tsx` |
+| Export | `app/api/admin/users/export/route.ts` |
+| Server | `features/admin-users/server/`: `user-admin-query.ts`, `user-admin-sql-fragments.ts`, `user-filter-options-query.ts`, `user-role-service.ts`, `set-user-role-action.ts`, `user-export-columns.ts`, `env-admin-email.ts` |
+| Schema, lib, UI | `features/admin-users/{schemas,lib,components}/` |
+| Dùng chung | `shared/admin/`: `admin-csv-filename.ts`, `admin-date-time-format.ts`, `csv-serializer.ts`, `export-limit.ts`, `timezone.ts` |
+| Migration | `db/migrations/0022_profiles_role_audit.sql` (+ `.down.sql`), `shared/db/schema/profiles.ts` |
+| Test | `tests/{unit,integration,e2e}/admin-users/` (e2e dùng `admin-users-e2e-steps.ts`) |
+| Bằng chứng | `plans/261108-0048-saa-2025-kudos-platform/evidence/phase-14/`, `.../evidence/screenshots/phase-14/` |
 
 #### Data Flow
 

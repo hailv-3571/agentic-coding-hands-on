@@ -1,0 +1,67 @@
+{
+  "commands": [
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "no type errors (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:22:33.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:22:45.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "86 files, 943 passed (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:22:52.000Z"
+    },
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations through 0022 + seeds applied (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:23:23.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "93 files, 598 passed; concurrent demotion/promotion race tests green, 0 leftover demoted admins (tester run) (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:25:50.000Z"
+    },
+    {
+      "command": "npx playwright test --timeout 90000 --workers=3",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "141 passed, 5 skipped (prelaunch-only), 0 failed on first run; incl. 9 phase 14 cases (overview 375px, users empty state) (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:28:25.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped (normal-server-only) (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:29:02.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled, no warnings, /admin/users + /admin/overview + export routes present (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:29:13.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "16/16 production status checks passed (final code, after review fixes: shared/admin helpers + G1/G3 e2e)",
+      "ts": "2026-11-23T01:29:18.000Z"
+    }
+  ]
+}

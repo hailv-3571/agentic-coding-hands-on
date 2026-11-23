@@ -2,7 +2,7 @@
 phase: 14
 feature: F014, F015
 priority: P2/P3
-status: pending
+status: completed
 depends_on: [08, 09, 10]
 file_ownership:
   - features/admin-users/**
@@ -28,7 +28,7 @@ resolves: [C-11 (consumer), C-12, C-13 (F014/F015 side), C-14 (consumer), C-20 (
 - Upstream: 01 (`shared/admin/*`: `csv-serializer`, `date-range-filter`, `timezone`, `export-limit`; env `ADMIN_TIMEZONE`, `EXPORT_MAX_ROWS`, `ADMIN_EMAILS`), 02 (`profiles`, `departments`, `requireAdmin`, `last_login_at`), 06 (`HeartStatsQuery.receivedByUsers`, `heartCountsSubquery`), 08 (admin layout + top nav, `kudo_status`), 09 (`HeroTierQuery#getTiersByRecipientIds`, `tierFromCount`), 10 (`secret_boxes.granted_at`, `user_icons`, `mystery_gift_awards.completed_at`)
 
 ## Overview
-- Priority: F014 P2, F015 P3 · Status: pending
+- Priority: F014 P2, F015 P3 · Status: completed (2026-11-23; conditional pre-approved sign-off applied after all 3 conditions held — role mutation + migration are safety-critical)
 - F014: Admin › User table (ID, Name, Email, Σ sent, Σ received, Total Heart, Level, Number of Badges, Time to get 6 Badges, Last logged in, Role, ⋯), filters Unit/Level/Role, accent-insensitive search, sortable columns, 20/page, CSV export, role change with guards.
 - F015: Admin › Overview per-unit statistics with date range, "All" row, CSV export.
 - Built together: both are read-mostly admin reports over the same tables + shared CSV/date utils (C-14); one migration only (role audit columns).
@@ -96,16 +96,25 @@ Modify: `messages/vi.json`, `messages/en.json` — `adminUsers.*`, `adminOvervie
 12. Overview export route (All row first); i18n; tests per Scope Contract; reviewer.
 
 ## Todo List
-- [ ] Next.js 16 route handler / searchParams docs read
-- [ ] Role audit migration (+ unaccent if absent)
-- [ ] User list params schema (+unit)
-- [ ] UserAdminQuery with 06/09 fragments + parity test
-- [ ] UserRoleService + action + guards; concurrency tests
-- [ ] Users page, filters, sort, pagination, role menu + confirm
-- [ ] Users CSV export route
-- [ ] UnitStatsQuery + All row + overview page + date range
-- [ ] Overview CSV export route
-- [ ] e2e users + overview
+- [x] Next.js 16 route handler / searchParams docs read (reviewer confirmed `error.tsx` `retry` prop against bundled docs)
+- [x] Role audit migration 0022 (no unaccent migration: reuses `public.f_unaccent` from 0007)
+- [x] User list params schema (+unit)
+- [x] UserAdminQuery with 06/09 fragments + parity test
+- [x] UserRoleService + action + guards; concurrency tests (20 races)
+- [x] Users page, filters, sort, pagination, role menu + confirm
+- [x] Users CSV export route
+- [x] UnitStatsQuery + All row + overview page + date range
+- [x] Overview CSV export route
+- [x] e2e users + overview (141 passed incl. Overview at 375 px and users empty state)
+- [x] Human sign-off (authz, role mutation, migration 0022) — conditional pre-approval applied 2026-11-23, gate SEALED
+- [ ] BTC copy confirmation (see Next Steps)
+
+## Evidence
+- Reports in `plans/reports/`: `implementer-261123-phase-14-admin-backend.md`, `implementer-261123-phase-14-admin-ui.md`, `implementer-261123-phase-14-review-fixes.md`, `tester-261123-phase-14-full-run.md`, `reviewer-261123-phase-14.md`.
+- Gates on final code (review-fix run, serial): tsc 0, lint 0, unit 943, integration 598, e2e 141 passed / 5 skipped by design, prelaunch 5, build 0, `test:prod` 16 PASS. Coverage not measured.
+- Reviewer: 0 critical, 0 high, 1 Medium (fixed: helpers moved to `shared/admin/`), Lows deferred; verdict SEALED, `humanSignedOff: false`.
+- `evidence/phase-14/` (inspection-verdict, study-context, RED logs), `evidence/screenshots/phase-14/` (desktop 1440x900, mobile 375x812).
+- Docs: `docs/features/F014_AdminUserManagement/`, `docs/features/F015_AdminOverview/`, `docs/system/architecture.md` section "Admin User và Overview (F014, F015)".
 
 ## Success Criteria
 - Admins A, B (only two) demote each other concurrently (20 iterations) → exactly one succeeds, other `409 LAST_ADMIN`; always ≥1 admin; no deadlock.
@@ -141,9 +150,18 @@ Rollback: down migration drops the two audit columns (no readers outside this ph
 - RLS on, no client policies (C-20); all reads server-side.
 
 ## Next Steps
-- Phase 09 exports `distinctSenderCountSubquery` + `tierCountRange` (reconciled 2026-11-15); phase 10 confirms `user_icons.icon`, `mystery_gift_awards.completed_at`, `secret_boxes.granted_at` names.
-- Doc writer: promote F014/F015 spec deltas (Level = Hero tier, env-admin guard, no list API endpoint).
+- Signed off 2026-11-23 (conditional pre-approval); status flipped to completed.
+- Phase 09 fragments and phase 10 column names confirmed by use (parity test green).
+- Docs promoted 2026-11-23 (F014/F015 technical specs, architecture, code standards, changelog, roadmap).
+- Follow-ups, all Low, none blocks sign-off:
+  - BTC to confirm English drafts, env-admin 409 `ENV_ADMIN` and English CSV headers.
+  - `adminKudoExportFilename` (`features/admin-moderation/server/admin-kudo-export.ts`) duplicates `adminCsvFilename` (`shared/admin/admin-csv-filename.ts`); delegate when phase 08 code is next touched.
+  - Per-page heart aggregation reads every heart on public kudos (233 ms at 100k kudos, grows linearly); revisit at 10x.
+  - A demoted-in-flight actor can get `ok:true`, ENV_ADMIN or LAST_ADMIN before FORBIDDEN (no write possible; state oracle). Deferred.
+  - `test:prod` does not cover `/admin/users` or the export routes; coverage not measured.
+  - The query-plan test (budget 500 ms, local worst 237 ms) may flake on slow CI; `user-role-concurrency` must not run beside Playwright.
 
 ## Open items
 - Env-admin demotion block (409 `ENV_ADMIN`) is a planner decision (phase 02 note); confirm with BTC.
-- If phase 08 already ships `unaccent` + `f_unaccent` for Review content search, drop `*_unaccent_search*` here and reuse.
+- If phase 08 already ships `unaccent` + `f_unaccent` for Review content search, drop `*_unaccent_search*` here and reuse. Resolved: reused `public.f_unaccent` (0007); no unaccent migration.
+- Still open: BTC confirmation of env-admin 409 and English CSV headers/copy.

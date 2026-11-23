@@ -1,0 +1,60 @@
+
+ RUN  v5.1.0 C:/Users/luong.viet.hai/my-app
+
+ ❯ |unit| tests/unit/admin-users-ui/admin-user-role-menu-state.test.ts (0 test)
+ ❯ |unit| tests/unit/admin-users-ui/admin-user-url-params.test.ts (0 test)
+ ❯ |unit| tests/unit/admin-overview-ui/overview-url-params.test.ts (0 test)
+ ❯ |unit| tests/unit/admin-users-ui/format-admin-date-time.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/admin-users-ui/admin-user-role-menu-state.test.ts [ tests/unit/admin-users-ui/admin-user-role-menu-state.test.ts ]
+Error: Cannot find package '@/features/admin-users/lib/admin-user-role-menu-state' imported from C:/Users/luong.viet.hai/my-app/tests/unit/admin-users-ui/admin-user-role-menu-state.test.ts
+ ❯ tests/unit/admin-users-ui/admin-user-role-menu-state.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import { roleErrorKey, roleMenuState } from "@/features/admin-users/li…
+       | ^
+      3| import type { SetUserRoleResult } from "@/features/admin-users/schemas…
+      4|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |unit| tests/unit/admin-users-ui/admin-user-url-params.test.ts [ tests/unit/admin-users-ui/admin-user-url-params.test.ts ]
+Error: Cannot find package '@/features/admin-users/lib/admin-user-url-params' imported from C:/Users/luong.viet.hai/my-app/tests/unit/admin-users-ui/admin-user-url-params.test.ts
+ ❯ tests/unit/admin-users-ui/admin-user-url-params.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import {
+       | ^
+      3|   adminUsersExportHref,
+      4|   adminUsersHref,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |unit| tests/unit/admin-users-ui/format-admin-date-time.test.ts [ tests/unit/admin-users-ui/format-admin-date-time.test.ts ]
+Error: Cannot find package '@/features/admin-users/lib/format-admin-date-time' imported from C:/Users/luong.viet.hai/my-app/tests/unit/admin-users-ui/format-admin-date-time.test.ts
+ ❯ tests/unit/admin-users-ui/format-admin-date-time.test.ts:2:1
+      1| import { describe, expect, it, vi } from "vitest";
+      2| import { formatAdminDateTime } from "@/features/admin-users/lib/format…
+       | ^
+      3|
+      4| vi.mock("@/shared/config/env", () => ({ env: { ADMIN_TIMEZONE: "Asia/H…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |unit| tests/unit/admin-overview-ui/overview-url-params.test.ts [ tests/unit/admin-overview-ui/overview-url-params.test.ts ]
+Error: Cannot find package '@/features/admin-overview/lib/overview-url-params' imported from C:/Users/luong.viet.hai/my-app/tests/unit/admin-overview-ui/overview-url-params.test.ts
+ ❯ tests/unit/admin-overview-ui/overview-url-params.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import { overviewExportHref, overviewHref } from "@/features/admin-ove…
+       | ^
+      3|
+      4| describe("overviewHref (URL = state, FR-401)", () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  4 failed (4)
+      Tests  no tests
+   Start at  02:58:22
+   Duration  292ms (worker 95%, environment 5%)
+

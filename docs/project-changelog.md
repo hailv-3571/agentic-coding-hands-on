@@ -6,6 +6,37 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-23 — Phase 14 (F014 Admin User, F015 Admin Overview) — hoàn thành (đã ký duyệt)
+
+Added
+- Trang `/admin/users`: bảng Sunner (ID, tên, email, Kudo gửi, Kudo nhận, Total Heart, Level, số Badge, thời điểm đủ 6 Badge, lần đăng nhập cuối, Role), lọc Unit / Level / Role, tìm không dấu theo tên hoặc email (tối đa 100 ký tự), sắp theo bảy cột (`sent, received, hearts, level, badges, six_badges_at, last_login_at`), 20 dòng mỗi trang, trạng thái nằm trên URL. Không có endpoint danh sách `GET /api/admin/users`: trang tự đọc.
+- Total Heart và Level không tự đếm: tim lấy từ `heartCountsSubquery` (F005) trên Kudo public mà người đó gửi, Level là hạng Hero (mảnh SQL của F009). Test parity so từng dòng với `HeartStatsQuery.rawTotal` và `HeroTierQuery`; Kudo spam không tính, Un Spam tính lại, Kudo ẩn danh tính cho người gửi thật.
+- Server action `setUserRoleAction` → `UserRoleService.setRole`: một transaction khoá các dòng admin theo id (`FOR UPDATE`), lỗi trả trong thân theo C-18 (`NOT_FOUND`, `SELF_DEMOTE`, `ENV_ADMIN`, `LAST_ADMIN`, `FORBIDDEN`); không bao giờ về 0 admin (test 20 lượt đua). Admin trong `ADMIN_EMAILS` có nhãn "Admin · env", không hạ quyền được từ trang.
+- Migration `0022_profiles_role_audit` (có `.down.sql`): `profiles.role_updated_by` (FK tự tham chiếu, `ON DELETE SET NULL`) và `role_updated_at`, nullable. Tìm không dấu dùng lại `public.f_unaccent` (0007).
+- `GET /api/admin/users/export` và `GET /api/admin/overview/export`: CSV theo đúng bộ lọc, BOM, chặn công thức, 422 `export_too_large` quá `EXPORT_MAX_ROWS`, 401/403/400 dạng `{code}`, `private, no-store`. Tệp `users-…csv`, `overview-…csv` (giờ `ADMIN_TIMEZONE`).
+- Trang `/admin/overview`: thống kê theo đơn vị (Total member, gửi, nhận, số người có ít nhất 1 Kudo nhận, Secret Box nhận), khoảng ngày `from`/`to` nửa mở theo `ADMIN_TIMEZONE`, dòng "All" bằng tổng các đơn vị cộng dòng "Chưa gán đơn vị" (chỉ có khi có người chưa gán đơn vị), đơn vị không hoạt động hiện 0. `loading.tsx` và `error.tsx` cho cả hai trang.
+- `shared/admin/admin-csv-filename.ts`, `shared/admin/admin-date-time-format.ts`; khoá `adminUsers.*`, `adminOverview.*` (vi, en).
+
+Changed
+- Truy vấn danh sách User chạy trong transaction với `SET LOCAL enable_nestloop = off`: tìm không dấu kèm lọc Level làm planner chọn nested loop, 15,7 s; sau sửa 48 ms (5k user, 100k Kudo; các hình dạng khác 209-237 ms). Test `admin-report-query-plan.test.ts` giữ ngưỡng 500 ms.
+- Tổng quát hoá thành phần UI phase 08 dùng lại cho hai trang mới (`AdminFilterSelect`, `AdminLoadErrorPanel`, `AdminSortCarets`, `AdminTableSkeletonRows`, nút xuất nhận `href`), giữ hành vi; 13 e2e `admin-moderation` vẫn đạt.
+- Id phòng ban là uuid: hợp đồng đổi từ `number` sang `string` (`unit` trên URL là uuid hoặc `none`).
+- `docs/system/architecture.md`: mục "Admin User và Overview (F014, F015)"; `docs/code-standards.md`: `shared/admin` giữ helper dùng chung giữa các trang admin, quy ước truy vấn báo cáo; `technical-spec.md` của F014 và F015 thêm bảng "thực tế implement" và nguồn mã.
+- Không thêm biến môi trường (`ADMIN_EMAILS`, `ADMIN_TIMEZONE`, `EXPORT_MAX_ROWS` đã có).
+
+Decisions
+- Thứ tự kiểm khi đổi role: khoá admin → `NOT_FOUND` → đã đúng role → `SELF_DEMOTE` → `ENV_ADMIN` → `LAST_ADMIN` → `FORBIDDEN`, để bên thua trong hai admin hạ nhau nhận `LAST_ADMIN`; người bị hạ giữa chừng vẫn không ghi được.
+- Tiêu chí "403/409" hiểu theo mã lỗi trong thân (server action, C-18); trang và route export vẫn trả HTTP 403 cho người không phải admin.
+- Mã lỗi export viết thường như phase 08 (`export_too_large`, `invalid_params`, `invalid_date_range`).
+- Review: 0 critical, 0 high; một Medium (import chéo feature) đã sửa bằng chuyển helper sang `shared/admin/`.
+
+Chưa làm
+- Chưa ký duyệt (phân quyền, ghi `profiles.role`, migration 0022).
+- Chờ BTC: bản tiếng Anh, chặn hạ quyền admin trong `ADMIN_EMAILS` (409 `ENV_ADMIN`), tiêu đề CSV tiếng Anh.
+- Low: `adminKudoExportFilename` (phase 08) trùng `adminCsvFilename`; gộp tim mỗi trang đọc mọi tim của Kudo public (233 ms ở 100k Kudo, tăng tuyến tính, xét lại ở 10 lần); admin bị hạ giữa chừng có thể thấy `ok:true`/`ENV_ADMIN`/`LAST_ADMIN` trước `FORBIDDEN` (không ghi được).
+- `test:prod` chưa phủ `/admin/users` và route export; chưa đo coverage; test kế hoạch truy vấn có thể chập chờn trên CI chậm; `user-role-concurrency` không chạy cùng Playwright.
+- Kết quả kiểm (code cuối, chạy tuần tự): tsc, lint, unit 943, integration 598, e2e 141 đạt (5 bỏ qua theo thiết kế), prelaunch 5, build, `test:prod` 16/16 đạt.
+
 ## 2026-11-23 — Phase 13 (F013 Notifications) — hoàn thành, đã ký duyệt
 
 Added

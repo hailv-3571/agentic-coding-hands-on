@@ -1,0 +1,101 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "Two admins demoting each other concurrently: exactly one succeeds, the other gets 409 LAST_ADMIN; at least one admin always remains; no deadlock",
+    "Concurrent promotions of the same user are idempotent with one write; role_updated_by records the first writer",
+    "Self-demotion returns 403, env admin demotion returns 409 ENV_ADMIN, a non-admin calling the page, action or export gets 403 with no write, an actor demoted mid-flight gets 403",
+    "Total Heart and Level equal HeartStatsQuery.rawTotal and HeroTierQuery for every row; spam kudos excluded and Un Spam restores; anonymous kudos counted for the real sender",
+    "Search is accent-insensitive on name or email, filters combine with AND, sort and pagination follow the URL, and q longer than 100 chars shows a validation message",
+    "User export rows equal the table rows across all pages, more than EXPORT_MAX_ROWS returns 422 with no file, and formula-like values are neutralised",
+    "Overview All row equals the sum of unit rows plus the unassigned row for every column; unassigned row appears only when such profiles exist; zero-activity units show 0; date range is half-open in ADMIN_TIMEZONE; empty range means all time; the URL reproduces the numbers; export includes the All row",
+    "Both admin screens match the Figma layout on desktop and stay usable at 375 px, with empty, loading and error states"
+  ],
+  "regressionChecked": [
+    "role-change lock order: SELECT admins ORDER BY id FOR UPDATE first in every change, so concurrent changes queue in one order (no deadlock); READ COMMITTED re-evaluates the WHERE after the wait so a demoted admin drops out of the locked set; target read is a fresh statement after the lock",
+    "zero-admin proof: a demotion passes only with locked set >= 2, actor in set (FORBIDDEN otherwise, no write), actor != target (SELF_DEMOTE first), so the actor always remains; the only other role writer (completeLogin) only promotes env admins",
+    "check ordering: business guards (NOT_FOUND, no-op, SELF_DEMOTE, ENV_ADMIN, LAST_ADMIN) before the FORBIDDEN actor check is safe: every write path passes the actor check; conditional UPDATE (role <> target) is a second guard",
+    "access control: requireAdmin first in users page, overview page and setUserRoleAction (before Zod); requireAdminApi first in both exports, before any param read; actor id comes only from the session, never from the input schema; exports answer private, no-store with code-only errors",
+    "input handling: sort and dir, level, role, unit (uuid or none) are Zod whitelists; sort selects a column from a fixed map, never interpolated; q is trimmed, capped at 100 code points, LIKE-escaped (backslash, percent, underscore) and bound as a parameter; unit goes through eq() as a bound uuid",
+    "fragment reuse: hearts use heartCountsSubquery (phase 06) joined to kudos.senderId on public kudos with asOf=now = HeartStatsQuery.rawTotal; Level uses HeroTierQuery.distinctSenderCountSubquery + tierCountRange; no copied SQL",
+    "planner guard: SET LOCAL enable_nestloop = off runs inside db.transaction around the single read, so it ends with the transaction and cannot leak through the pool (also safe behind a transaction-mode pooler); the rationale and measured 15.7 s to 48 ms are documented and covered by a plan test",
+    "CSV: serializeCsv guards = + - @ tab CR, quotes per RFC 4180, BOM; row cap reads EXPORT_MAX_ROWS+1 and refuses with 422 in one read; columns carry no kudo text; filename in ADMIN_TIMEZONE",
+    "overview: one grouped subquery per metric (no kudos x boxes cross join), FULL JOIN departments x members with IS NOT DISTINCT FROM so the NULL unit matches; All row summed in TS from the same rows; range is [from 00:00, to+1 day 00:00) via the shared schema, impossible dates rejected by z.iso.date",
+    "migration 0022: additive nullable columns + self FK ON DELETE SET NULL; snapshot prevId chains to 0021; journal idx 22 with increasing when; down script drops FK then columns; schema, snapshot and SQL agree; RLS untouched",
+    "phase 08 generalisation: ReviewStatusFilter now a thin wrapper over AdminFilterSelect with the same props, labels and chip classes; ReviewExportButton takes href + fallbackFilename and Review content passes reviewExportHref(filter) and kudos.csv; search and date-range gain optional label props with the old defaults; load-error panel keeps role=alert and router.refresh retry; no file over 200 lines",
+    "accessibility: role menu has aria-haspopup/expanded/controls, focus to item on open, Esc/Tab/outside click close with focus returned, env-locked item aria-disabled with described reason; confirm dialog is an alertdialog with focus trap, Cancel focused, busy lock and role=alert refusal copy",
+    "i18n: en.json and vi.json key sets identical (no missing key either way)",
+    "Next 16 error.tsx contract: retry prop confirmed in node_modules/next/dist/docs error.md",
+    "delta review: no remaining reference to format-admin-date-time; adminCsvFilename defined once (shared/admin/admin-csv-filename.ts, server-only, 9 lines, body identical to the kudos variant); both export routes import it with prefixes users and overview",
+    "delta review: shared/admin/admin-date-time-format.ts is pure (type-only import from timezone, erased at compile), no server-only, so the users screen and CSV column file can both import it; no touched file over 200 lines (largest: user-table-and-role.spec.ts 186)",
+    "delta review: new e2e cases assert real behaviour (375 px: zero page overflow, table container overflow-x auto and scrolls, last column off-screen until the container scrolls, window.scrollX 0); tsc clean and tests/unit/shared 63/63 rerun green"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  },
+  "findings": [
+    {
+      "severity": "Medium",
+      "category": "Maintainability",
+      "location": "app/api/admin/overview/export/route.ts:2",
+      "summary": "Overview export imports adminCsvFilename from the admin-users feature (defined at features/admin-users/server/user-export-columns.ts:54); a generic export helper lives in a sibling feature, so removing or reshaping users export breaks overview; move it to shared/admin (csv-filename.ts) and import from both [Resolved in review-fix round: shared/admin/admin-csv-filename.ts (server-only), both routes import it, no remaining reference to the old definition]",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Security",
+      "location": "features/admin-users/server/user-role-service.ts:40-47",
+      "summary": "A demoted-in-flight actor can still receive ok:true (target already has the role, no write) or ENV_ADMIN / LAST_ADMIN (reveals env-admin status and admin count) before FORBIDDEN; no write is possible and the order is deliberate (spec 3.4 LAST_ADMIN for the race loser), but with a cheap actor-in-set check first for non-demotions the oracle could shrink; consider only if the spec allows",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "features/admin-users/server/user-admin-sql-fragments.ts:36",
+      "summary": "Every table page, count and export aggregates ALL hearts on public kudos, not just the page; 233 ms at 100k kudos / 200k hearts is within the 500 ms budget but grows linearly; revisit with a materialised or incremental total when volume is 10x",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "features/admin-users/server/user-admin-query.ts:35",
+      "summary": "enable_nestloop = off applies to the whole statement (departments, mystery awards joins too), and a clamped out-of-range page opens up to 3 transactions; scoped and measured so acceptable; a plan test with a hard 500 ms wall budget may flake on slow CI hardware, so keep it out of the required gate or loosen it",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Operations",
+      "location": "db/migrations/0022_profiles_role_audit.sql:10",
+      "summary": "Self-referencing FK role_updated_by has no index, so deleting a profile seq-scans profiles for SET NULL; negligible at ~5k rows, add an index if profile deletes become routine",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Testing",
+      "location": "tests/integration/admin-users/user-role-concurrency.test.ts:17-21",
+      "summary": "The file demotes every other admin in the shared DB and restores them in afterAll; a crash mid-run leaves them demoted (env admins re-promote at login); acceptable on the local test DB, never point it at a shared or staging database",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Documentation",
+      "location": "plans/261108-0048-saa-2025-kudos-platform/phase-14-admin-users-and-overview.md:99-108",
+      "summary": "Todo checkboxes still unchecked, and the decision-log entries (role guard order, 422 code, planner guard, uuid contract) plus docs/code-standards and changelog are pending the delivery-tracker and doc-writer steps",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Maintainability",
+      "location": "features/admin-moderation/server/admin-kudo-export.ts:53",
+      "summary": "adminKudoExportFilename duplicates shared adminCsvFilename (same body, prefix kudos); phase 08 code outside phase 14 scope; replace with adminCsvFilename('kudos', now) when that module is next touched",
+      "disposition": "Defer"
+    }
+  ]
+}

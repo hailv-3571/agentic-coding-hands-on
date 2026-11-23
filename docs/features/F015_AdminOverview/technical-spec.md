@@ -36,6 +36,19 @@ flowchart LR
     A2 -.đọc.-> T3
 ```
 
+> **Thực tế implement (phase 14, 2026-11-23) — đọc trước khi đối chiếu tên "planned" bên dưới.** Mã nguồn thắng khi lệch.
+>
+> | Spec nói | Mã thực tế |
+> |---|---|
+> | A1 `AdminOverviewPage#render` | `app/admin/overview/page.tsx` (server component, `requireAdmin()`), kèm `loading.tsx`, `error.tsx`; gọi `UnitStatsQuery.forRange` rồi `addAllRow` |
+> | A2 `GET /api/admin/overview/export` | `app/api/admin/overview/export/route.ts`; tệp `overview-{yyyyMMdd-HHmm}.csv` (`shared/admin/admin-csv-filename.ts`); 401/403 JSON trước khi đọc tham số, 400 `invalid_date_range` / `invalid_params`; không có trần số dòng (số đơn vị ở mức hàng chục) |
+> | Tham số `dateFrom`, `dateTo` | **`from`, `to`** (`schemas/overview-params-schema.ts`, dùng `adminDateRangeSchema` nửa mở `[from 00:00, to+1 ngày 00:00)` theo `ADMIN_TIMEZONE`); tham số sai → bảng "toàn thời gian" kèm `filterError`, không ném lỗi |
+> | `AdminOverviewFilterSchema`, `AdminDateRangeFilter` | `parseOverviewParams` và `shared/admin/date-range-filter.ts` (phase 01) |
+> | Dòng "All" | Tính ở TypeScript từ chính các dòng đã đọc (`add-all-row.ts`), bằng tổng các đơn vị cộng dòng "Chưa gán đơn vị"; CSV có dòng All đầu, cột No trống; đơn vị đánh số từ 1 |
+> | Tên đơn vị chưa gán | `Chưa gán đơn vị` (vi) / `Unassigned` (en), do server trả |
+> | Migration | Không có (F015 chỉ đọc); giữ nguyên |
+> | Biến môi trường | Dùng `ADMIN_TIMEZONE`, `EXPORT_MAX_ROWS` đã có; không thêm biến mới |
+
 ## 2. Action Index
 
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
@@ -310,22 +323,34 @@ Giá trị nghiệp vụ nhìn thấy được (khoảng ngày mặc định) gh
 
 ### 5.2 Assumptions
 
-- *(A1, A2)* Next.js 16 có thể khác kiến thức cũ (server component đọc tham số địa chỉ, route handler, cơ chế cache mặc định); chưa đọc `node_modules/next/dist/docs/` ở bước này, cần xác nhận API trước khi implement, tên handler chỉ là dự kiến. `[UNVERIFIED]`
-- *(A1, A2)* `profiles.department_id` cho phép null và trỏ `departments`; F001 chưa chốt nguồn dữ liệu phòng ban nên toàn bộ số liệu phụ thuộc quyết định đó. `[INFERRED]` từ F001 § 4.2.
-- *(A1, A2)* Bảng `kudos` có một `recipient_id` mỗi Kudo (một người nhận), nên đếm theo `recipient_id` không nhân đôi. `[INFERRED]` từ F003 data model; nếu sau này một Kudo có nhiều người nhận thì BR-002 và BR-003 phải làm lại.
-- *(A1)* Số đơn vị ở mức hàng chục, nên dựng cả bảng trong một lần không cần phân trang. `[INFERRED]` từ thiết kế (10 dòng, không có phân trang).
+- *(A1, A2)* Đã đọc `node_modules/next/dist/docs/` ở phase 14 (server component đọc `searchParams` dạng Promise, route handler trả tệp, `error.tsx`).
+- *(A1, A2)* Mỗi Kudo có một `recipient_id`, mỗi người thuộc tối đa một đơn vị, nên tổng "Total users with at least 1 kudo" của các đơn vị cộng lại đúng cho dòng All. Nếu sau này một Kudo có nhiều người nhận hoặc một người thuộc nhiều đơn vị thì BR-002, BR-003 và `addAllRow` phải làm lại.
+- *(A1)* Số đơn vị ở mức hàng chục, dựng cả bảng một lần, không phân trang.
+- *(tiếng Anh)* Bản tiếng Anh và tiêu đề CSV tiếng Anh là bản nháp, chờ BTC. `[UNVERIFIED]`
 
 ### 5.3 Unresolved Questions
 
-1. **Hiệu năng truy vấn** *(A1, A2)*: một câu `GROUP BY` trên `kudos` đủ nhanh ở mức nào? Kiểm bằng `EXPLAIN` với dữ liệu mẫu vài chục nghìn Kudo để quyết có cần chỉ mục `(status, created_at)` kèm `sender_id`/`recipient_id` hay không; chỉ khi đo thấy chậm mới xét view vật chất hoá hoặc bảng đếm.
-2. **Viết truy vấn bằng Drizzle hay hàm SQL** *(A1, A2)*: truy vấn có nhiều truy vấn con nhóm riêng và `COUNT(DISTINCT)`; Drizzle `sql` template có đủ dễ đọc hay nên gói vào một hàm Postgres (kèm migration)?
-3. **Module CSV dùng chung** *(A2)*: F007 chưa tách bộ serialize CSV (BOM, vô hiệu công thức); F015 nên dùng lại, cần chốt tên và vị trí module khi một trong hai feature được implement trước.
-4. **Cắt ngày theo múi giờ ở SQL** *(A1, A2)*: tính `startOfDay(date, TZ)` ở TypeScript rồi truyền timestamptz, hay dùng `AT TIME ZONE` trong SQL? Chọn một cách và dùng chung với F007.
-5. **Đơn vị đã xoá mềm** *(A1)*: nếu `departments` có cờ ngừng dùng thì đơn vị đó còn người có hiện không (liên quan nguồn dữ liệu phòng ban của F001).
+Đã giải quyết ở phase 14: hiệu năng (`EXPLAIN ANALYZE` ở 5k user / 100k Kudo: 82-90 ms, nằm trong ngưỡng 500 ms nên không cần chỉ mục hay view vật chất hoá), Drizzle hay hàm SQL (Drizzle, một câu với bốn truy vấn con nhóm riêng), CSV dùng chung (`shared/admin/csv-serializer.ts`), cắt ngày theo múi giờ (TypeScript, `shared/admin/date-range-filter.ts`), đơn vị đã xoá mềm (không có cờ này; mọi `departments` đều hiện).
+
+Còn mở:
+
+1. **Bản tiếng Anh và chữ "All" in đậm hay thường**: Figma để chữ thường, spec suy ra đậm; hiện là Medium. Chờ BTC.
+2. **Câu lỗi xuất tệp**: dùng chung câu của phase 08 ("Không xuất được tệp…"), không dùng câu riêng "Không xuất được số liệu…" của spec.
+3. **Test**: `test:prod` chưa phủ route export; chưa đo coverage.
 
 ### 5.4 Source References
 
-Chưa có mã nguồn — xem `## 7. User Stories` trong `functional-spec.md` để biết hành vi dự kiến. Bảng tham chiếu sẽ được điền ở bước đối chiếu sau khi implement.
+Mã nguồn (phase 14):
+
+| Vùng | Đường dẫn |
+|---|---|
+| Trang | `app/admin/overview/{page,loading,error}.tsx` |
+| Export | `app/api/admin/overview/export/route.ts` |
+| Server | `features/admin-overview/server/`: `unit-stats-query.ts`, `add-all-row.ts`, `overview-export-columns.ts` |
+| Schema, lib, UI | `features/admin-overview/{schemas,lib,components}/` |
+| Dùng chung | `shared/admin/`: `admin-csv-filename.ts`, `csv-serializer.ts`, `date-range-filter.ts`, `timezone.ts` |
+| Test | `tests/{unit,integration,e2e}/admin-overview/` |
+| Bằng chứng | `plans/261108-0048-saa-2025-kudos-platform/evidence/phase-14/`, `.../evidence/screenshots/phase-14/` |
 
 #### Data Flow
 

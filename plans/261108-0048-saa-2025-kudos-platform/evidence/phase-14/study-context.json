@@ -1,0 +1,17 @@
+{
+  "task": "Phase 14 (F014 Admin users + F015 Admin overview): admin User table with filters, accent-insensitive search, sort, pagination, CSV export and guarded role change; admin Overview per-unit statistics with date range, All row and CSV export; profiles role audit columns migration",
+  "mode": "code",
+  "acceptanceCriteria": [
+    "Two admins demoting each other concurrently: exactly one succeeds, the other gets 409 LAST_ADMIN; at least one admin always remains; no deadlock",
+    "Concurrent promotions of the same user are idempotent with one write; role_updated_by records the first writer",
+    "Self-demotion returns 403, env admin demotion returns 409 ENV_ADMIN, a non-admin calling the page, action or export gets 403 with no write, an actor demoted mid-flight gets 403",
+    "Total Heart and Level equal HeartStatsQuery.rawTotal and HeroTierQuery for every row; spam kudos excluded and Un Spam restores; anonymous kudos counted for the real sender",
+    "Search is accent-insensitive on name or email, filters combine with AND, sort and pagination follow the URL, and q longer than 100 chars shows a validation message",
+    "User export rows equal the table rows across all pages, more than EXPORT_MAX_ROWS returns 422 with no file, and formula-like values are neutralised",
+    "Overview All row equals the sum of unit rows plus the unassigned row for every column; unassigned row appears only when such profiles exist; zero-activity units show 0; date range is half-open in ADMIN_TIMEZONE; empty range means all time; the URL reproduces the numbers; export includes the All row",
+    "Both admin screens match the Figma layout on desktop and stay usable at 375 px, with empty, loading and error states"
+  ],
+  "touchpoints": ["features/admin-users/**", "features/admin-overview/**", "app/admin/users/**", "app/admin/overview/**", "app/api/admin/users/**", "app/api/admin/overview/**", "db/migrations/0022_*", "shared/db/schema/profiles", "messages/*.json"],
+  "blastRadius": ["profiles table (requireAdmin reads role)", "admin layout and nav", "HeartStatsQuery / HeroTierQuery fragments (read-only)", "shared/admin csv, date range, export limit (read-only)"],
+  "contracts": ["features/admin-users/schemas/admin-user-views.ts", "features/admin-overview/schemas/unit-stats-views.ts", "setUserRoleAction", "GET /api/admin/users/export", "GET /api/admin/overview/export"]
+}

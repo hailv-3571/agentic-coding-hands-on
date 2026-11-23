@@ -1,0 +1,12 @@
+
+Running 7 tests using 3 workers
+
+  ✓  1 [chromium] › tests\e2e\admin-overview\overview-date-range.spec.ts:82:3 › Admin › Overview › a reversed range is refused inline and the table stays; one in the URL shows all time (3.0s)
+  ✓  2 [chromium] › tests\e2e\admin-overview\overview-date-range.spec.ts:98:3 › Admin › Overview › Export downloads the CSV of the same range with the All row first (3.8s)
+  ✓  3 [chromium] › tests\e2e\admin-overview\overview-date-range.spec.ts:54:3 › Admin › Overview › a date range narrows the figures, survives a reload, and All stays the sum of the units (4.6s)
+  ✓  6 [chromium] › tests\e2e\admin-users\user-table-and-role.spec.ts:161:3 › Admin › User › Export downloads the CSV of the current filter (2.4s)
+  ✓  5 [chromium] › tests\e2e\admin-users\user-table-and-role.spec.ts:105:3 › Admin › User › Set as Admin / Set as User go through the confirm dialog; the actor's own row is locked (3.7s)
+  ✓  7 [chromium] › tests\e2e\admin-users\user-table-and-role.spec.ts:182:5 › Admin › User › at 375 px › the page has no horizontal scroll; the table scrolls inside its own container (1.2s)
+  ✓  4 [chromium] › tests\e2e\admin-users\user-table-and-role.spec.ts:41:3 › Admin › User › filters, sorts and pages the table; every filter or sort change goes back to page 1 (8.3s)
+
+  7 passed (13.3s)

@@ -21,8 +21,10 @@ Nguồn: `plans/261108-0048-saa-2025-kudos-platform/plan.md` (chi tiết từng 
 | 11 | Spotlight board (realtime) | F008 | P2 | 05, 08 | Hoàn thành (2026-11-23) |
 | 12 | Profile | F012 | P2 | 09, 10 | Hoàn thành (2026-11-23) |
 | 13 | Notifications | F013 | P2 | 06, 08, 09, 10 | Hoàn thành (2026-11-23) |
-| 14 | Admin users & overview | F014, F015 | P2/P3 | 08, 09, 10 | Chưa làm |
+| 14 | Admin users & overview | F014, F015 | P2/P3 | 08, 09, 10 | Hoàn thành (ký duyệt 2026-11-23) |
 
-Tiến độ: 13/14 phase hoàn thành (01–13).
+Tiến độ: 14/14 phase hoàn thành (01–14).
+
+Rủi ro và việc mở của phase 14: chờ BTC xác nhận bản tiếng Anh, chặn hạ quyền admin trong `ADMIN_EMAILS` (409 `ENV_ADMIN`) và tiêu đề CSV tiếng Anh; `adminKudoExportFilename` trùng `adminCsvFilename` (Low); gộp tim mỗi trang tăng tuyến tính, xét lại ở 10 lần dữ liệu (Low); admin bị hạ giữa chừng có thể thấy mã lỗi nghiệp vụ trước `FORBIDDEN` (Low, hoãn); `test:prod` chưa phủ `/admin/users` và route export; chưa đo coverage.
 
 Chạy song song được: 02 ∥ 03 · 07 ∥ 04 · 08 ∥ 05 (sau 04) · 09 ∥ 06. Phase 10 và 11 cùng sửa file chung của phase 01 nên chạy tuần tự.
