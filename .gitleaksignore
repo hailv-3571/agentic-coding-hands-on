@@ -2,3 +2,7 @@
 b5520cefb4b627b1e9d81d288cf9bf763c37a5e2:tests/integration/notifications/drain-route-auth.test.ts:generic-api-key:17
 23f476c03054bef47a8c1dc758858fea2ebfe558:tests/integration/secret-box-rewards/internal-tick-guard.test.ts:generic-api-key:18
 23f476c03054bef47a8c1dc758858fea2ebfe558:tests/integration/secret-box-rewards/secret-box-tick-overlap-and-cap.test.ts:generic-api-key:25
+# Evidence files: Vault record UUIDs of deleted local secrets (ids, not values) and quotes of the test-only constants above.
+0533cf7649f4f96728f8f4c70246d541d761bb36:plans/261108-0048-saa-2025-kudos-platform/evidence/post-14-hardening/cron-drain-local-run.txt:generic-api-key:6
+0533cf7649f4f96728f8f4c70246d541d761bb36:plans/261108-0048-saa-2025-kudos-platform/evidence/post-14-hardening/gitleaks-history-scan.txt:generic-api-key:6
+0533cf7649f4f96728f8f4c70246d541d761bb36:plans/261108-0048-saa-2025-kudos-platform/evidence/post-14-hardening/gitleaks-history-scan.txt:generic-api-key:7
