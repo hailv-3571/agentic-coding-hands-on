@@ -1,6 +1,7 @@
 import "server-only";
+import { adminCsvFilename } from "@/shared/admin/admin-csv-filename";
 import { serializeCsv, type CsvCell } from "@/shared/admin/csv-serializer";
-import { formatInZone, toAdminZone } from "@/shared/admin/timezone";
+import { formatInZone } from "@/shared/admin/timezone";
 import type { AdminKudoRow } from "../schemas/admin-kudo-row";
 
 /**
@@ -49,9 +50,7 @@ export function serializeAdminKudoCsv(rows: readonly AdminKudoRow[]): string {
   return serializeCsv(ADMIN_KUDO_CSV_HEADER, rows.map(toAdminKudoCsvRow));
 }
 
-/** `kudos-{yyyyMMdd-HHmm}.csv`, wall clock of `now` in ADMIN_TIMEZONE. */
+/** `kudos-{yyyyMMdd-HHmm}.csv`, wall clock of `now` in ADMIN_TIMEZONE (same scheme as the user / overview exports). */
 export function adminKudoExportFilename(now: Date): string {
-  const p = toAdminZone(now);
-  const pad = (n: number, width = 2) => String(n).padStart(width, "0");
-  return `kudos-${pad(p.year, 4)}${pad(p.month)}${pad(p.day)}-${pad(p.hour)}${pad(p.minute)}.csv`;
+  return adminCsvFilename("kudos", now);
 }
