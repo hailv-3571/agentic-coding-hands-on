@@ -748,5 +748,107 @@
         "plain": "Chúc mừng! Lời nhắn gửi của bạn đã trở thành Kudos Quốc Dân và nhận phần quà đặc biệt từ SAA 2025: Root Further."
       }
     }
+  },
+  "adminUsers": {
+    "metaTitle": "User",
+    "title": "User",
+    "filters": {
+      "region": "Bộ lọc người dùng",
+      "unit": "Unit",
+      "unitPlaceholder": "Chọn phòng ban",
+      "unitList": "Lọc theo phòng ban",
+      "unitNone": "Chưa gán đơn vị",
+      "level": "Level",
+      "levelPlaceholder": "Chọn Level",
+      "levelList": "Lọc theo Level",
+      "levelNone": "Chưa có Level",
+      "role": "Role",
+      "rolePlaceholder": "Chọn Role",
+      "roleList": "Lọc theo Role",
+      "all": "Tất cả",
+      "search": "Tìm theo tên hoặc email",
+      "searchPlaceholder": "Search",
+      "clear": "Xoá bộ lọc"
+    },
+    "filterError": {
+      "query_too_long": "Từ khoá tối đa 100 ký tự",
+      "invalid_params": "Bộ lọc không hợp lệ, đang hiện tất cả người dùng."
+    },
+    "table": {
+      "caption": "Danh sách người dùng",
+      "id": "ID",
+      "user": "User",
+      "email": "Email",
+      "sent": "∑ sent Kudos ({total})",
+      "received": "∑ Received Kudos ({total})",
+      "hearts": "Total Heart",
+      "level": "Level",
+      "badges": "Number of Badges",
+      "sixBadges": "Time to get 6 Badges",
+      "lastLogin": "Last Logged in",
+      "role": "Role",
+      "actions": "Actions",
+      "sortHint": "Bấm để đổi thứ tự sắp xếp",
+      "empty": "Không có người dùng nào phù hợp bộ lọc.",
+      "loadFailed": "Không tải được danh sách người dùng. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "role": {
+      "admin": "Admin",
+      "user": "User",
+      "envAdmin": "Admin · env"
+    },
+    "roleMenu": {
+      "trigger": "Thao tác cho {name}",
+      "setAdmin": "Set as Admin",
+      "setUser": "Set as User",
+      "envLocked": "Admin được cấu hình qua ADMIN_EMAILS nên không hạ role tại đây được.",
+      "selfLocked": "Bạn không thể tự hạ role của mình."
+    },
+    "roleDialog": {
+      "toAdmin": "Đổi role của người dùng này thành Admin?",
+      "toUser": "Đổi role của người dùng này thành User?",
+      "confirm": "Xác nhận",
+      "saving": "Đang lưu…",
+      "cancel": "Huỷ"
+    },
+    "roleErrors": {
+      "selfDemote": "Bạn không thể tự hạ role của mình.",
+      "lastAdmin": "Không thể hạ Admin cuối cùng.",
+      "envAdmin": "Admin được cấu hình qua ADMIN_EMAILS. Hãy gỡ email khỏi ADMIN_EMAILS trước khi hạ role.",
+      "forbidden": "Bạn không còn quyền Admin.",
+      "notFound": "Người dùng này không còn tồn tại.",
+      "failed": "Không cập nhật được role. Vui lòng thử lại."
+    },
+    "roleChanged": {
+      "admin": "Đã đặt {name} làm Admin.",
+      "user": "Đã đặt {name} làm User."
+    }
+  },
+  "adminOverview": {
+    "metaTitle": "Overview",
+    "title": "Overview",
+    "dateRange": {
+      "group": "Khoảng ngày thống kê"
+    },
+    "filterError": {
+      "invalid_date_range": "Khoảng ngày không hợp lệ, đang hiện số liệu toàn thời gian.",
+      "invalid_params": "Bộ lọc không hợp lệ, đang hiện số liệu toàn thời gian."
+    },
+    "table": {
+      "caption": "Thống kê Kudo và Secret Box theo đơn vị",
+      "no": "No",
+      "unit": "Unit",
+      "totalMembers": "Total member",
+      "kudosSent": "Total sent kudos",
+      "kudosReceived": "Total received kudos",
+      "usersWithReceivedKudo": "Total users with at least 1 kudo",
+      "secretBoxesReceived": "Total received secret box",
+      "all": "All",
+      "unassigned": "Chưa gán đơn vị",
+      "empty": "Chưa có đơn vị nào.",
+      "loadFailed": "Không tải được số liệu. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    }
   }
 }

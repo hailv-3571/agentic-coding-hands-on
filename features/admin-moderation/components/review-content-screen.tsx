@@ -3,16 +3,17 @@
 import { useCallback, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { secondaryButton, settingsTitle } from "@/features/admin-campaigns/components/campaign-settings-styles";
+import { settingsTitle } from "@/features/admin-campaigns/components/campaign-settings-styles";
 import { CampaignSettingsToast, type CampaignNotice } from "@/features/admin-campaigns/components/campaign-settings-toast";
 import type { AdminKudoFilterValues, AdminKudoPage, AdminKudoStatus, ReviewContentScreenProps } from "../schemas/admin-kudo-row";
 import type { KudoModerationResult } from "../schemas/kudo-moderation-result";
+import { AdminLoadErrorPanel } from "./admin-load-error-panel";
 import { ReviewDateRangeFilter } from "./review-date-range-filter";
 import { ReviewExportButton } from "./review-export-button";
 import { ReviewFilters } from "./review-filters";
 import { ReviewPagination } from "./review-pagination";
 import { ReviewTable } from "./review-table";
-import { applyFilterPatch, nextHeartSort, reviewHref } from "./review-url-params";
+import { applyFilterPatch, nextHeartSort, reviewExportHref, reviewHref } from "./review-url-params";
 import { useExternalResetKey } from "./use-external-reset-key";
 
 const CLEARED: Partial<AdminKudoFilterValues> = { senderId: null, receiverId: null, status: null, from: null, to: null, query: "" };
@@ -70,7 +71,7 @@ export function ReviewContentScreen({ data, filter, selectedSender, selectedRece
               navigate({ from, to });
             }}
           />
-          <ReviewExportButton filter={filter} onNotice={setNotice} />
+          <ReviewExportButton href={reviewExportHref(filter)} fallbackFilename="kudos.csv" onNotice={setNotice} />
         </div>
       </div>
       <ReviewFilters view={view} selectedSender={selectedSender} selectedReceiver={selectedReceiver} onChange={navigate} />
@@ -80,17 +81,7 @@ export function ReviewContentScreen({ data, filter, selectedSender, selectedRece
         </p>
       )}
       {loadError ? (
-        <div role="alert" className="flex flex-col items-center gap-4 rounded border border-divider bg-container-2 px-4 py-10 text-center">
-          <p className="text-title-medium text-text-muted">{t("table.loadFailed")}</p>
-          <button
-            type="button"
-            aria-disabled={navigating || undefined}
-            onClick={() => !navigating && startNavigation(() => router.refresh())}
-            className={secondaryButton}
-          >
-            {t("table.retry")}
-          </button>
-        </div>
+        <AdminLoadErrorPanel message={t("table.loadFailed")} retryLabel={t("table.retry")} />
       ) : (
         <>
           <ReviewTable

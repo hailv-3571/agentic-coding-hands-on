@@ -155,6 +155,13 @@
       "when": 1795375080885,
       "tag": "0021_notifications_retry_backoff_and_event_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795377491699,
+      "tag": "0022_profiles_role_audit",
+      "breakpoints": true
     }
   ]
 }

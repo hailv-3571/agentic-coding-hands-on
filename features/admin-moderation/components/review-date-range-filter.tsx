@@ -51,9 +51,10 @@ function DateField({ label, value, min, max, invalid, describedBy, onChange }: D
  * Sent-date range (E02/E03, Figma mms_B.2: white, rounded 8, "Start date → End date" + calendar).
  * Each complete change filters the table (page 1); a reversed range is refused inline with the
  * spec message and the table stays as it is (spec § 6). Keeps its own values; key it with
- * `useExternalResetKey` so an outside change remounts it.
+ * `useExternalResetKey` so an outside change remounts it. `groupLabel` defaults to the Review
+ * content copy ("Khoảng ngày gửi"); Admin › Overview passes its own.
  */
-export function ReviewDateRangeFilter({ from, to, onChange }: ReviewDateRange & { onChange(range: ReviewDateRange): void }) {
+export function ReviewDateRangeFilter({ from, to, onChange, groupLabel }: ReviewDateRange & { onChange(range: ReviewDateRange): void; groupLabel?: string }) {
   const t = useTranslations("adminModeration.dateRange");
   const errorId = useId();
   const [start, setStart] = useState(from ?? "");
@@ -69,7 +70,7 @@ export function ReviewDateRangeFilter({ from, to, onChange }: ReviewDateRange & 
 
   return (
     <div className="flex w-full flex-col gap-1 sm:w-74">
-      <div role="group" aria-label={t("group")} className={`${whiteField} flex h-13 items-center px-3 ${reversed ? "border-error" : ""}`}>
+      <div role="group" aria-label={groupLabel ?? t("group")} className={`${whiteField} flex h-13 items-center px-3 ${reversed ? "border-error" : ""}`}>
         <DateField
           label={t("start")}
           value={start}

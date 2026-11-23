@@ -13,10 +13,12 @@ const SEARCH_MAX_LENGTH = 100;
  * "Search by content" (E08, Figma mms_C.4: white, w360, h48, rounded 8, search icon at the end).
  * Keeps its own text and sends the trimmed query after a pause or on Enter, never the same query
  * twice in a row. Key it with `useExternalResetKey` so an outside change (Xoá bộ lọc, back button)
- * remounts it with the new `initial` text.
+ * remounts it with the new `initial` text. `label` / `placeholder` default to the Review content
+ * copy; Admin › User passes its own (name or email, "Search").
  */
-export function ReviewSearchInput({ initial, onSearch }: { initial: string; onSearch(query: string): void }) {
+export function ReviewSearchInput({ initial, onSearch, label, placeholder }: { initial: string; onSearch(query: string): void; label?: string; placeholder?: string }) {
   const t = useTranslations("adminModeration.filters");
+  const name = label ?? t("search");
   const id = useId();
   const [text, setText] = useState(initial);
   const sent = useRef(initial.trim());
@@ -39,14 +41,14 @@ export function ReviewSearchInput({ initial, onSearch }: { initial: string; onSe
   return (
     <div className="relative w-full md:w-auto md:max-w-90 md:min-w-64 md:flex-1">
       <label htmlFor={id} className="sr-only">
-        {t("search")}
+        {name}
       </label>
       <input
         id={id}
         type="search"
         value={text}
         maxLength={SEARCH_MAX_LENGTH}
-        placeholder={t("search")}
+        placeholder={placeholder ?? name}
         autoComplete="off"
         onChange={(event) => {
           const value = event.target.value;

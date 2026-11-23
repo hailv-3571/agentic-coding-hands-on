@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, text, timestamp, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { departments } from "./reference-data";
 
 /**
@@ -21,6 +21,10 @@ export const profiles = pgTable(
     /** Null until the Sunner picks a department on first login (decision-log: self-select). */
     departmentId: uuid("department_id").references(() => departments.id),
     role: profileRole("role").notNull().default("user"),
+    /** Admin of the latest role change (phase 14, FR-002); null until changed or once that admin is deleted. */
+    roleUpdatedBy: uuid("role_updated_by").references((): AnyPgColumn => profiles.id, { onDelete: "set null" }),
+    /** Time of the latest role change (phase 14); null until the role is first changed from the admin UI. */
+    roleUpdatedAt: timestamp("role_updated_at", { withTimezone: true }),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

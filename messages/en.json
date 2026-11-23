@@ -748,5 +748,107 @@
         "plain": "Congratulations! Your Kudos became a National Kudos and receives a special gift from SAA 2025: Root Further."
       }
     }
+  },
+  "adminUsers": {
+    "metaTitle": "User",
+    "title": "User",
+    "filters": {
+      "region": "User filters",
+      "unit": "Unit",
+      "unitPlaceholder": "Select unit",
+      "unitList": "Filter by unit",
+      "unitNone": "No unit",
+      "level": "Level",
+      "levelPlaceholder": "Select level",
+      "levelList": "Filter by level",
+      "levelNone": "No level yet",
+      "role": "Role",
+      "rolePlaceholder": "Select role",
+      "roleList": "Filter by role",
+      "all": "All",
+      "search": "Search by name or email",
+      "searchPlaceholder": "Search",
+      "clear": "Clear filters"
+    },
+    "filterError": {
+      "query_too_long": "Search terms can be at most 100 characters",
+      "invalid_params": "Invalid filter, showing all users."
+    },
+    "table": {
+      "caption": "Users",
+      "id": "ID",
+      "user": "User",
+      "email": "Email",
+      "sent": "∑ sent Kudos ({total})",
+      "received": "∑ Received Kudos ({total})",
+      "hearts": "Total Heart",
+      "level": "Level",
+      "badges": "Number of Badges",
+      "sixBadges": "Time to get 6 Badges",
+      "lastLogin": "Last Logged in",
+      "role": "Role",
+      "actions": "Actions",
+      "sortHint": "Click to change the sort order",
+      "empty": "No users match the filters.",
+      "loadFailed": "Couldn't load the users. Please try again.",
+      "retry": "Retry"
+    },
+    "role": {
+      "admin": "Admin",
+      "user": "User",
+      "envAdmin": "Admin · env"
+    },
+    "roleMenu": {
+      "trigger": "Actions for {name}",
+      "setAdmin": "Set as Admin",
+      "setUser": "Set as User",
+      "envLocked": "This admin comes from ADMIN_EMAILS, so their role can't be lowered here.",
+      "selfLocked": "You can't lower your own role."
+    },
+    "roleDialog": {
+      "toAdmin": "Change this user's role to Admin?",
+      "toUser": "Change this user's role to User?",
+      "confirm": "Confirm",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
+    "roleErrors": {
+      "selfDemote": "You can't lower your own role.",
+      "lastAdmin": "The last Admin can't be lowered.",
+      "envAdmin": "This admin comes from ADMIN_EMAILS. Remove the email from ADMIN_EMAILS first.",
+      "forbidden": "You're no longer an Admin.",
+      "notFound": "This user no longer exists.",
+      "failed": "Couldn't update the role. Please try again."
+    },
+    "roleChanged": {
+      "admin": "{name} is now an Admin.",
+      "user": "{name} is now a User."
+    }
+  },
+  "adminOverview": {
+    "metaTitle": "Overview",
+    "title": "Overview",
+    "dateRange": {
+      "group": "Statistics date range"
+    },
+    "filterError": {
+      "invalid_date_range": "Invalid date range, showing all-time figures.",
+      "invalid_params": "Invalid filter, showing all-time figures."
+    },
+    "table": {
+      "caption": "Kudos and Secret Box figures by unit",
+      "no": "No",
+      "unit": "Unit",
+      "totalMembers": "Total member",
+      "kudosSent": "Total sent kudos",
+      "kudosReceived": "Total received kudos",
+      "usersWithReceivedKudo": "Total users with at least 1 kudo",
+      "secretBoxesReceived": "Total received secret box",
+      "all": "All",
+      "unassigned": "No unit",
+      "empty": "No units yet.",
+      "loadFailed": "Couldn't load the figures. Please try again.",
+      "retry": "Retry"
+    }
   }
 }

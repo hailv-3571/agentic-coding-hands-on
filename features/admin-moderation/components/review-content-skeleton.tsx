@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { settingsTitle } from "@/features/admin-campaigns/components/campaign-settings-styles";
+import { AdminTableSkeletonRows } from "./admin-table-skeleton-rows";
 
 /**
  * Loading state of Admin › Review content (spec § 5 "loading"): the title, placeholder filter
@@ -21,14 +22,7 @@ export function ReviewContentSkeleton() {
           <div key={field} className="mt-6.5 h-12 w-full animate-pulse rounded-lg bg-secondary sm:w-[259px]" />
         ))}
       </div>
-      <div className="flex flex-col">
-        <div className="h-11 border-b border-divider bg-background" />
-        {[0, 1, 2, 3, 4].map((row) => (
-          <div key={row} className="flex h-20 items-center border-b border-divider bg-container-2 px-3">
-            <div className="h-4 w-full animate-pulse rounded bg-divider" />
-          </div>
-        ))}
-      </div>
+      <AdminTableSkeletonRows />
     </div>
   );
 }

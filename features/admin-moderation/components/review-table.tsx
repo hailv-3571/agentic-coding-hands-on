@@ -5,7 +5,7 @@ import { bodyCell, headerCell, headerDivider, secondaryButton } from "@/features
 import { focusRing } from "@/features/app-shell/components/shell-styles";
 import type { AdminKudoRow, AdminKudoSort, AdminKudoStatus } from "../schemas/admin-kudo-row";
 import type { KudoModerationResult } from "../schemas/kudo-moderation-result";
-import { AdminModerationIcon } from "./admin-moderation-icon";
+import { AdminSortCarets } from "./admin-sort-carets";
 import { ReviewTableRow } from "./review-table-row";
 import { heartAriaSort } from "./review-url-params";
 
@@ -28,10 +28,7 @@ function HeartSortButton({ sort, onClick }: { sort: AdminKudoSort; onClick(): vo
   return (
     <button type="button" onClick={onClick} title={t("heartSort")} className={`inline-flex items-center gap-2 rounded ${focusRing}`}>
       {t("heart")}
-      <span aria-hidden className="flex flex-col">
-        <AdminModerationIcon name="sort-up" className={`-mb-0.5 ${sort === "hearts_asc" ? "brightness-200" : "opacity-40"}`} />
-        <AdminModerationIcon name="sort-down" className={`-mt-0.5 ${sort === "hearts_desc" ? "brightness-200" : "opacity-40"}`} />
-      </span>
+      <AdminSortCarets direction={sort === "hearts_asc" ? "asc" : sort === "hearts_desc" ? "desc" : null} />
     </button>
   );
 }
