@@ -162,6 +162,13 @@
       "when": 1795377491699,
       "tag": "0022_profiles_role_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795400107732,
+      "tag": "0023_housekeeping_outbox_and_cron_history_prune",
+      "breakpoints": true
     }
   ]
 }
