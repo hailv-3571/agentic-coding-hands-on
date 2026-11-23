@@ -1,5 +1,5 @@
 import { waitForRouterRefresh } from "./kudo-composer-e2e-steps";
-import { expect, feedWindow, kudosSentBy, seedKudo, test } from "./kudo-e2e-fixtures";
+import { expect, feedWindow, kudosSentBy, newerThanEveryPublicKudo, seedKudo, test } from "./kudo-e2e-fixtures";
 
 /**
  * F003 composer, edit mode (US004, FR-401/402): the owner opens it from the pen on their own Kudo
@@ -62,6 +62,27 @@ test.describe("Kudo composer — edit", () => {
       body: "Cảm ơn bạn, đã sửa lại",
     });
     expect(kudos[0].kudo_hashtags).toHaveLength(2);
+  });
+
+  // Regression (debugger-261123 B): the All Kudos feed remounts when the save's refresh brings a
+  // different first page, which is the usual case while other Sunners post. The confirmation must
+  // outlive that remount (FR-210: about 4 s), not vanish when the refreshed feed commits.
+  test("keeps the saved confirmation when someone posted a newer Kudo before saving", async ({ page, auth, kudoUsers }) => {
+    const pair = await kudoUsers.pair();
+    const seeded = await seedKudo(pair, { title: null, body: "Cảm ơn bạn", hashtagCount: 1, createdAt: feedWindow("top")() });
+    await auth.signIn(pair.sender);
+    await page.goto("/kudos");
+    await feedCard(page, seeded.id).getByRole("button", { name: "Chỉnh sửa Kudo" }).click();
+    const dialog = page.getByRole("dialog", { name: "Chỉnh sửa bài viết của bạn" });
+    const body = dialog.getByRole("textbox", { name: "Lời nhắn" });
+    await expect(body).toHaveValue("Cảm ơn bạn");
+    await body.fill("Cảm ơn bạn, đã sửa lại");
+    await seedKudo(pair, { title: null, body: "Một Kudo mới hơn", hashtagCount: 1, createdAt: await newerThanEveryPublicKudo() });
+
+    await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(feedCard(page, seeded.id).getByText("Cảm ơn bạn, đã sửa lại")).toBeVisible(); // refreshed feed committed
+    await expect(page.getByRole("status").filter({ hasText: "Đã lưu thay đổi." })).toBeVisible({ timeout: 1_000 });
   });
 
   test("another Sunner gets no edit pen and the edit route refuses them", async ({ page, auth, kudoUsers }) => {

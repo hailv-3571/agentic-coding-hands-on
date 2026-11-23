@@ -51,6 +51,10 @@ async function deleteKudoDataOf(userIds: string[]): Promise<void> {
   const paths = [...new Set([...attached, ...pending].map((row) => row.storage_path))];
   if (paths.length) check(await serviceClient.storage.from(KUDO_IMAGE_BUCKET).remove(paths));
   if (kudoIds.length) {
+    // The product never deletes a kudo, so a bare DELETE sends no Spotlight event and every board
+    // open in another worker stays above the database total. Taking public kudos out the product's
+    // way first (public → spam fires `removed`) keeps those boards in step with the database.
+    check(await serviceClient.from("kudos").update({ status: "spam" }).in("id", kudoIds).eq("status", "public"));
     check(await serviceClient.from("domain_event_outbox").delete().in("payload->>kudoId", kudoIds));
     check(await serviceClient.from("kudos").delete().in("id", kudoIds));
   }
@@ -88,6 +92,18 @@ export function feedWindow(kind: "top" | "low" = "top"): (offsetMinutes?: number
   const year = (kind === "top" ? 5000 : 2100) + Math.floor(Math.random() * 2900);
   const base = Date.UTC(year, 0, 1) + Math.floor(Math.random() * 360) * 86_400_000;
   return (offsetMinutes = 0) => new Date(base + offsetMinutes * 60_000).toISOString();
+}
+
+/**
+ * A `created_at` one minute after the newest public kudo right now, so a kudo inserted with it
+ * tops the first Live board page: whatever the viewer loaded earlier is no longer the first item.
+ */
+export async function newerThanEveryPublicKudo(): Promise<string> {
+  const rows = check(
+    await serviceClient.from("kudos").select("created_at").eq("status", "public").order("created_at", { ascending: false }).limit(1),
+  ) as { created_at: string }[];
+  const newest = rows[0] ? Date.parse(rows[0].created_at) : Date.now();
+  return new Date(newest + 60_000).toISOString();
 }
 
 /** Inserts a kudo directly (service role) so the edit flow has something to open. */
