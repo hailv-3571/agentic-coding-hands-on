@@ -27,6 +27,8 @@ type Check = {
   /** Must NOT appear in the body. */
   notBody?: RegExp;
   location?: string;
+  /** Expected `content-type` prefix (e.g. `text/csv`). */
+  contentType?: string;
 };
 
 const SERVER_READY_TIMEOUT_MS = 60_000;
@@ -86,6 +88,8 @@ async function runCheck(baseUrl: string, check: Check): Promise<string[]> {
   if (check.notBody?.test(body)) problems.push(`body matches ${check.notBody}`);
   const location = response.headers.get("location");
   if (check.location && location !== check.location) problems.push(`location ${location}, expected ${check.location}`);
+  const contentType = response.headers.get("content-type") ?? "";
+  if (check.contentType && !contentType.startsWith(check.contentType)) problems.push(`content-type ${contentType}, expected ${check.contentType}`);
   return problems;
 }
 
@@ -137,6 +141,15 @@ function checksFor(member: string, admin: string): Check[] {
       status: 200,
       body: adminFrame,
     },
+    // Phase 14 Admin › User sits behind the same gate, RSC requests included.
+    { name: "member RSC GET /admin/users → 403 page", path: "/admin/users", cookie: member, init: rscNavigation, status: 403, body: forbiddenPage, notBody: adminFrame },
+    { name: "member RSC prefetch /admin/users → 403 page", path: "/admin/users", cookie: member, init: rscPrefetch, status: 403, body: forbiddenPage, notBody: adminFrame },
+    { name: "admin /admin/users → 200 user screen", path: "/admin/users", cookie: admin, status: 200, body: /^(?=[\s\S]*>ADMIN<)[\s\S]*aria-label="Bộ lọc người dùng"/ },
+    // The CSV exports live under /api (outside the proxy's /admin gate): the route's own admin API guard answers.
+    ...["/api/admin/users/export", "/api/admin/overview/export", "/api/admin/kudos/export"].flatMap((path): Check[] => [
+      { name: `member GET ${path} → 403 JSON`, path, cookie: member, status: 403, body: /"code":"forbidden"/ },
+      { name: `admin GET ${path} → 200 CSV`, path, cookie: admin, status: 200, contentType: "text/csv" },
+    ]),
   ];
 }
 

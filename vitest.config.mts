@@ -40,5 +40,16 @@ export default defineConfig({
         },
       },
     ],
+    // Opt-in: only read when `--coverage` is passed. Without `include`, V8 reports only
+    // files a test loads, so never-imported modules would hide at 0%.
+    coverage: {
+      include: [
+        "app/**/*.{ts,tsx}",
+        "features/**/*.{ts,tsx}",
+        "shared/**/*.{ts,tsx}",
+        "db/**/*.ts",
+        "proxy.ts",
+      ],
+    },
   },
 });

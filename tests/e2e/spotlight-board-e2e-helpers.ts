@@ -1,4 +1,5 @@
 import type { Browser, BrowserContext, Locator, Page } from "@playwright/test";
+import { SPOTLIGHT_TOPIC } from "../../features/spotlight-board/spotlight-config";
 import { serviceClient, signInToCookieJar, type TestSunner } from "../setup/local-sunner-accounts";
 import { expect } from "./kudos-feed/live-board-fixtures";
 
@@ -50,15 +51,47 @@ export function nextResync(page: Page): Promise<unknown> {
 
 /**
  * Uses the board's own "tab visible again → refetch and replace" path, then waits until the counter
- * equals the database. Run before a step: other specs' teardowns hard-delete Kudos, which emits no
- * event (the product has no delete flow), so an open board may lag the DB until its next resync.
- * After this, whatever the step changes can only arrive through the Realtime event.
+ * equals the database. Run before a step so it starts from a settled board; whatever the step
+ * changes can then only arrive through the Realtime event. (Teardowns set public Kudos to spam
+ * before deleting them, see `kudo-e2e-fixtures.ts`, so other workers' cleanup reaches the board as
+ * `removed` events instead of leaving it above the database.)
  */
 export async function resyncNow(page: Page): Promise<void> {
   const resynced = nextResync(page);
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   await resynced;
   await expectTotalMatchesDatabase(page);
+}
+
+const SPOTLIGHT_CHANNEL = `realtime:${SPOTLIGHT_TOPIC}`;
+
+/** The topic of a Realtime server frame that is a broadcast, else null. */
+function broadcastTopic(message: string | Buffer): string | null {
+  if (typeof message !== "string") {
+    // realtime-js binary user broadcast: [kind 4][topic size][event size][meta size][encoding][topic]…
+    return message[0] === 4 ? message.subarray(5, 5 + message[1]).toString("utf8") : null;
+  }
+  let frame: unknown;
+  try {
+    frame = JSON.parse(message); // protocol 2.0.0: [join_ref, ref, topic, event, payload]
+  } catch {
+    return null; // not a JSON frame: forward it untouched rather than stall the proxied socket
+  }
+  return Array.isArray(frame) && frame[3] === "broadcast" ? String(frame[2]) : null;
+}
+
+/**
+ * Keeps the page's Realtime socket real (join, heartbeats, reconnect) but drops the Spotlight
+ * broadcasts on it, so Kudos that other workers write meanwhile never reach this board. Only for
+ * tests about a fixed snapshot, not the live path. Call before the page opens.
+ */
+export async function muteSpotlightBroadcasts(page: Page): Promise<void> {
+  await page.routeWebSocket(/\/realtime\/v1\/websocket/, (ws) => {
+    const server = ws.connectToServer();
+    server.onMessage((message) => {
+      if (broadcastTopic(message) !== SPOTLIGHT_CHANNEL) ws.send(message);
+    });
+  });
 }
 
 /** Opens the Live board and waits for the first resync, i.e. until the private channel is joined. */

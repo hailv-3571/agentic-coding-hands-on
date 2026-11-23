@@ -1,0 +1,4 @@
+# Test-only fixture values (not real secrets): constant-time secret checks in integration tests.
+b5520cefb4b627b1e9d81d288cf9bf763c37a5e2:tests/integration/notifications/drain-route-auth.test.ts:generic-api-key:17
+23f476c03054bef47a8c1dc758858fea2ebfe558:tests/integration/secret-box-rewards/internal-tick-guard.test.ts:generic-api-key:18
+23f476c03054bef47a8c1dc758858fea2ebfe558:tests/integration/secret-box-rewards/secret-box-tick-overlap-and-cap.test.ts:generic-api-key:25

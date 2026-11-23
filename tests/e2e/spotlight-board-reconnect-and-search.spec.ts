@@ -2,6 +2,7 @@ import { expect, seedFeedKudo, test } from "./kudos-feed/live-board-fixtures";
 import {
   cloudName,
   expectTotalMatchesDatabase,
+  muteSpotlightBroadcasts,
   nextResync,
   openLiveBoard,
   spotlightRegion,
@@ -74,9 +75,12 @@ test.describe("Spotlight Board reconnect, search and empty state", () => {
   });
 
   // The database is shared with other specs, so "no public Kudo yet" is produced by answering the
-  // region's own refetch with an empty snapshot; the page and the channel stay real.
+  // region's own refetch with an empty snapshot, and the Spotlight broadcasts for Kudos other
+  // workers write meanwhile are dropped (they would add names to the empty board). The page and
+  // the Realtime socket stay real.
   test("an empty snapshot shows 0 KUDOS and the empty message", async ({ page, auth, sunners }) => {
     await page.route("**/api/spotlight", (route) => route.fulfill({ json: { total: 0, names: [], recent: [] } }));
+    await muteSpotlightBroadcasts(page);
     await auth.signIn(await sunners.create());
     await openLiveBoard(page);
     await expect(spotlightTotal(page)).toHaveText("0 KUDOS");
