@@ -1,0 +1,26 @@
+PASS  guest /admin/overview → login
+PASS  member /admin/overview → 403 page
+PASS  member /admin → 403 page
+PASS  member /admin/overview (English) → 403 page
+PASS  member action POST /admin/overview → 403 JSON
+PASS  member / → 200
+PASS  admin /admin/overview → 200 admin frame
+PASS  guest /admin/review → login
+PASS  member /admin/review → 403 page
+PASS  admin /admin/review → 200 review screen
+PASS  member //admin/overview → 308
+PASS  member /admin/ → 308
+PASS  member /admin%2Foverview → 404
+PASS  member RSC GET /admin/overview → 403 page
+PASS  member RSC prefetch /admin/overview → 403 page
+PASS  admin RSC GET /admin/overview → 200 admin flight
+PASS  member RSC GET /admin/users → 403 page
+PASS  member RSC prefetch /admin/users → 403 page
+PASS  admin /admin/users → 200 user screen
+PASS  member GET /api/admin/users/export → 403 JSON
+PASS  admin GET /api/admin/users/export → 200 CSV
+PASS  member GET /api/admin/overview/export → 403 JSON
+PASS  admin GET /api/admin/overview/export → 200 CSV
+PASS  member GET /api/admin/kudos/export → 403 JSON
+PASS  admin GET /api/admin/kudos/export → 200 CSV
+All production status checks passed on http://localhost:57796

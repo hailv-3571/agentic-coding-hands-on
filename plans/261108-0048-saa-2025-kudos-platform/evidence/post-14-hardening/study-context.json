@@ -1,0 +1,30 @@
+{
+  "task": "Post-phase-14 hardening: close the open technical items left after 14/14 phases — database housekeeping schedule, local cron-to-drain verification, flaky e2e fixes, production status checks for the admin user/overview routes, coverage measurement, duplicate export filename helper, secret scan of history, spec rebuild and docs sync.",
+  "mode": "standard",
+  "acceptanceCriteria": [
+    "A migration schedules pg_cron housekeeping that deletes consumed domain_event_outbox rows older than a retention window and cron.job_run_details rows older than a retention window; parked (failed, unconsumed) and pending events are never deleted; notification history survives (event_id set null); the migration is a no-op with a NOTICE where pg_cron is unavailable; a down script removes the jobs; integration tests prove the delete predicate",
+    "The real local path pg_cron -> pg_net -> POST /api/internal/notifications/drain turns a pending outbox event into a notification, verified against the local Supabase stack with evidence, and local Vault secrets are restored afterwards",
+    "The spotlight-board counter and edit-kudo toast e2e flakes are root-caused and fixed without weakening assertions; the full Playwright suite passes in three consecutive runs at 3 workers",
+    "npm run test:prod also checks /admin/users and the users, overview and kudos CSV export routes answer 403 to a member and 200 to an admin",
+    "adminKudoExportFilename reuses the shared adminCsvFilename with unchanged output",
+    "Unit and integration coverage is measured and recorded (no threshold gate imposed)",
+    "A secret scan of the full git history reports no leaked secret before any push",
+    "Full gates are green on the final code: tsc, lint, unit, db:reset, integration, e2e, prelaunch, build, test:prod"
+  ],
+  "touchpoints": [
+    "db/migrations/0023_* (housekeeping cron) + meta",
+    "features/admin-moderation/server/admin-kudo-export.ts",
+    "tests/prod/production-admin-403-status.ts",
+    "tests/e2e/spotlight-board*.spec.ts, spotlight-board-e2e-helpers.ts, edit-kudo e2e spec",
+    "tests/integration/housekeeping/**",
+    "package.json (coverage devDependency), vitest config",
+    "docs/** (spec rebuild, permissions, deployment notes)"
+  ],
+  "blastRadius": "Migration adds scheduled deletes on domain_event_outbox and cron.job_run_details (data mutation, safety-critical). Wrong predicate could drop pending notification events or parked events awaiting manual replay. Other changes are test-only or a pure helper swap.",
+  "contracts": [
+    "notifications.event_id FK is ON DELETE SET NULL (migration 0021) — pruning outbox must not delete notifications",
+    "Parked events (failed_at not null, consumed_at null) must stay for manual replay SQL documented in 0021",
+    "Migrations stay portable: NOTICE and no change without pg_cron/pg_net (pattern of 0016/0020)",
+    "adminCsvFilename(prefix, now) output format unchanged"
+  ]
+}

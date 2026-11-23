@@ -1,0 +1,12 @@
+Secret scan of full git history (acceptance criterion 7), 2026-11-24 ~02:08-02:09 ICT
+Tool: gitleaks v8.21.2 (docker image zricethezav/gitleaks:v8.21.2, --network none, repo mounted read-only)
+Command: gitleaks git /repo --redact --no-banner
+
+Run 1 (no ignore file): 49 commits scanned, 3 findings, all rule generic-api-key, all test-only fixture constants:
+  b5520ce tests/integration/notifications/drain-route-auth.test.ts:17           SECRET = "drain-secret-0123456789abcdef-..." (test value for constant-time compare)
+  23f476c tests/integration/secret-box-rewards/internal-tick-guard.test.ts:18    SECRET = "tick-secret-0123456789abcdef-..."
+  23f476c tests/integration/secret-box-rewards/secret-box-tick-overlap-and-cap.test.ts:25  same test constant
+  Triage: false positives (not real credentials; not used by any environment). Fingerprints recorded in .gitleaksignore.
+
+Run 2 (with .gitleaksignore): scan completed, "no leaks found", exit 0.
+Note: rescan the working tree before the next commit and before any push.

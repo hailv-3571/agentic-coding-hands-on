@@ -1,0 +1,79 @@
+{
+  "score": 9,
+  "criticalCount": 0,
+  "decision": "SEALED",
+  "acceptanceCovered": [
+    "A migration schedules pg_cron housekeeping that deletes consumed domain_event_outbox rows older than a retention window and cron.job_run_details rows older than a retention window; parked (failed, unconsumed) and pending events are never deleted; notification history survives (event_id set null); the migration is a no-op with a NOTICE where pg_cron is unavailable; a down script removes the jobs; integration tests prove the delete predicate",
+    "npm run test:prod also checks /admin/users and the users, overview and kudos CSV export routes answer 403 to a member and 200 to an admin",
+    "adminKudoExportFilename reuses the shared adminCsvFilename with unchanged output",
+    "The real local path pg_cron -> pg_net -> POST /api/internal/notifications/drain turns a pending outbox event into a notification, verified against the local Supabase stack with evidence, and local Vault secrets are restored afterwards",
+    "The spotlight-board counter and edit-kudo toast e2e flakes are root-caused and fixed without weakening assertions; the full Playwright suite passes in three consecutive runs at 3 workers",
+    "Unit and integration coverage is measured and recorded (no threshold gate imposed)",
+    "A secret scan of the full git history reports no leaked secret before any push",
+    "Full gates are green on the final code: tsc, lint, unit, db:reset, integration, e2e, prelaunch, build, test:prod"
+  ],
+  "regressionChecked": [
+    "outbox prune predicate requires consumed_at IS NOT NULL, so pending (consumed_at null) and parked (failed_at set, consumed_at null) rows can never match; the integration test runs the scheduled command text read from cron.job against pending, retrying, parked, recent and malformed-consumed seeds",
+    "notifications.event_id FK ON DELETE SET NULL (0021): the SET NULL update fires no trigger (notifications_publish_signal is AFTER INSERT OR UPDATE OF count only); UNIQUE(event_id, recipient_id, type) treats NULLs as distinct so no collision; covered by a test that keeps the notification with event_id null",
+    "migration 0023: pg_cron guard (preloaded AND available) with NOTICE and RETURN; cron.schedule by name upserts so re-run is idempotent; down script unschedules by jobname and no-ops with NOTICE without cron.job; down-up-up tested in rolled-back transactions",
+    "meta chain: 0023 snapshot prevId = 0022 id, tables deep-equal to 0022 (custom SQL, no schema change); journal idx 23 with a larger when than idx 22",
+    "cron.job_run_details prune: RLS username = current_user limits it to jobs of the migration role (all saa-* jobs); running rows (end_time null) are never matched; documented in the migration header",
+    "adminKudoExportFilename: body of shared adminCsvFilename is identical to the removed inline code (prefix kudos), toAdminZone import dropped, formatInZone kept; admin-moderation unit tests green",
+    "test:prod additions: member 403 JSON on three export routes, admin 200 with content-type text/csv prefix check, member RSC navigation and prefetch of /admin/users 403; the new contentType check only runs when set (checked by reading, test:prod not run)",
+    "e2e fixtures: marking public kudos spam before delete fires the 0017 trigger (public to spam sends removed), so other boards stay in step; filtered to status public; teardown order unchanged",
+    "muteSpotlightBroadcasts: routeWebSocket proxies the real socket and drops only broadcasts on the spotlight topic; join, heartbeat and reconnect still pass; used by the empty-snapshot spec only, assertions unchanged",
+    "edit-kudo spec: new regression test added, no existing assertion removed or loosened",
+    "toast host: client provider wrapping RSC children in an already blocking (instant = false) layout does not alter the static shell; single role=status live region mounted once; each save is a new notice object so the timer restarts; clear callback stable; all composer consumers (kudos page, profile, hover card, edit pen) render under app/(app); admin pages use none of them; modal hooks run before the early return",
+    "tsc --noEmit clean; eslint clean on all touched dirs; vitest unit admin-moderation and kudos-authoring 158/158; no touched file over 200 lines",
+    "delta: tester run on final tree (unit 943, integration 607, Playwright 142 passed/5 skipped/0 failed x3 at 3 workers, prelaunch, build, test:prod all exit 0); cron-drain evidence shows consumed_at set, notification row, HTTP 200, vault saa_* secrets 0 before and after",
+    "delta: broadcastTopic now try/catch returns null so the frame is forwarded (verified by reading)",
+    "delta: @vitest/coverage-v8 pinned 5.1.0 exact devDependency; vitest coverage.include block is read only with --coverage, so no effect on normal runs; no production dependency added",
+    "delta: gitleaks v8.21.2 full history clean with 3 test-only fingerprints; rescan before push"
+  ],
+  "contractStatus": "OK",
+  "refuted": [],
+  "unproven": [],
+  "reachableRegressions": [],
+  "riskGate": {
+    "touchesSensitiveArea": true,
+    "signoffRequired": true,
+    "humanSignedOff": true
+  },
+  "findings": [
+    {
+      "severity": "Low",
+      "category": "Documentation",
+      "location": "plans/261108-0048-saa-2025-kudos-platform/handover-open-decisions.md:123",
+      "summary": "Row still lists scheduling the outbox and cron.job_run_details prune as open work; migration 0023 now does it, so the handover overstates what remains; mark it done or reword to the staging cron-drain check only",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Testing",
+      "location": "tests/e2e/spotlight-board-e2e-helpers.ts:70-76",
+      "summary": "broadcastTopic calls JSON.parse on every text frame from the Realtime server with no guard; a non-JSON text frame would throw inside the onMessage handler and stall the proxied socket; wrap in try/catch and forward unparsed frames [Resolved: try/catch returns null, frame forwarded]",
+      "disposition": "Accept"
+    },
+    {
+      "severity": "Low",
+      "category": "Performance",
+      "location": "db/migrations/0023_housekeeping_outbox_and_cron_history_prune.sql:32-35",
+      "summary": "Unbatched DELETE with no index on consumed_at: seq scan plus one transaction per day; fine at current volume and documented with a revisit threshold (about 1M rows); first run after a long gap is the largest",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Testing",
+      "location": "tests/e2e/kudos-authoring/edit-kudo.spec.ts:85",
+      "summary": "The 1 s visibility timeout for the toast is tight on a loaded 3-worker run, but it deliberately asserts the toast outlives the feed remount (about 4 s lifetime); keep unless it flakes in the three-run gate",
+      "disposition": "Defer"
+    },
+    {
+      "severity": "Low",
+      "category": "Maintainability",
+      "location": "features/kudos-authoring/components/kudo-composer-toast-host.tsx:30-32",
+      "summary": "useShowComposerToast throws if a composer ever renders outside app/(app); today every consumer is inside it (verified), so the throw is a clear guard, but a future use under app/admin or (public) crashes the page instead of degrading",
+      "disposition": "Defer"
+    }
+  ]
+}

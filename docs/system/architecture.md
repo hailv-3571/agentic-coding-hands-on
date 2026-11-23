@@ -51,7 +51,7 @@ graph TB
 
 Bố cục thư mục/tệp: xem `docs/code-standards.md` (chốt ở phase 01; AGENTS.md yêu cầu đọc `node_modules/next/dist/docs/` trước khi code vì Next.js 16 có thay đổi phá vỡ).
 
-Tiến trình nền (không có FE): trigger Postgres (`auth.users` của F001: chặn domain khi INSERT và khi đổi email, tạo hồ sơ, đồng bộ email; phát Spotlight của F008; `notify_realtime` của F013), bộ xử lý outbox (F013 A1, kích hoạt sau commit và quét định kỳ), job chốt Kudos Quốc Dân (F010 A7, cron bằng khoá dịch vụ). Cơ chế kích hoạt cron (`pg_cron` / Vercel Cron / Edge Function): `TBD (draft)`.
+Tiến trình nền (không có FE): trigger Postgres (`auth.users` của F001: chặn domain khi INSERT và khi đổi email, tạo hồ sơ, đồng bộ email; phát Spotlight của F008; `notify_realtime` của F013), bộ xử lý outbox (F013 A1, kích hoạt sau commit và quét định kỳ), job chốt Kudos Quốc Dân (F010 A7, cron bằng khoá dịch vụ). Cơ chế kích hoạt cron đã chọn: pg_cron + pg_net + Vault (migration 0016, 0020), kèm hai job dọn hằng ngày (0023); dự phòng cron máy chủ. Xem Deployment View.
 
 ## Session proxy và cổng truy cập (F001, đã implement ở phase 02)
 
@@ -300,7 +300,7 @@ Luồng thả tim → hộp: server action `addHeartAction` ghi `kudo_hearts` (k
 
 N/A — no infrastructure-as-code found in repository.
 
-Chưa quyết định nơi chạy Next.js (nền tảng hosting): `TBD (draft)`. Cron của F010 đã chọn (phase 10), xem bên dưới; job outbox của F013 chạy bằng pg_cron mỗi 5 giây (phase 13), xem "Cài đặt drain outbox theo môi trường (F013)". Supabase là dịch vụ managed ngoài (Auth, Postgres, Realtime, Storage); cấu hình provider Google, tắt kênh Realtime công khai, bật Broadcast riêng tư nằm ở dashboard Supabase, không lưu trong repo.
+Chưa quyết định nơi chạy Next.js (nền tảng hosting): `TBD (draft)`. Cron của F010 đã chọn (phase 10), xem bên dưới; job outbox của F013 chạy bằng pg_cron mỗi 5 giây (phase 13) và được dọn hằng ngày bởi migration 0023, xem "Cài đặt drain outbox theo môi trường (F013)". Supabase là dịch vụ managed ngoài (Auth, Postgres, Realtime, Storage); cấu hình provider Google, tắt kênh Realtime công khai, bật Broadcast riêng tư nằm ở dashboard Supabase, không lưu trong repo.
 
 ### Cài đặt tick Secret Box theo môi trường (F010)
 
@@ -341,12 +341,26 @@ Drain là `POST /api/internal/notifications/drain`, pg_cron gọi mỗi 5 giây.
    curl -fsS -X POST -H "x-drain-secret: $OUTBOX_DRAIN_SECRET" https://<app-origin>/api/internal/notifications/drain
    ```
 4. Phản hồi: không header hoặc sai secret → 401; chưa đặt env → 503; đúng → 200 `{ processed, malformed, retrying, failed }`. Đường này công khai trong `PUBLIC_PATHS` (cron không có cookie).
-5. **Vận hành, chưa có việc nào được lên lịch:**
-   - `cron.job_run_details` thêm khoảng 17 nghìn dòng mỗi ngày ở nhịp 5 giây: cần job dọn của pg_cron.
-   - Outbox chưa có việc dọn dòng đã tiêu thụ. Dọn không còn xoá thông báo vì `notifications.event_id` là `ON DELETE SET NULL`.
+5. **Dọn dữ liệu vận hành (migration `0023_housekeeping_outbox_and_cron_history_prune`, có `.down.sql`):** hai job pg_cron chạy hằng ngày, giờ lịch tính theo GMT (`cron.timezone`):
+
+   | Job | Lịch | Giờ ICT | Việc làm |
+   |---|---|---|---|
+   | `saa-outbox-prune` | `0 19 * * *` | 02:00 | Xoá dòng `domain_event_outbox` có `consumed_at` cũ hơn 30 ngày |
+   | `saa-cron-history-prune` | `15 19 * * *` | 02:15 | Xoá `cron.job_run_details` có `end_time` cũ hơn 7 ngày |
+
+   - **Không bao giờ xoá dòng chờ hoặc đã đỗ:** điều kiện bắt buộc `consumed_at IS NOT NULL`, nên dòng pending, đang retry và dòng `failed_at` (chưa tiêu thụ) không khớp ở mọi độ tuổi. Giữ 30 ngày để còn `last_error` của event lỗi; dọn không xoá thông báo vì `notifications.event_id` là `ON DELETE SET NULL`.
+   - **Phạm vi dọn lịch sử cron:** RLS của `cron.job_run_details` (`username = current_user`) giới hạn lệnh xoá ở job do role chạy migration sở hữu (`postgres` trên Supabase), gồm mọi job `saa-*`. Lịch sử job của role khác không bị dọn.
+   - **Lên lịch lại được:** `cron.schedule` theo tên là upsert; chạy lại migration không nhân đôi job. Kiểm: `select jobname, schedule, active from cron.job where jobname like 'saa-%';`.
+   - **DB không có pg_cron:** migration chỉ `RAISE NOTICE` và không lên lịch (không báo lỗi). Dùng cron máy chủ chạy hằng ngày với `psql`, hai câu lệnh giống hệt phần lệnh của job:
+     ```bash
+     psql "$DATABASE_URL" -c "DELETE FROM public.domain_event_outbox WHERE consumed_at IS NOT NULL AND consumed_at < now() - interval '30 days'"
+     psql "$DATABASE_URL" -c "DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days'"  # chỉ khi DB có schema cron
+     ```
+   - Không chia lô và không đánh index `consumed_at` (mỗi lần chỉ xoá khoảng một ngày dòng); xem lại khi outbox vượt khoảng 1 triệu dòng.
+6. **Vận hành khác:**
    - `domain_event_outbox.last_error` có thể chứa văn bản lỗi của driver kèm tham số SQL (id); chỉ phía máy chủ (RLS, không quyền cho client), đừng đưa ra ngoài.
    - Sự kiện lỗi thử lại theo backoff 1, 2, 4, 8 phút (`OUTBOX_RETRY_BASE_DELAY_SECONDS = 60`), tối đa 5 lần rồi đặt `failed_at`. Phát lại thủ công: SQL ở `docs/features/F013_Notifications/technical-spec.md` (INT-001).
-6. **Chưa kiểm đầu-cuối:** đường pg_cron → pg_net → endpoint chưa chạy thật ở dev (không có secret Vault); e2e gọi `drain()` trực tiếp, route kiểm trong tiến trình. Làm một lần trên staging với secret đúng và sai trước khi mở sự kiện.
+7. **Đã kiểm đầu-cuối trên Supabase local (2026-11-23):** pg_cron → pg_net → drain biến một sự kiện `BoxGranted` chờ thành thông báo `secret_box_granted` trong khoảng 2 giây, route trả 200 `{"processed":1,"malformed":0,"retrying":0,"failed":0}`; bằng chứng ở `plans/261108-0048-saa-2025-kudos-platform/evidence/post-14-hardening/cron-drain-local-run.txt`. **Chưa kiểm trên hosted/staging** (secret Vault thật, URL thật): làm một lần với secret đúng và sai trước khi mở sự kiện.
 
 ### Release checklist — Realtime (F008)
 

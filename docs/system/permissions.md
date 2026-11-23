@@ -20,13 +20,13 @@ lang: vi
 **Identified Roles**:
 - Guest — chưa đăng nhập.
 - User (Sunner) — đã đăng nhập bằng Google `@sun-asterisk.com`, `profiles.role = user` (mặc định).
-- Admin — `profiles.role = admin`; do Admin khác nâng quyền (F014); cách tạo Admin đầu tiên: `TBD (draft)`.
+- Admin — `profiles.role = admin`; email nằm trong `ADMIN_EMAILS` (env) tự thành Admin ở mỗi lần đăng nhập; các Admin khác do Admin cấp từ trang User (F014).
 
 ## Curated View
 
 ### Theo role
 
-- **Guest** chỉ thấy màn đăng nhập, trang callback đăng nhập, tài nguyên tĩnh và trang lỗi 404. Màn Countdown trước giờ mở và `/awards` có công khai hay không còn chờ xác nhận. Mọi trang và API khác chuyển về đăng nhập (trang) hoặc trả 401 (dữ liệu). Guest không bao giờ đọc được dữ liệu nghiệp vụ.
+- **Guest** chỉ thấy màn đăng nhập, trang callback đăng nhập, tài nguyên tĩnh và trang lỗi 404. Màn Countdown (`/countdown`) công khai; `/awards` không công khai trước giờ mở (không nằm trong danh sách cho phép). Mọi trang và API khác chuyển về đăng nhập (trang) hoặc trả 401 (dữ liệu). Guest không bao giờ đọc được dữ liệu nghiệp vụ.
 - **User (Sunner)** dùng toàn bộ khu Sunner: xem Kudo công khai, viết và sửa Kudo của mình, thả tim, xem Spotlight, huy hiệu Hero, Secret Box của mình, thông báo của mình, profile. Không vào được khu Admin (nhận 403) và không gọi được hành động của Admin dù gọi trực tiếp.
 - **Admin** làm được mọi việc của User, cộng khu `/admin`: duyệt và đánh dấu Spam Kudo, quản lý Campaign, quản lý người dùng và đổi role, xem Overview, Export. Admin không được tự hạ role của mình và không được để hệ thống hết Admin.
 
@@ -42,7 +42,7 @@ lang: vi
 **F002_AppShell**
 - *Trang 404 cho mọi người, kể cả Guest*; *trang 403 cho User đã đăng nhập mà không đủ quyền*, không lộ nội dung khu Admin.
 - *Mục Admin Dashboard trong menu avatar chỉ hiện với Admin* — chỉ để gọn giao diện, không phải lớp bảo vệ.
-- *Đổi ngôn ngữ* lưu bằng cookie, không ghi hồ sơ; Guest có đổi được hay không (trang Login) chờ xác nhận.
+- *Đổi ngôn ngữ* lưu bằng cookie, không ghi hồ sơ; trang công khai (Login, Countdown) có nút đổi ngôn ngữ và đổi ngôn ngữ luôn mở, kể cả trước giờ mở.
 
 **F003_KudosAuthoring**
 - *Người gửi luôn là người đang đăng nhập*: không nhận `sender_id` từ client.
@@ -66,7 +66,7 @@ lang: vi
 - *Hệ số x2 gắn lúc thả* và giữ nguyên sau khi campaign kết thúc hoặc bị xoá.
 
 **F006_AwardsPortal**
-- *Trước giờ mở (`LAUNCH_AT`) người dùng thường chỉ thấy Countdown*; `/awards` mở được trước giờ mở theo mặc định đề xuất. Admin có bỏ qua cổng này hay không: `TBD (draft)`.
+- *Trước giờ mở (`LAUNCH_AT`) người dùng thường chỉ thấy Countdown*; `/awards` cũng bị chặn trước giờ mở. Admin bỏ qua cổng này (vai trò đọc từ DB, lỗi đọc coi như không phải Admin), nhưng không ghi được trước giờ mở (cửa ghi chung `LAUNCH_AT ≤ now < EVENT_END_AT`).
 - *Thể lệ, Tiêu chuẩn cộng đồng, Hệ thống giải là trang tĩnh, không có ô nhập, không có dữ liệu cá nhân.*
 
 **F007_AdminModeration**
@@ -107,9 +107,12 @@ lang: vi
 - *Việc sinh thông báo chạy phía máy chủ bằng khoá dịch vụ*, không có đường gọi từ trình duyệt.
 
 **F014_AdminUserManagement**
-- *Chỉ Admin xem bảng người dùng, lọc, Export, đổi role.*
-- *Admin không được tự hạ role của chính mình* (403) và *hệ thống luôn còn ít nhất một Admin* (409); hai Admin hạ nhau cùng lúc chỉ một lệnh thành công.
-- *Role chỉ đổi qua hành động này*: Sunner không tự nâng role được qua API Supabase công khai.
+- *Chỉ Admin xem bảng người dùng, lọc, Export, đổi role*: trang `/admin/users` và server action `setUserRoleAction` gọi `requireAdmin()` trước mọi việc; người gọi lấy từ session, input chỉ có `userId` và `role`. Route `GET /api/admin/users/export` (và `/api/admin/overview/export`) gọi `requireAdminApi()` trước khi đọc tham số: chưa đăng nhập 401 `unauthorized`, không phải Admin 403 `forbidden`, thân lỗi chỉ có `{code}`.
+- *Ba chốt khi hạ về User*, kiểm trong cùng transaction với việc ghi: không tự hạ role của chính mình (`SELF_DEMOTE`, kể cả khi còn Admin khác); không hạ Admin có email trong `ADMIN_EMAILS` (`ENV_ADMIN`, vì lần đăng nhập sau sẽ tự lên Admin lại; bảng hiện nhãn "Admin · env" và tắt "Set as User"); hệ thống luôn còn ít nhất một Admin (`LAST_ADMIN`). Đổi role là server action nên các từ chối trả về dạng mã lỗi trong kết quả `{ ok: false, error }` (cùng `NOT_FOUND`, `FORBIDDEN`), không phải mã HTTP.
+- *Hai Admin hạ nhau cùng lúc chỉ một lệnh thành công*: mọi lần đổi role khoá các dòng Admin theo thứ tự id rồi đọc lại; bên thua nhận `LAST_ADMIN`, không bao giờ về 0 Admin.
+- *Kiểm lại người thao tác trong transaction*: người thao tác phải còn nằm trong nhóm Admin vừa khoá, nếu không nhận `FORBIDDEN` và không ghi được gì (Admin bị hạ giữa chừng không đổi được role nữa). Nếu role đích đã đúng thì trả trạng thái hiện tại, không ghi.
+- *Dấu vết kiểm toán*: mỗi lần đổi role ghi `profiles.role_updated_by` (id người thao tác) và `profiles.role_updated_at`; hai Admin nâng cùng một người cùng lúc thì chỉ một lần ghi, `role_updated_by` là người ghi trước.
+- *Role chỉ đổi qua hành động này*: Sunner không tự nâng role được qua API Supabase công khai. Ngoại lệ duy nhất: đăng nhập bằng email trong `ADMIN_EMAILS` tự đặt `role = admin` (F001).
 
 **F015_AdminOverview**
 - *Chỉ Admin xem Overview và Export*; chỉ đọc, không ghi.
@@ -133,7 +136,7 @@ lang: vi
 - Chỉ chính người gửi biết bài của mình (cờ "chủ bài" do máy chủ tính, chỉ trả cho đúng người đó).
 - Người gửi ẩn danh vẫn được tính điểm: tim, Secret Box, Kudos Quốc Dân, số liệu Admin. Ẩn danh chỉ là chuyện hiển thị.
 - Avatar người gửi ẩn danh không có thẻ nhanh; thẻ nhanh không gắn với Kudo nên không suy ra được người gửi.
-- Admin: mặc định đề xuất `[INFERRED]` — Admin thấy người gửi thật kèm nhãn "Ẩn danh" trong bảng Review, bộ lọc người gửi và Export (để truy vết vi phạm). Chính sách này trái với cam kết ẩn danh nếu doanh nghiệp quyết định "không ai thấy"; cần xác nhận (`[NEEDS_DOMAIN_CONFIRMATION]`).
+- Admin: đã chốt — Admin thấy người gửi thật kèm nhãn "Ẩn danh" trong bảng Review, bộ lọc người gửi và Export (cột "Ẩn danh" = Có, để truy vết vi phạm); người dùng thường không bao giờ thấy.
 
 ### Quy tắc hiển thị Kudo spam
 
@@ -153,9 +156,9 @@ lang: vi
 
 ## Special Conditions
 
-- **Trước giờ mở (`LAUNCH_AT`)**: người dùng thường bị đưa về Countdown; sau giờ mở `/countdown` về trang chủ. Chỉ suy ra từ giờ máy chủ, không lưu cờ.
+- **Trước giờ mở (`LAUNCH_AT`)**: khách và người dùng thường chỉ vào được `/login`, `/auth/callback`, `/countdown`, `/access-denied` (cùng hai đường nội bộ có khoá riêng: tick Secret Box, drain thông báo); trang khác chuyển về Countdown, còn Server Action, `/api/*` và request không phải GET nhận JSON 403 `{code:"prelaunch"}`. Admin bỏ qua cổng nhưng không ghi được. Sau giờ mở `/countdown` về trang chủ. Chỉ suy ra từ giờ máy chủ, không lưu cờ. Cổng này chỉ là lớp tiện lợi, quyền dữ liệu vẫn kiểm ở từng truy vấn.
 - **Khung giờ campaign x2 tim**: hệ số của tim gắn lúc thả theo campaign đang hiệu lực `[starts_at, ends_at)`; không đổi hồi tố.
-- **Mốc khoá Secret Box (`SECRET_BOX_LOCK_AT`, `[INFERRED]` 2025-12-26 23:59:59+07)**: sau mốc này không cấp hộp mới; tim thả sau mốc không tính. Kudos Quốc Dân chốt đúng một lần ở mốc `NATIONAL_KUDOS_FINALIZE_AT`.
+- **Sau `EVENT_END_AT`**: khoá gửi/sửa Kudo và thả tim (không còn tim mới nên không cấp hộp mới); hộp đã có vẫn mở được. Không có mốc `SECRET_BOX_LOCK_AT` riêng. Kudos Quốc Dân chốt đúng một lần ở mốc `NATIONAL_KUDOS_FINALIZE_AT`.
 - **Phiên hết hạn / hạ role giữa chừng**: coi như chưa có session (chuyển Login kèm đích quay lại) hoặc bị 403 ở request kế (role đọc lại từ DB). Quyền kênh Realtime chỉ cập nhật khi token hết hạn.
 - **Giới hạn nhập**: lời nhắn tối đa 1.000 ký tự, tối đa 5 ảnh; Export tối đa `EXPORT_MAX_ROWS` dòng, ô CSV bắt đầu bằng `= + - @` bị vô hiệu hoá.
 - **Gọi trực tiếp API / server action khi chưa đủ quyền**: bị từ chối theo cùng quy tắc như đi qua giao diện (401 chưa đăng nhập, 403 không đủ quyền, 404 với tài nguyên không được phép biết là tồn tại: Kudo spam, thông báo của người khác).
@@ -163,7 +166,5 @@ lang: vi
 
 ### Quyết định còn mở liên quan phân quyền
 
-- Admin đầu tiên được tạo bằng cách nào (F001 D003).
-- Admin có vào được trang trước giờ mở không (F006); Guest có xem Countdown, `/awards`, đổi ngôn ngữ ở Login không (F001, F002, F006).
-- Admin có thấy người gửi thật của Kudo ẩn danh không (F007 D001, RISK-01).
-- Chủ bài có xem Kudo spam của mình không (F004, F007); sửa thì đã chốt là không (F003, 423).
+- Không còn quyết định phân quyền nào mở về cổng trước giờ mở hay người gửi ẩn danh (đã chốt, xem trên). Còn chờ BTC xác nhận câu chữ lỗi, không phải quyền: xem `plans/261108-0048-saa-2025-kudos-platform/handover-open-decisions.md`.
+- Chủ bài xem Kudo spam của mình: đã chốt là có, chỉ đọc (trang chi tiết và "Đã gửi"); sửa thì không (F003, 423).

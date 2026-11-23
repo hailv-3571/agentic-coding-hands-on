@@ -152,7 +152,7 @@ Final verification (final code): unit 600/600 · integration 94/94 subset (kudos
 ### Scope notes (not drift, but affects users)
 - First-login Sunners before launch land on `/countdown` and cannot reach `/onboarding/department` until launch. Consistent with "only Login + Countdown"; the onboarding flow waits until launch.
 - The gate is a convenience wall. Data protection stays in `requireSunner()` and write-window checks.
-- Ship-time docs: `docs/code-standards.md` needs the `test:e2e:prelaunch` row (not done, O13).
+- Ship-time docs: `docs/code-standards.md` needs the `test:e2e:prelaunch` row (done, O13 closed 2026-11-24).
 
 ### Open items carried forward
 Owner names are roles on this team. "Done when" is the check that closes the item.
@@ -171,7 +171,7 @@ Owner names are roles on this team. "Done when" is the check that closes the ite
 | O10 | FR-203 mutation check not run (reasoning only) | tester | Throwaway branch: test fails with `redirectOnZero` removed | Test trust |
 | O11 | Distinct log tag for role-lookup failures so an outage is not read as "admin blocked" (review S2) | phase 07 implementer | Log tag added, test asserts it | Ops clarity |
 | O12 | Note on client clock lag in `use-server-clock-now.ts` header (review S3) | phase 07 implementer | Comment present | None |
-| O13 | Docs drift: `docs/features/F006_AwardsPortal/technical-spec.md` still lists `/awards` as allowed pre-launch (DEC-001 TBD) and says the countdown links to `/awards`. `docs/development-roadmap.md` row 07 still reads "Chưa làm". `docs/project-changelog.md` has no phase 07 entry. `docs/code-standards.md` lacks the prelaunch test row | doc-writer, delivery-tracker | Grep shows no conflicting statement; roadmap and changelog updated | Documentation rule |
+| O13 | ~~Docs drift in F006 technical-spec, roadmap row 07, changelog, code-standards prelaunch row~~ **Closed 2026-11-24:** spec corrected (`/awards` not allowlisted, countdown has no `/awards` link, real handler names); roadmap row 07, phase 07 changelog entry and the `test:e2e:prelaunch` row in `code-standards.md` verified present | doc-writer, delivery-tracker | Grep shows no conflicting statement; roadmap and changelog updated | Documentation rule |
 | O14 | Next.js feedback candidate (`connection()` docs vs `react-hooks/purity` lint) drafted, not sent | user | Sent or dropped by user | None |
 
 - Phase 13/14 and phase 11 are unaffected. Admin bypass covers prelaunch rehearsal.

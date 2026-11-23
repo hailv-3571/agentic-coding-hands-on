@@ -1,0 +1,102 @@
+{
+  "commands": [
+    {
+      "command": "npx tsc --noEmit -p .",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean on final tree (tester) and again after the JSON.parse guard fix (orchestrator)",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "clean on final tree; eslint on the fixed e2e helper clean",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npx vitest run --project unit --coverage",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "943 passed; coverage measured (merged unit+integration ~49% statements, no threshold)",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "86 files, 943 passed",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run db:reset",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "migrations through 0023 + seeds applied; 4 cron jobs present",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "95 files, 607 passed (incl. housekeeping prune tests running the scheduled cron.job SQL; RED 9/9 before migration, GREEN after)",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npx vitest run --project integration --coverage",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "95 files, 607 passed",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npx playwright test --timeout 90000 --workers=3",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "3 consecutive full runs: 142 passed, 5 skipped, 0 failed, 0 flaky each, plus a 4th full run on the final tree after the helper fix: 142 passed, 5 skipped, 0 failed (edit-kudo toast regression RED 3/3 before fix, GREEN after)",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npx playwright test tests/e2e/spotlight-board*.spec.ts --workers=3 --repeat-each=3",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "15/15 passed after the reviewer Low fix (JSON.parse guard in spotlight e2e helper) — the only change after the full runs",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run test:e2e:prelaunch",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "5 passed, 1 skipped",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "compiled, 38/38 static pages, no warnings",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "npm run test:prod",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "all PASS (25 checks) incl. /admin/users and users/overview/kudos CSV exports",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "node cron-drain-verify.cjs (real pg_cron -> pg_net -> POST drain on local Supabase)",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "pending BoxGranted event consumed in ~2 s, notification created, HTTP 200; Vault secrets restored to none",
+      "ts": "2026-11-24T07:30:00.000Z"
+    },
+    {
+      "command": "gitleaks git /repo --redact (v8.21.2, full history)",
+      "exitCode": 0,
+      "status": "pass",
+      "summary": "no leaks found (3 test-only fixture constants fingerprinted in .gitleaksignore)",
+      "ts": "2026-11-24T07:30:00.000Z"
+    }
+  ]
+}

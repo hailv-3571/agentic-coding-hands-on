@@ -58,10 +58,10 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-601, FR-602 | — | § 4.4 |
-| **A1** | `AdminUserList#list` (planned) | `GET` `/api/admin/users` | FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-402, FR-407, FR-408, BR-004, BR-005, DEC-003, US001_BrowseUserTable, US002_FilterSearchSortUsers | — *(read-only)* | § 3.1 |
-| **A2** | `AdminUserFilterOptions#get` (planned) | `server function` · — | FR-203, FR-204, FR-205, US002_FilterSearchSortUsers | — *(read-only)* | § 3.1 |
-| **A3** | `AdminUserRole#setRole` (planned) | `server action` | FR-001, FR-002, FR-209, FR-401, FR-404, FR-405, FR-406, BR-001, BR-002, BR-003, DEC-001, SM-001, US003_ChangeUserRole | `profiles` | § 3.2 |
-| **A4** | `AdminUserExport#download` (planned) | `GET` `/api/admin/users/export` | FR-403, FR-603, BR-004, BR-005, BR-006, DEC-002, US004_ExportUsers | — *(read-only; trả tệp)* | § 3.3 |
+| **A1** | `AdminUsersPage` (`app/admin/users/page.tsx`, server component) | `GET` `/admin/users` (không có endpoint danh sách) | FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208, FR-402, FR-407, FR-408, BR-004, BR-005, DEC-003, US001_BrowseUserTable, US002_FilterSearchSortUsers | — *(read-only)* | § 3.1 |
+| **A2** | `UserFilterOptionsQuery.get` | `server function` · — | FR-203, FR-204, FR-205, US002_FilterSearchSortUsers | — *(read-only)* | § 3.1 |
+| **A3** | `setUserRoleAction` → `UserRoleService.setRole` | `server action` | FR-001, FR-002, FR-209, FR-401, FR-404, FR-405, FR-406, BR-001, BR-002, BR-003, DEC-001, SM-001, US003_ChangeUserRole | `profiles` | § 3.2 |
+| **A4** | route handler `GET` (`app/api/admin/users/export/route.ts`) | `GET` `/api/admin/users/export` | FR-403, FR-603, BR-004, BR-005, BR-006, DEC-002, US004_ExportUsers | — *(read-only; trả tệp)* | § 3.3 |
 
 **Rung set** theo template: Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn. **State** bỏ trong bản nháp vì chưa có nguồn xác nhận; vòng đời role nằm ở SM-001 (§ 4.3).
 
@@ -70,13 +70,13 @@ flowchart LR
 ### 3.1 CAP-01 — Xem, lọc, tìm kiếm, sắp xếp người dùng
 
 #### A1 · Lấy một trang người dùng cho bảng User
-`GET /api/admin/users` → `` `AdminUserList#list` `` (planned)
+`GET /admin/users` → `` `AdminUsersPage` `` (không có `GET /api/admin/users`)
 `FR-101` `FR-201` `FR-202` `FR-203` `FR-204` `FR-205` `FR-206` `FR-207` `FR-208` `FR-402` `FR-407` `FR-408` `BR-004` `BR-005` `DEC-003` `US001_BrowseUserTable` `US002_FilterSearchSortUsers` · `SCR026_AdminUser` (draft)
 
 **Who** · Admin *(gate A0 — § 4.4)*
 **FE** · Trang User (FR-101: Admin vào từ mục "User" của menu khu Admin, menu thuộc F002). Bảng gồm cột ID, User, Email, tổng Kudo gửi, tổng Kudo nhận, Total Heart, Level, Number of Badges, Time to get 6 Badges, Last Logged in, Role, Actions (FR-201). Ba dropdown Unit / Level / Role (FR-203, FR-204, FR-205) và ô Search (FR-206). Bấm đầu cột số liệu để đảo chiều sắp xếp (FR-207). Phân trang đánh số (FR-202). Đổi bất kỳ điều kiện nào thì gọi lại action và về trang 1 (FR-402). Ô không có dữ liệu hiện dấu gạch (FR-208). Không có dòng thì hiện trạng thái trống, gọi lỗi thì hiện lỗi kèm nút thử lại (FR-407).
 **Request** · param `unitId` *(số nguyên, tuỳ chọn)*, `level` *(giá trị do `LevelQuery` liệt kê, tuỳ chọn)*, `role` *(`user` | `admin`; vắng = tất cả)*, `q` *(1–`USER_SEARCH_MAX_LENGTH` ký tự, tuỳ chọn)*, `sortBy` *(`name` mặc định | `sentKudos` | `receivedKudos` | `totalHeart` | `level` | `badges` | `completedAt` | `lastLoginAt`)*, `sortDir` *(`asc` | `desc`)*, `page` *(số nguyên ≥ 1)*; kiểm bằng `AdminUserFilterSchema` (Zod). Cỡ trang do server cố định (`ADMIN_USER_PAGE_SIZE`), client không gửi.
-**BE** · `` `AdminUserList#list` `` gọi `AdminGuard#requireAdmin`, kiểm tham số, rồi chạy `UserAdminQuery` (planned): đọc `profiles` nối `departments`, kèm các số liệu gộp theo từng người (đếm Kudo gửi, Kudo nhận, tổng tim, số icon khác nhau, thời điểm đủ 6 icon) và Level lấy từ `LevelQuery`. Lọc, sắp xếp và phân trang chạy trong SQL để sắp theo cột số liệu vẫn đúng qua các trang (không gộp ở bộ nhớ). Trả `items`, `total`, `page`, `pageSize`.
+**BE** · `` `AdminUsersPage` `` gọi `AdminGuard#requireAdmin`, kiểm tham số, rồi chạy `UserAdminQuery.listPage`: đọc `profiles` nối `departments`, kèm các số liệu gộp theo từng người (đếm Kudo gửi, Kudo nhận, tổng tim, số icon khác nhau, thời điểm đủ 6 icon) và Level lấy từ hạng Hero của F009 (không có `LevelQuery`). Lọc, sắp xếp và phân trang chạy trong SQL để sắp theo cột số liệu vẫn đúng qua các trang (không gộp ở bộ nhớ). Trả `items`, `total`, `page`, `pageSize`.
 **Rule** · quyết định ô "Time to get 6 Badges", áp bộ lọc và nguồn số liệu:
 
 | DEC | subtype | Condition | What the user sees | Source |
@@ -95,13 +95,13 @@ flowchart LR
 ---
 
 #### A2 · Lấy lựa chọn cho ba dropdown lọc
-`—` → `` `AdminUserFilterOptions#get` `` (planned)
+`—` → `` `UserFilterOptionsQuery.get` ``
 `FR-203` `FR-204` `FR-205` `US002_FilterSearchSortUsers` · `SCR026_AdminUser` (draft)
 
 **Who** · Admin *(gate A0 — § 4.4)*
 **FE** · Nạp một lần khi mở trang, đổ vào dropdown "Chọn phòng ban" (FR-203), "Chọn Level" (FR-204), "Chọn Role" (FR-205). Chưa có Level để liệt kê thì dropdown Level không có lựa chọn và bị khoá.
 **Request** · không có tham số.
-**BE** · `` `AdminUserFilterOptions#get` `` gọi `AdminGuard#requireAdmin`, đọc toàn bộ `departments` (sắp theo tên), gọi `LevelQuery#listLevels` lấy danh sách Level, và trả hai giá trị Role cố định `user`, `admin`.
+**BE** · `` `UserFilterOptionsQuery.get` `` gọi `AdminGuard#requireAdmin`, đọc toàn bộ `departments` (sắp theo tên), gọi `LevelQuery#listLevels` lấy danh sách Level, và trả hai giá trị Role cố định `user`, `admin`.
 **Result** · read-only — **không ghi DB**. Trả `{ departments: [{id, name}], levels: [...], roles: ["user", "admin"] }`; `levels` rỗng khi `LevelQuery` chưa có nguồn (D001).
 **Source:** TBD (draft)
 
@@ -110,13 +110,13 @@ flowchart LR
 ### 3.2 CAP-02 — Đổi role người dùng
 
 #### A3 · Đặt role cho một người dùng
-`server action` → `` `AdminUserRole#setRole` `` (planned)
+`server action` → `` `setUserRoleAction` `` → `` `UserRoleService.setRole` ``
 `FR-001` `FR-002` `FR-209` `FR-401` `FR-404` `FR-405` `FR-406` `BR-001` `BR-002` `BR-003` `DEC-001` `SM-001` `US003_ChangeUserRole` · `SCR026_AdminUser` (draft)
 
 **Who** · Admin *(gate A0 — § 4.4)*
 **FE** · Nút "⋯" ở mỗi dòng mở menu (FR-209). Nội dung menu theo DEC-001 `[INFERRED]` — thiết kế chưa chụp menu này. Chọn xong có popover xác nhận hay đổi ngay là D007; trong lúc chờ nút bị khoá để chống bấm đúp. Thành công thì dòng cập nhật cột Role tại chỗ, không tải lại trang (FR-401). Lỗi chốt an toàn hiện thông báo ngay tại dòng.
 **Request** · `userId` *(uuid, Zod)*, `role` *(`user` | `admin`)*; `adminId` lấy từ session, không nhận từ client.
-**BE** · `` `AdminUserRole#setRole` `` gọi `AdminGuard#requireAdmin`, kiểm tham số, rồi chạy một giao dịch: khoá các dòng Admin hiện có, đọc role hiện tại của người dùng, kiểm hai chốt an toàn, ghi. Sau khi ghi, làm mới trang Admin. Role luôn được `AdminGuard` đọc lại từ DB ở mỗi request nên người bị hạ mất quyền ngay ở request kế (F001).
+**BE** · `` `setUserRoleAction` / `UserRoleService.setRole` `` gọi `AdminGuard#requireAdmin`, kiểm tham số, rồi chạy một giao dịch: khoá các dòng Admin hiện có, đọc role hiện tại của người dùng, kiểm hai chốt an toàn, ghi. Sau khi ghi, làm mới trang Admin. Role luôn được `AdminGuard` đọc lại từ DB ở mỗi request nên người bị hạ mất quyền ngay ở request kế (F001).
 **Rule**
 - **BR-001 — Đổi role chỉ ghi khi role hiện tại khác role đích; lệnh trùng không lỗi.** Hai Admin cùng đặt một người làm Admin: lần đến sau nhận trạng thái hiện tại, không ghi đè `role_updated_*` (FR-406).
 - **BR-002 — Admin không được tự hạ role của chính mình.** `userId` bằng `adminId` và `role = 'user'` thì từ chối, kể cả khi còn nhiều Admin (FR-404).
@@ -153,13 +153,13 @@ Menu của dòng quyết định bởi:
 ### 3.3 CAP-03 — Xuất danh sách người dùng
 
 #### A4 · Tải tệp CSV các người dùng đang lọc
-`GET /api/admin/users/export` → `` `AdminUserExport#download` `` (planned)
+`GET /api/admin/users/export` → route handler `GET` (`app/api/admin/users/export/route.ts`)
 `FR-403` `FR-603` `BR-004` `BR-005` `BR-006` `DEC-002` `US004_ExportUsers` · `SCR026_AdminUser` (draft)
 
 **Who** · Admin *(gate A0 — § 4.4)*
 **FE** · Nút "Export" (màu vàng) ở góc trên bên phải tiêu đề. Bấm thì tải về tệp của **toàn bộ** kết quả khớp bộ lọc hiện tại, không chỉ trang đang xem (FR-403); trong lúc chuẩn bị nút bị khoá kèm trạng thái chờ.
 **Request** · cùng tham số lọc và sắp xếp như A1, **không có `page`**; kiểm bằng cùng `AdminUserFilterSchema`.
-**BE** · `` `AdminUserExport#download` `` gọi `AdminGuard#requireAdmin`, kiểm tham số, đếm số dòng khớp, rồi truyền (stream) từng dòng từ `UserAdminQuery` ra phản hồi CSV, `Content-Disposition: attachment`. Cột: ID, User, Email, Sent Kudos, Received Kudos, Total Heart, Level, Number of Badges, Time to get 6 Badges, Last Logged in, Role (không có cột Actions).
+**BE** · `` route handler export `` gọi `AdminGuard#requireAdmin`, kiểm tham số, đếm số dòng khớp, rồi truyền (stream) từng dòng từ `UserAdminQuery` ra phản hồi CSV, `Content-Disposition: attachment`. Cột: ID, User, Email, Sent Kudos, Received Kudos, Total Heart, Level, Number of Badges, Time to get 6 Badges, Last Logged in, Role (không có cột Actions).
 **Rule** · quyết định định dạng và giới hạn của tệp:
 
 | DEC | subtype | Condition | What the user sees | Source |
@@ -199,13 +199,13 @@ Menu của dòng quyết định bởi:
 
 | Component | Responsibility | Used in | File |
 |---|---|---|---|
-| `AdminUserList` (planned) | Điểm vào đọc trang người dùng | A1 | TBD (draft) |
-| `AdminUserFilterOptions` (planned) | Danh sách lựa chọn cho ba dropdown | A2 | TBD (draft) |
-| `AdminUserRole` (planned) | Server action đổi role kèm giao dịch và hai chốt an toàn | A3 | TBD (draft) |
-| `AdminUserExport` (planned) | Route handler stream CSV | A4 | TBD (draft) |
-| `UserAdminQuery` (planned) | Truy vấn Drizzle dùng chung: lọc AND, sắp xếp, đếm, gộp số liệu theo người dùng; đưa Kudo Spam ra khỏi số | A1, A4 | TBD (draft) |
-| `AdminUserFilterSchema` (planned) | Schema Zod chung cho tham số lọc của A1 và A4 | A1, A4 | TBD (draft) |
-| `LevelQuery` (planned, **chưa có cài đặt — D001**) | Giao diện thay thế được: `listLevels()` và một subquery `(user_id, level)` để `UserAdminQuery` lọc và sắp xếp trong SQL; cài đặt mặc định trả rỗng | A1, A2, A4 | TBD (draft) |
+| `AdminUsersPage` | Điểm vào đọc trang người dùng (server component) | A1 | `app/admin/users/page.tsx` |
+| `UserFilterOptionsQuery` | Danh sách lựa chọn cho ba dropdown | A2 | `features/admin-users/server/user-filter-options-query.ts` |
+| `setUserRoleAction` + `UserRoleService` | Server action đổi role; service giữ giao dịch và các chốt an toàn | A3 | `features/admin-users/server/set-user-role-action.ts`, `user-role-service.ts` |
+| route handler export | Stream CSV | A4 | `app/api/admin/users/export/route.ts`, `features/admin-users/server/user-export-columns.ts` |
+| `UserAdminQuery` | Truy vấn Drizzle dùng chung: lọc AND, sắp xếp, đếm, gộp số liệu theo người dùng; đưa Kudo Spam ra khỏi số | A1, A4 | `features/admin-users/server/user-admin-query.ts` (`listPage`, `listForExport`) |
+| `parseUserListParams` | Schema Zod chung cho tham số lọc của A1 và A4 | A1, A4 | `features/admin-users/schemas/user-list-params-schema.ts` |
+| `LevelQuery` | **Không có cài đặt** (D001 đã giải quyết): Level = hạng Hero của F009 (`HeroTierQuery`, `tierFromCount`) | A1, A2, A4 | `features/hero-badges/` |
 | `AdminGuard#requireAdmin` *(F001)* | Kiểm role Admin đọc từ DB; F014 chỉ gọi lại, không tự kiểm role | A1-A4 | TBD (draft) |
 
 ### 4.2 Data Model

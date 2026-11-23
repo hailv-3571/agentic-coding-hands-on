@@ -278,15 +278,15 @@ sequenceDiagram
 
 | Component | Responsibility | Used in | File |
 |---|---|---|---|
-| `NotificationEventProcessor` | Chọn lô outbox, mở giao dịch từng sự kiện, gọi `ALG-001`, ghi thông báo và `consumed_at` | A1 | TBD (draft) |
-| `DomainEventOutbox` | Hợp đồng ghi/đọc `domain_event_outbox`; F010 đã phác thảo, F013 dùng lại và là bên tiêu thụ | A1 | TBD (draft) |
-| `notifications_publish_signal` | Hàm trigger Postgres phát tin Broadcast riêng tư | A2 | TBD (draft) |
-| `NotificationBell` | Client component ở slot chuông của F002: chấm đỏ, đăng ký kênh, mở dropdown | A3, A4, A5 | TBD (draft) |
-| `NotificationPanel` | Client component (dropdown): tiêu đề, "Xem tất cả", ≡, danh sách | A5, A7 | TBD (draft) |
-| `NotificationsPage` | Server component trang "Tất cả thông báo" kèm nạp thêm | A5, A7 | TBD (draft) |
-| `NotificationRow` | Component dùng chung của dropdown và trang: biểu tượng theo loại, câu chữ next-intl, thời gian tương đối, chấm đỏ, điều hướng | A5, A6 | TBD (draft) |
-| `NotificationQuery` | Truy vấn Drizzle: đếm chưa đọc, danh sách cursor kèm tên | A4, A5 | TBD (draft) |
-| `notification-actions.ts` | Server Action `markNotificationRead` và `markAllNotificationsRead`, session từ `requireSunner` | A6, A7 | TBD (draft) |
+| `NotificationEventProcessor` | Chọn lô outbox, mở giao dịch từng sự kiện, gọi `ALG-001`, ghi thông báo và `consumed_at` | A1 | `features/notifications/server/notification-event-processor.ts` |
+| `DomainEventOutbox` | Hợp đồng ghi/đọc `domain_event_outbox`; F010 đã phác thảo, F013 dùng lại và là bên tiêu thụ | A1 | `shared/events/domain-event-outbox.ts` (`DomainEventOutbox.add`, chỉ ghi), `shared/db/schema/domain-event-outbox.ts` |
+| `notifications_publish_signal` | Hàm trigger Postgres phát tin Broadcast riêng tư | A2 | `db/migrations/0019_notifications_realtime.sql` |
+| `NotificationBell` | Client component ở slot chuông của F002: chấm đỏ, đăng ký kênh, mở dropdown | A3, A4, A5 | `features/notifications/components/notification-bell.tsx` (+ `notification-bell-slot.tsx`, `hooks/use-notification-channel.ts`) |
+| `NotificationPanel` | Client component (dropdown): tiêu đề, "Xem tất cả", ≡, danh sách | A5, A7 | `features/notifications/components/notification-panel.tsx` |
+| `NotificationsPage` | Server component trang "Tất cả thông báo" kèm nạp thêm | A5, A7 | `app/(app)/notifications/page.tsx` + `components/notification-list-page-client.tsx` |
+| `NotificationRow` | Component dùng chung của dropdown và trang: biểu tượng theo loại, câu chữ next-intl, thời gian tương đối, chấm đỏ, điều hướng | A5, A6 | `features/notifications/components/notification-row.tsx` |
+| `NotificationQuery` | Truy vấn Drizzle: đếm chưa đọc, danh sách cursor kèm tên | A4, A5 | `features/notifications/server/notification-query.ts` (`list`), `notification-unread-query.ts` (`getUnreadCount`) |
+| `notification-actions.ts` | Server Action `markNotificationRead` và `markAllNotificationsRead`, session từ `requireSunner` | A6, A7 | `features/notifications/server/notification-actions.ts` |
 
 ### 4.2 Data Model
 

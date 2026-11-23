@@ -6,6 +6,31 @@ lang: vi
 
 Mới nhất ở trên. Mỗi phase hoàn thành thêm một mục.
 
+## 2026-11-24 — Hardening sau phase 14
+
+Added
+- Migration `0023_housekeeping_outbox_and_cron_history_prune` (có `.down.sql`): hai job pg_cron dọn hằng ngày. `saa-outbox-prune` lúc 02:00 ICT xoá dòng `domain_event_outbox` đã tiêu thụ quá 30 ngày; `saa-cron-history-prune` lúc 02:15 ICT xoá `cron.job_run_details` quá 7 ngày. Dòng pending và dòng đã đỗ (`failed_at`) không bao giờ bị xoá (điều kiện bắt buộc `consumed_at IS NOT NULL`). DB không có pg_cron: migration chỉ `RAISE NOTICE`, không làm gì. Cài đặt và dự phòng cron máy chủ: `docs/system/architecture.md` → "Cài đặt drain outbox theo môi trường (F013)".
+- `KudoComposerToastHost` (`features/kudos-authoring/components/kudo-composer-toast-host.tsx`) trong `app/(app)/layout.tsx`: một vùng toast duy nhất cho mọi đường lưu composer.
+- `test:prod` nay 25 kiểm tra, thêm `/admin/users` (trang và RSC, member 403, admin 200) và ba route CSV export (member 403 JSON, admin 200 `text/csv`).
+- `@vitest/coverage-v8` (devDependency, đúng phiên bản 5.1.0) và khối `coverage.include` trong `vitest.config.mts`; đo coverage unit + integration được khoảng 49% câu lệnh, chưa đặt ngưỡng.
+- `.gitleaksignore` cho 3 hằng số test (secret giả để so sánh hằng thời gian).
+
+Changed
+- `adminKudoExportFilename` dùng lại `adminCsvFilename("kudos", now)` của `shared/admin/`; tên tệp không đổi.
+
+Fixed
+- Toast xác nhận của composer mất ngay sau khi lưu khi feed bị mount lại (`AllKudosFeed key={feedKey}` đổi sau `router.refresh()`, toast chỉ hiện khoảng 0,2 s thay vì khoảng 4 s). Toast chuyển lên host trong layout nên sống qua mọi lần mount lại; có test hồi quy trong `edit-kudo.spec.ts`.
+- Hai e2e chập chờn: teardown `kudoUsers` đặt Kudo public thành spam trước khi xoá (bảng Spotlight của worker khác không còn lệch tổng DB); test snapshot rỗng chặn broadcast Spotlight (`muteSpotlightBroadcasts`). Playwright ổn định 3 lượt liên tiếp: 142 đạt, 5 bỏ qua.
+
+Verified
+- Cron → pg_net → drain chạy thật trên Supabase local: sự kiện chờ thành thông báo trong khoảng 2 s, route trả 200 (bằng chứng `evidence/post-14-hardening/cron-drain-local-run.txt`). Hosted/staging chưa kiểm.
+- Quét bí mật toàn lịch sử git bằng gitleaks: sạch (`gitleaks-history-scan.txt`).
+- `npm audit`: 0 lỗ hổng ở dependency chạy thật; 11 mức moderate chỉ ở dev (`drizzle-kit`/`esbuild`, `typescript-eslint`/`minimatch`), chưa xử lý.
+- Kết quả (code cuối, tuần tự): tsc, lint, unit 943, integration 607, e2e 142 đạt (5 bỏ qua), prelaunch 5, build, `test:prod` 25/25.
+
+Chưa làm
+- `/tkm:rebuild-spec` chưa chạy (máy chưa cài Python 3); chưa push (chờ chủ sản phẩm). Chi tiết: `plans/261108-0048-saa-2025-kudos-platform/handover-open-decisions.md`.
+
 ## 2026-11-23 — Phase 14 (F014 Admin User, F015 Admin Overview) — hoàn thành (đã ký duyệt)
 
 Added

@@ -1,0 +1,8 @@
+ RUN  v5.1.0 C:/Users/luong.viet.hai/my-app
+
+
+ Test Files  95 passed (95)
+      Tests  607 passed (607)
+   Start at  09:19:48
+   Duration  149.09s (tests 62%, setup 24%, import 12%, transform 1%)
+

@@ -1,0 +1,25 @@
+# Real pg_cron -> pg_net -> drain run (local Supabase), started 2026-11-23T14:21:41.516Z
+# Secret values are not recorded.
+== preflight ==
+vault secrets saa_outbox_drain_secret / saa_notifications_drain_url existing before run: 0
+== create Vault secrets (values not recorded) ==
+created saa_outbox_drain_secret id=08b9c6db-ee53-498f-a8dc-acc886095a92; created saa_notifications_drain_url id=713caee4-3586-4e36-8eb7-0c590f9a9117
+== seeded user (Auth admin API, sun-asterisk.com domain) ==
+user id=3cfbcd36-3ea9-433f-b0a3-a23b19ab0a58
+== insert pending BoxGranted event (-> secret_box_granted notification) ==
+outbox event id=452ba125-9acd-4f91-bde6-e8a907628775 inserted at 2026-11-23T14:21:41.596Z
+== poll (<=60 s) for consumed_at and notification ==
+after ~2 s: consumed=true failed=false attempts=0 notifications=secret_box_granted
+RESULT consumed_at set: true ; notification row exists: true
+== cron.job_run_details for saa-notifications-drain since insert ==
+run 230 status=succeeded return_message="0 rows" start=2026-11-23T14:21:32.295Z
+run 231 status=succeeded return_message="0 rows" start=2026-11-23T14:21:37.304Z
+run 232 status=succeeded return_message="1 row" start=2026-11-23T14:21:42.315Z
+== net._http_response since insert (request headers never read or stored) ==
+responses since insert: 1 ; status 200: 1 ; other statuses: []
+sample 200 at 2026-11-23T14:21:42.331Z body="{\"processed\":1,\"malformed\":0,\"retrying\":0,\"failed\":0}"
+== cleanup ==
+vault saa_* secrets after cleanup: 0 (before run: 0)
+deleted notifications=1 outbox=1
+deleted auth user 3cfbcd36-3ea9-433f-b0a3-a23b19ab0a58
+outbox rows after cleanup: 0

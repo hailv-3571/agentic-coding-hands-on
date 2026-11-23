@@ -63,12 +63,12 @@ flowchart LR
 ### 3.1 CAP-01 — Prelaunch Gate and Countdown
 
 #### A1 · Evaluate prelaunch gate
-`GET /(mọi route khu Sunner)` → `PrelaunchGate#evaluate` (planned)
+`GET /(mọi route khu Sunner)` → `decidePrelaunchRoute` (`features/awards-portal/server/prelaunch-gate.ts`, nối vào proxy qua `prelaunch-gate-step.ts`)
 `FR-002` `FR-601` `FR-602` `BR-002` `DEC-001` · TBD (draft) — SCR011_CountdownPrelaunch
 
 **Who** · Mọi người dùng, kể cả khách chưa đăng nhập *(gate A0 — § 4.4)*
 **Request** · mọi request tới route khu Sunner; chỉ đọc đường dẫn và giờ máy chủ
-**BE** · `PrelaunchGate#evaluate` so giờ máy chủ với `LAUNCH_AT` (FR-002: giờ mở cấu hình được) rồi chọn chuyển hướng hay cho qua. Hàm thuần `isPrelaunch(now)` do F006 sở hữu để F001_Auth dùng trong guard (FR-602: phiên do F001 kiểm tra, F006 không tự kiểm tra phiên).
+**BE** · `decidePrelaunchRoute` so giờ máy chủ với `LAUNCH_AT` (FR-002: giờ mở cấu hình được) rồi chọn chuyển hướng hay cho qua. Hàm thuần `isPrelaunch(now)` do F006 sở hữu để F001_Auth dùng trong guard (FR-602: phiên do F001 kiểm tra, F006 không tự kiểm tra phiên).
 **Rule**
 - **BR-002 — "Trước giờ mở" chỉ suy ra từ `now < LAUNCH_AT`, không lưu cờ ở đâu.** Đổi `LAUNCH_AT` là đổi hành vi ngay, không cần migrate hay sửa dữ liệu.
 
@@ -87,11 +87,11 @@ flowchart LR
 ---
 
 #### A2 · Render countdown page
-`GET /countdown` → `CountdownPage#render` (planned)
+`GET /countdown` → `CountdownPage` (`app/(public)/countdown/page.tsx`)
 `FR-201` `FR-202` `FR-203` `FR-401` `BR-001` `DEC-002` `US001_SeeCountdownBeforeLaunch` · TBD (draft) — SCR011_CountdownPrelaunch
 
-**Who** · Khách chưa đăng nhập (nếu D001 xác nhận công khai), Sunner, Admin *(gate A1)*
-**FE** · Server component truyền `serverNow` và `LAUNCH_AT` xuống `CountdownTimer` (client component). Timer hiện DAYS/HOURS/MINUTES (FR-201), tính độ lệch `serverNow − Date.now()` một lần lúc nạp (FR-401: tính theo giờ máy chủ) rồi cập nhật mỗi phút (FR-202). Hiệu ứng lật số tôn trọng `prefers-reduced-motion` *(mong muốn, chưa kiểm chứng)*. Có liên kết tới `/awards`.
+**Who** · Khách chưa đăng nhập (`/countdown` nằm trong allowlist trước giờ mở), Sunner, Admin *(gate A1)*
+**FE** · Server component truyền `serverNow` và `LAUNCH_AT` xuống `CountdownTimer` (client component). Timer hiện DAYS/HOURS/MINUTES (FR-201), tính độ lệch `serverNow − Date.now()` một lần lúc nạp (FR-401: tính theo giờ máy chủ) rồi cập nhật mỗi phút (FR-202). Hiệu ứng lật số tôn trọng `prefers-reduced-motion` *(mong muốn, chưa kiểm chứng)*.
 **BE** · Trang chỉ render, không gọi API nào; bản dịch lấy qua next-intl.
 **Rule**
 - **BR-001 — Số còn lại = mốc − giờ máy chủ, làm tròn xuống ngày/giờ/phút, chặn ở 0.** Nghĩa là không bao giờ hiện số âm. *(§ 4.4)*
@@ -110,7 +110,7 @@ flowchart LR
 ### 3.2 CAP-02 — Event Homepage
 
 #### A3 · Render homepage
-`GET /` → `HomePage#render` (planned)
+`GET /` → `HomePage` (`app/(app)/page.tsx`)
 `FR-101` `FR-102` `FR-103` `FR-104` `FR-211` `FR-212` `FR-213` `FR-214` `FR-215` `FR-216` `BR-001` `BR-003` `US002_ViewHomepage` · TBD (draft) — SCR012_Homepage
 
 **Who** · Sunner, Admin *(gate A1, A0)*
@@ -130,10 +130,10 @@ flowchart LR
 ### 3.3 CAP-03 — Award Categories Browsing
 
 #### A4 · Render awards system page
-`GET /awards` → `AwardsSystemPage#render` (planned)
+`GET /awards` → `AwardsPage` (`app/(app)/awards/page.tsx`)
 `FR-301` `FR-302` `FR-303` `FR-304` `FR-305` `FR-306` `BR-003` `US003_BrowseAwardCategories` · TBD (draft) — SCR009_AwardsSystem
 
-**Who** · Sunner, Admin; người dùng thường trước giờ mở nếu D002 xác nhận *(gate A1, A0)*
+**Who** · Sunner sau giờ mở, Admin cả trước giờ mở. Trước giờ mở người dùng thường bị chuyển tới `/countdown` vì `/awards` không nằm trong allowlist *(gate A1, A0)*
 **FE** · Hero + tiêu đề (FR-301). `AwardAnchorMenu` dính bên trái, mục đang xem được đánh dấu bằng `IntersectionObserver` (FR-302). Mỗi giải là một section có `id` ổn định để neo, gồm ảnh, tên, mô tả, "Số lượng giải thưởng", "Giá trị giải thưởng" (FR-303). Signature 2025 – Creator hiện hai dòng giá trị: cá nhân, tập thể (FR-304). Cuối trang banner Sun* Kudos (FR-306). Mobile: menu neo thành thanh chip ngang theo D009.
 **BE** · Đọc 6 giải từ module dữ liệu giải (FR-305: giá trị đúng bảng ở spec màn hình SCR009_AwardsSystem § 3).
 **Rule**
@@ -149,7 +149,7 @@ flowchart LR
 ### 3.4 CAP-04 — Static Information Pages
 
 #### A5 · Render rules page
-`GET /rules` → `RulesPage#render` (planned)
+`GET /rules` → `RulesPage` (`app/(app)/rules/page.tsx`)
 `FR-311` `FR-312` `US004_ReadRules` · TBD (draft) — SCR013_Rules
 
 **Who** · Sunner, Admin *(gate A1, A0)*
@@ -161,7 +161,7 @@ flowchart LR
 ---
 
 #### A6 · Render community standards page
-`GET /community-standards` → `CommunityStandardsPage#render` (planned)
+`GET /community-standards` → `CommunityStandardsPage` (`app/(app)/community-standards/page.tsx`)
 `FR-321` `US005_ReadCommunityStandards` · TBD (draft) — SCR010_CommunityStandards
 
 **Who** · Sunner, Admin *(gate A1, A0)*
@@ -292,13 +292,13 @@ ADMIN_TIMEZONE = Asia/Ho_Chi_Minh     # múi giờ hiển thị ngày lễ trên
 
 ### 5.2 Assumptions
 
-- *(A1)* F001_Auth gọi `isPrelaunch(now)` trong guard và giữ danh sách trang công khai; F006 không tự cài guard phiên (đang chờ D001 ở F001).
+- *(A1)* Cổng prelaunch chạy trong proxy (`proxy.ts`, bước 5, `decidePrelaunchRoute`); danh sách trang công khai nằm ở `shared/auth/public-paths.ts` (`PUBLIC_PATHS`: bốn trang người dùng `/login`, `/auth/callback`, `/countdown`, `/access-denied` cùng hai endpoint job nội bộ `/api/internal/*`).
 - *(A2, A3)* Đồng hồ máy chủ là chuẩn; độ lệch với máy người dùng chỉ tính một lần lúc nạp trang.
 - *(A3, A4)* Id neo của giải (ví dụ `top-talent`) ổn định và không dịch theo ngôn ngữ.
 
 ### 5.3 Unresolved Questions
 
-1. **`middleware` hay `proxy` trong Next.js 16** *(A1)*: AGENTS.md nói phiên bản này có breaking change; phải đọc `node_modules/next/dist/docs/` để biết tên file và API chuyển hướng đúng trước khi code cổng prelaunch.
+1. **`middleware` hay `proxy` trong Next.js 16** *(A1)*: đã giải quyết, cổng chạy trong `proxy.ts` (bước 5 của session proxy).
 2. **Đếm ngược chạy ở client hay streaming** *(A2, A3)*: chưa chốt cách truyền `serverNow` mà không làm trang mất cache tĩnh.
 3. **Luật Thể lệ lệch số liệu gốc** *(A5)*: chép tay chữ vào bản dịch hay đọc hằng số của F009/F010 khi các feature đó có code (RISK-02).
 4. **Cách lấy ảnh giải** *(A3, A4)*: xuất từ thiết kế vào repo hay lưu ở Supabase Storage.

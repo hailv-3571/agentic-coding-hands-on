@@ -25,6 +25,10 @@ Nguồn: `plans/261108-0048-saa-2025-kudos-platform/plan.md` (chi tiết từng 
 
 Tiến độ: 14/14 phase hoàn thành (01–14).
 
-Rủi ro và việc mở của phase 14: chờ BTC xác nhận bản tiếng Anh, chặn hạ quyền admin trong `ADMIN_EMAILS` (409 `ENV_ADMIN`) và tiêu đề CSV tiếng Anh; `adminKudoExportFilename` trùng `adminCsvFilename` (Low); gộp tim mỗi trang tăng tuyến tính, xét lại ở 10 lần dữ liệu (Low); admin bị hạ giữa chừng có thể thấy mã lỗi nghiệp vụ trước `FORBIDDEN` (Low, hoãn); `test:prod` chưa phủ `/admin/users` và route export; chưa đo coverage.
+Rủi ro và việc mở của phase 14: chờ BTC xác nhận bản tiếng Anh, chặn hạ quyền admin trong `ADMIN_EMAILS` (409 `ENV_ADMIN`) và tiêu đề CSV tiếng Anh; gộp tim mỗi trang tăng tuyến tính, xét lại ở 10 lần dữ liệu (Low); admin bị hạ giữa chừng có thể thấy mã lỗi nghiệp vụ trước `FORBIDDEN` (Low, hoãn). (`adminKudoExportFilename`, `test:prod` và đo coverage đã xử lý ở vòng hardening bên dưới.)
+
+Sau phase 14 (hardening 2026-11-24, ngoài 14 phase của kế hoạch): xong migration `0023` dọn outbox và lịch sử cron (30 ngày / 7 ngày), sửa toast composer mất sau khi lưu (host toast trong layout), sửa hai e2e chập chờn, `test:prod` 25 kiểm tra (thêm `/admin/users` và ba route CSV), cài `@vitest/coverage-v8`, quét bí mật toàn lịch sử sạch, kiểm cron → pg_net → drain trên Supabase local. Chi tiết: `docs/project-changelog.md` mục 2026-11-24.
+
+Còn lại: `/tkm:rebuild-spec` bị chặn tới khi cài Python 3 (chạy `--features F006,F008,F010,F012,F013,F014,F015`); coverage khoảng 49% câu lệnh, chưa có ngưỡng; chưa push (chờ chủ sản phẩm); 11 cảnh báo `npm audit` mức moderate chỉ ở dev; kiểm cron drain trên hosted/staging. Danh sách đầy đủ: `plans/261108-0048-saa-2025-kudos-platform/handover-open-decisions.md` mục E.
 
 Chạy song song được: 02 ∥ 03 · 07 ∥ 04 · 08 ∥ 05 (sau 04) · 09 ∥ 06. Phase 10 và 11 cùng sửa file chung của phase 01 nên chạy tuần tự.

@@ -1,0 +1,167 @@
+
+ RUN  v5.1.0 C:/Users/luong.viet.hai/my-app
+
+ ❯ |integration| tests/integration/housekeeping/housekeeping-prune-jobs.test.ts (3 tests | 3 failed) 70ms
+   ❯ outbox prune job (consumed events past the 30-day retention) (2)
+     × deletes only events consumed more than 30 days ago; pending, retrying, parked and recent ones stay 42ms
+     × keeps the notification history of a pruned event, with event_id set to null 19ms
+   ❯ cron history prune job (cron.job_run_details past the 7-day retention) (1)
+     × deletes only runs that ended more than 7 days ago 5ms
+ ❯ |integration| tests/integration/housekeeping/housekeeping-migration.test.ts (6 tests | 6 failed) 87ms
+   ❯ housekeeping migration (6)
+     × is a journal entry that drizzle-kit migrate has applied 9ms
+     × schedules both prune jobs daily (19:00 / 19:15 UTC = 02:00 / 02:15 ICT), owned by the migration role 56ms
+     × the up script schedules nothing, with a NOTICE, when pg_cron is not preloaded 2ms
+     × the up script schedules nothing, with a NOTICE, when pg_cron is not available 2ms
+     × the down script is a no-op, with a NOTICE, when pg_cron is not installed 1ms
+     × rolls down (both jobs gone, other jobs kept) and back up; re-running up keeps one job each 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-migration.test.ts > housekeeping migration > is a journal entry that drizzle-kit migrate has applied
+Error: no journal entry *_housekeeping_outbox_and_cron_history_prune
+ ❯ journalEntry tests/integration/housekeeping/housekeeping-migration.test.ts:25:21
+     23|   const { entries } = JSON.parse(readFileSync("db/migrations/meta/_jou…
+     24|   const entry = entries.find((candidate) => candidate.tag.endsWith(HOU…
+     25|   if (!entry) throw new Error(`no journal entry *${HOUSEKEEPING_TAG_SU…
+       |                     ^
+     26|   return entry;
+     27| }
+ ❯ tests/integration/housekeeping/housekeeping-migration.test.ts:34:92
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-migration.test.ts > housekeeping migration > schedules both prune jobs daily (19:00 / 19:15 UTC = 02:00 / 02:15 ICT), owned by the migration role
+AssertionError: expected [] to deeply equal [ { …(4) }, { …(4) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "active": true,
+-     "jobname": "saa-cron-history-prune",
+-     "owner_is_current": true,
+-     "schedule": "15 19 * * *",
+-   },
+-   {
+-     "active": true,
+-     "jobname": "saa-outbox-prune",
+-     "owner_is_current": true,
+-     "schedule": "0 19 * * *",
+-   },
+- ]
++ []
+
+ ❯ tests/integration/housekeeping/housekeeping-migration.test.ts:42:126
+     40|       select jobname, schedule, command, username = current_user as ow…
+     41|       from cron.job where jobname in (${OUTBOX_PRUNE_JOB}, ${CRON_HIST…
+     42|     expect(jobs.map(({ jobname, schedule, owner_is_current, active }) …
+       |                                                                                                                              ^
+     43|       { jobname: CRON_HISTORY_PRUNE_JOB, schedule: "15 19 * * *", owne…
+     44|       { jobname: OUTBOX_PRUNE_JOB, schedule: "0 19 * * *", owner_is_cu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-migration.test.ts > housekeeping migration > the up script schedules nothing, with a NOTICE, when pg_cron is not preloaded
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-migration.test.ts > housekeeping migration > the up script schedules nothing, with a NOTICE, when pg_cron is not available
+Error: no journal entry *_housekeeping_outbox_and_cron_history_prune
+ ❯ journalEntry tests/integration/housekeeping/housekeeping-migration.test.ts:25:21
+     23|   const { entries } = JSON.parse(readFileSync("db/migrations/meta/_jou…
+     24|   const entry = entries.find((candidate) => candidate.tag.endsWith(HOU…
+     25|   if (!entry) throw new Error(`no journal entry *${HOUSEKEEPING_TAG_SU…
+       |                     ^
+     26|   return entry;
+     27| }
+ ❯ up tests/integration/housekeeping/housekeeping-migration.test.ts:28:41
+ ❯ tests/integration/housekeeping/housekeeping-migration.test.ts:55:88
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-migration.test.ts > housekeeping migration > the down script is a no-op, with a NOTICE, when pg_cron is not installed
+Error: no journal entry *_housekeeping_outbox_and_cron_history_prune
+ ❯ journalEntry tests/integration/housekeeping/housekeeping-migration.test.ts:25:21
+     23|   const { entries } = JSON.parse(readFileSync("db/migrations/meta/_jou…
+     24|   const entry = entries.find((candidate) => candidate.tag.endsWith(HOU…
+     25|   if (!entry) throw new Error(`no journal entry *${HOUSEKEEPING_TAG_SU…
+       |                     ^
+     26|   return entry;
+     27| }
+ ❯ down tests/integration/housekeeping/housekeeping-migration.test.ts:29:43
+ ❯ tests/integration/housekeeping/housekeeping-migration.test.ts:61:71
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-migration.test.ts > housekeeping migration > rolls down (both jobs gone, other jobs kept) and back up; re-running up keeps one job each
+Error: no journal entry *_housekeeping_outbox_and_cron_history_prune
+ ❯ journalEntry tests/integration/housekeeping/housekeeping-migration.test.ts:25:21
+     23|   const { entries } = JSON.parse(readFileSync("db/migrations/meta/_jou…
+     24|   const entry = entries.find((candidate) => candidate.tag.endsWith(HOU…
+     25|   if (!entry) throw new Error(`no journal entry *${HOUSEKEEPING_TAG_SU…
+       |                     ^
+     26|   return entry;
+     27| }
+ ❯ down tests/integration/housekeeping/housekeeping-migration.test.ts:29:43
+ ❯ tests/integration/housekeeping/housekeeping-migration.test.ts:74:54
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-prune-jobs.test.ts > outbox prune job (consumed events past the 30-day retention) > deletes only events consumed more than 30 days ago; pending, retrying, parked and recent ones stay
+Error: pg_cron job saa-outbox-prune is not scheduled (housekeeping migration not applied)
+ ❯ runScheduledCommand tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:18:19
+     16| async function runScheduledCommand(tx: Tx, jobName: string): Promise<v…
+     17|   const [job] = await tx.execute<{ command: string }>(sql`select comma…
+     18|   if (!job) throw new Error(`pg_cron job ${jobName} is not scheduled (…
+       |                   ^
+     19|   await tx.execute(sql.raw(job.command));
+     20| }
+ ❯ tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:65:7
+ ❯ tests/setup/integration-db.ts:33:25
+ ❯ scope node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin node_modules/postgres/src/index.js:243:14
+ ❯ withRollback tests/setup/integration-db.ts:32:5
+ ❯ tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:63:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-prune-jobs.test.ts > outbox prune job (consumed events past the 30-day retention) > keeps the notification history of a pruned event, with event_id set to null
+Error: pg_cron job saa-outbox-prune is not scheduled (housekeeping migration not applied)
+ ❯ runScheduledCommand tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:18:19
+     16| async function runScheduledCommand(tx: Tx, jobName: string): Promise<v…
+     17|   const [job] = await tx.execute<{ command: string }>(sql`select comma…
+     18|   if (!job) throw new Error(`pg_cron job ${jobName} is not scheduled (…
+       |                   ^
+     19|   await tx.execute(sql.raw(job.command));
+     20| }
+ ❯ tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:78:7
+ ❯ tests/setup/integration-db.ts:33:25
+ ❯ scope node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin node_modules/postgres/src/index.js:243:14
+ ❯ withRollback tests/setup/integration-db.ts:32:5
+ ❯ tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:74:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  |integration| tests/integration/housekeeping/housekeeping-prune-jobs.test.ts > cron history prune job (cron.job_run_details past the 7-day retention) > deletes only runs that ended more than 7 days ago
+Error: pg_cron job saa-cron-history-prune is not scheduled (housekeeping migration not applied)
+ ❯ tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:102:25
+    100|           from cron.job where jobname = ${CRON_HISTORY_PRUNE_JOB}
+    101|           returning runid::text`);
+    102|         if (!row) throw new Error(`pg_cron job ${CRON_HISTORY_PRUNE_JO…
+       |                         ^
+    103|         labels.set(row.runid, label);
+    104|       }
+ ❯ tests/setup/integration-db.ts:33:25
+ ❯ scope node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin node_modules/postgres/src/index.js:243:14
+ ❯ withRollback tests/setup/integration-db.ts:32:5
+ ❯ tests/integration/housekeeping/housekeeping-prune-jobs.test.ts:92:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  9 failed (9)
+   Start at  09:14:48
+   Duration  1.83s (setup 75%, tests 12%, transform 10%, import 2%, worker 1%)
+

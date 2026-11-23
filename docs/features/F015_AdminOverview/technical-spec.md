@@ -54,8 +54,8 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-601 | — | § 4.4 |
-| **A1** | `AdminOverviewPage#render` (planned) | `GET` `/admin/overview` | FR-001, FR-002, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-401, FR-403, BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, DEC-001, DEC-002, ALG-001, US001_ViewUnitStatistics, US002_FilterByDateRange | — *(read-only)* | § 3.1 |
-| **A2** | `AdminOverviewExport#download` (planned) | `GET` `/api/admin/overview/export` | FR-402, FR-602, BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, DEC-002, ALG-001, US003_ExportUnitStatistics | — *(read-only; trả tệp)* | § 3.2 |
+| **A1** | `AdminOverviewPage` (`app/admin/overview/page.tsx`) | `GET` `/admin/overview` | FR-001, FR-002, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-401, FR-403, BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, DEC-001, DEC-002, ALG-001, US001_ViewUnitStatistics, US002_FilterByDateRange | — *(read-only)* | § 3.1 |
+| **A2** | route handler `GET` (`app/api/admin/overview/export/route.ts`) | `GET` `/api/admin/overview/export` | FR-402, FR-602, BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, DEC-002, ALG-001, US003_ExportUnitStatistics | — *(read-only; trả tệp)* | § 3.2 |
 
 **Rung set** theo template: Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn. Không có **State**: F015 không có vòng đời trạng thái nào.
 
@@ -64,13 +64,13 @@ flowchart LR
 ### 3.1 CAP-01 — Xem thống kê theo đơn vị
 
 #### A1 · Dựng trang Overview với bảng thống kê theo đơn vị
-`GET /admin/overview?dateFrom&dateTo` → `` `AdminOverviewPage#render` `` (planned)
+`GET /admin/overview?from&to` → `` `AdminOverviewPage` ``
 `FR-001` `FR-002` `FR-101` `FR-201` `FR-202` `FR-203` `FR-204` `FR-205` `FR-206` `FR-207` `FR-401` `FR-403` `BR-001` `BR-002` `BR-003` `BR-004` `BR-005` `BR-006` `DEC-001` `DEC-002` `ALG-001` `US001_ViewUnitStatistics` `US002_FilterByDateRange` · `SCR027_AdminOverview` (draft)
 
 **Who** · Admin *(gate A0 — § 4.4)*
 **FE** · Trang Overview (FR-101: Admin vào từ mục "Overview" của menu khu Admin, menu thuộc F002). Bảng bảy cột No, Unit, Total member, Total sent kudos, Total received kudos, Total users with at least 1 kudo, Total received secret box (FR-201); dòng "All" đầu tiên rồi từng đơn vị (FR-202); không phân trang (FR-206). Ô khoảng ngày (FR-203, FR-204) — chọn xong thì đẩy `dateFrom`, `dateTo` lên địa chỉ trang để server dựng lại bảng; địa chỉ giữ khoảng ngày nên tải lại hoặc chia sẻ vẫn ra đúng số (FR-401). Ngày bắt đầu sau ngày kết thúc thì FE chặn và hiện lỗi cạnh ô ngày, không gọi server (FR-403). Trong lúc dựng lại hiện trạng thái chờ, lỗi thì hiện thông báo kèm nút thử lại (FR-207). Dropdown chọn nhanh khoảng thời gian chưa làm ở bản đầu (D009 ở functional-spec).
 **Request** · param `dateFrom`, `dateTo` *(ngày `YYYY-MM-DD`, tuỳ chọn; vắng = không giới hạn đầu đó)*; kiểm bằng `AdminOverviewFilterSchema` (Zod): đúng định dạng ngày hợp lệ và `dateFrom` ≤ `dateTo`, sai thì 400 (FR-403).
-**BE** · `` `AdminOverviewPage#render` `` (server component) gọi `AdminGuard#requireAdmin`, kiểm tham số, rồi chạy `UnitStatsQuery#forRange` (planned) theo `ALG-001`. Trả mảng dòng gồm dòng "All" và các dòng đơn vị đã sắp thứ tự. Không cache: số liệu đọc trực tiếp ở mỗi lần dựng.
+**BE** · `` `AdminOverviewPage` `` (server component) gọi `AdminGuard#requireAdmin`, kiểm tham số, rồi chạy `UnitStatsQuery.forRange` theo `ALG-001`. Trả mảng dòng gồm dòng "All" và các dòng đơn vị đã sắp thứ tự. Không cache: số liệu đọc trực tiếp ở mỗi lần dựng.
 **Rule** · quyết định dòng nào hiện và cách hiểu khoảng ngày:
 
 | DEC | subtype | Condition | What the user sees | Source |
@@ -96,13 +96,13 @@ flowchart LR
 ### 3.2 CAP-02 — Xuất thống kê
 
 #### A2 · Tải tệp CSV bảng thống kê đang xem
-`GET /api/admin/overview/export?dateFrom&dateTo` → `` `AdminOverviewExport#download` `` (planned)
+`GET /api/admin/overview/export?from&to` → route handler `GET`
 `FR-402` `FR-602` `BR-001` `BR-002` `BR-003` `BR-004` `BR-005` `BR-006` `DEC-002` `ALG-001` `US003_ExportUnitStatistics` · `SCR027_AdminOverview` (draft)
 
 **Who** · Admin *(gate A0 — § 4.4)*
 **FE** · Nút "Export" (màu vàng) cạnh ô khoảng ngày. Bấm thì tải về tệp theo đúng khoảng ngày đang chọn (FR-402); trong lúc chuẩn bị nút bị khoá kèm trạng thái chờ. FE chỉ trỏ trình duyệt tới đường dẫn xuất kèm `dateFrom`, `dateTo` hiện tại, không tự dựng CSV.
 **Request** · cùng `dateFrom`, `dateTo` như A1; kiểm bằng cùng `AdminOverviewFilterSchema`.
-**BE** · `` `AdminOverviewExport#download` `` gọi `AdminGuard#requireAdmin`, kiểm tham số, chạy cùng `UnitStatsQuery#forRange` như A1 (nên tệp luôn khớp bảng), rồi ghi từng dòng ra phản hồi CSV với `Content-Disposition: attachment`. Cột đúng bảy cột của bảng (FR-201), hàng đầu là dòng "All". Số dòng bằng số đơn vị nên không cần stream hay trần số dòng.
+**BE** · `` route handler export `` gọi `AdminGuard#requireAdmin`, kiểm tham số, chạy cùng `UnitStatsQuery.forRange` như A1 (nên tệp luôn khớp bảng), rồi ghi từng dòng ra phản hồi CSV với `Content-Disposition: attachment`. Cột đúng bảy cột của bảng (FR-201), hàng đầu là dòng "All". Số dòng bằng số đơn vị nên không cần stream hay trần số dòng.
 **Rule** · dùng lại nguyên các quy tắc tính của A1 vì cùng một truy vấn: BR-001 (Kudo Public, ngày giờ Việt Nam), BR-002 (gán theo đơn vị người gửi/người nhận), BR-003 (đếm người nhận khác nhau), BR-004 (Total member không lọc ngày), BR-005 (Secret Box theo ngày cấp), BR-006 (dòng "All" là tổng), DEC-002 (đầu ngày vắng nghĩa là không giới hạn); chi tiết ở *(§ 4.4)*. Riêng FR-602 *(tệp an toàn khi mở bằng Excel)*: ô văn bản bắt đầu bằng `=`, `+`, `-`, `@`, tab hoặc CR bị thêm dấu `'` đứng đầu; ghi tệp UTF-8 có BOM để Excel đọc đúng tiếng Việt; tên tệp `overview-{dateFrom|all}-{dateTo|now}.csv`. Dùng chung bộ serialize CSV với F007 (không viết lại, DRY — § 5.3 mục 3). Tên đơn vị do Admin quản trị nhưng vẫn qua bước vô hiệu hoá công thức vì nguồn danh mục chưa chốt.
 **Result** · read-only — không ghi DB. Phản hồi là tệp CSV. Khoảng ngày sai (400) hoặc lỗi truy vấn (500) thì không có tệp, FE hiện "Không xuất được số liệu. Vui lòng thử lại."
 **Source:** TBD (draft)
@@ -131,12 +131,12 @@ flowchart LR
 
 | Component | Responsibility | Used in | File |
 |---|---|---|---|
-| `AdminOverviewPage` (planned) | Server component dựng trang: gọi guard, đọc tham số, gọi truy vấn, render bảng | A1 | TBD (draft) |
-| `AdminOverviewExport` (planned) | Route handler ghi CSV | A2 | TBD (draft) |
-| `UnitStatsQuery` (planned) | Truy vấn tổng hợp theo đơn vị theo `ALG-001`, dùng chung cho A1 và A2 | A1, A2 | TBD (draft) |
-| `AdminOverviewFilterSchema` (planned) | Schema Zod chung cho `dateFrom`, `dateTo` | A1, A2 | TBD (draft) |
-| `AdminDateRangeFilter` (planned) | Ô khoảng ngày kèm lịch; nên dùng chung với bộ lọc ngày của trang Review content (F007) thay vì viết hai bản | A1 (FE) | TBD (draft) |
-| `CsvSerializer` (planned, dùng chung với F007) | Ghi CSV UTF-8 có BOM, vô hiệu hoá công thức, bọc nháy kép | A2 | TBD (draft) |
+| `AdminOverviewPage` | Server component dựng trang: gọi guard, đọc tham số, gọi truy vấn, render bảng | A1 | `app/admin/overview/page.tsx` |
+| route handler export | Ghi CSV | A2 | `app/api/admin/overview/export/route.ts`, `features/admin-overview/server/overview-export-columns.ts` |
+| `UnitStatsQuery` | Truy vấn tổng hợp theo đơn vị theo `ALG-001`, dùng chung cho A1 và A2 | A1, A2 | `features/admin-overview/server/unit-stats-query.ts` (`forRange`), `add-all-row.ts` |
+| `parseOverviewParams` | Schema Zod chung cho `from`, `to` | A1, A2 | `features/admin-overview/schemas/overview-params-schema.ts` |
+| `adminDateRangeSchema` / date-range-filter | Khoảng ngày nửa mở theo `ADMIN_TIMEZONE`, dùng chung với F007 | A1 (FE) | `shared/admin/date-range-filter.ts` |
+| `serializeCsv` (dùng chung với F007) | Ghi CSV UTF-8 có BOM, vô hiệu hoá công thức, bọc nháy kép | A2 | `shared/admin/csv-serializer.ts` |
 | `AdminGuard#requireAdmin` *(F001 A7)* | Kiểm role Admin đọc từ DB; F015 chỉ gọi lại, không tự kiểm role | A1, A2 | TBD (draft) |
 
 ### 4.2 Data Model
