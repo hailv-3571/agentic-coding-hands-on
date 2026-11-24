@@ -1,0 +1,35 @@
+{
+  "plan_dir": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform",
+  "specs": {
+    "F006_AwardsPortal": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F006_AwardsPortal\\technical-spec.md"
+    },
+    "F008_SpotlightBoard": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F008_SpotlightBoard\\technical-spec.md"
+    },
+    "F010_SecretBoxRewards": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md"
+    },
+    "F012_Profile": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F012_Profile\\technical-spec.md"
+    },
+    "F013_Notifications": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications\\technical-spec.md"
+    },
+    "F014_AdminUserManagement": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F014_AdminUserManagement\\technical-spec.md"
+    },
+    "F015_AdminOverview": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F015_AdminOverview\\technical-spec.md"
+    }
+  },
+  "timestamp": "2026-11-24T04:09:30Z",
+  "validator": "citation"
+}

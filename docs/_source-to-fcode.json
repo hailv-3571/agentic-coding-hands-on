@@ -1,4 +1,325 @@
 {
-  "generated_at": "2026-11-15T03:33:59Z",
-  "index": {}
+  "generated_at": "2026-11-24T04:14:47Z",
+  "index": {
+    "app/(app)/awards/page.tsx": [
+      "F006"
+    ],
+    "app/(app)/community-standards/page.tsx": [
+      "F006"
+    ],
+    "app/(app)/layout.tsx": [
+      "F006"
+    ],
+    "app/(app)/notifications/page.tsx": [
+      "F013"
+    ],
+    "app/(app)/page.tsx": [
+      "F006"
+    ],
+    "app/(app)/profile/[userId]/page.tsx": [
+      "F012"
+    ],
+    "app/(app)/profile/page.tsx": [
+      "F012"
+    ],
+    "app/(app)/rules/page.tsx": [
+      "F006"
+    ],
+    "app/(public)/countdown/page.tsx": [
+      "F006"
+    ],
+    "app/admin/page.tsx": [
+      "F015"
+    ],
+    "app/admin/users/page.tsx": [
+      "F014"
+    ],
+    "app/api/admin/users/export/route.ts": [
+      "F014"
+    ],
+    "app/api/internal/notifications/drain/route.ts": [
+      "F013"
+    ],
+    "app/api/internal/secret-box/tick/route.ts": [
+      "F010"
+    ],
+    "app/api/notifications/route.ts": [
+      "F013"
+    ],
+    "app/api/notifications/unread-count/route.ts": [
+      "F013"
+    ],
+    "app/api/profile/[userId]/kudos/route.ts": [
+      "F012"
+    ],
+    "app/api/secret-boxes/me/route.ts": [
+      "F010"
+    ],
+    "app/api/secret-boxes/open/route.ts": [
+      "F010"
+    ],
+    "app/api/spotlight/route.ts": [
+      "F008"
+    ],
+    "app/api/sunners/[userId]/card/route.ts": [
+      "F012"
+    ],
+    "db/migrations/0016_secret_box_tick_cron.sql": [
+      "F010"
+    ],
+    "db/migrations/0017_spotlight_realtime.sql": [
+      "F008"
+    ],
+    "db/migrations/0019_notifications_realtime.sql": [
+      "F013"
+    ],
+    "db/migrations/0020_notifications_drain_cron.sql": [
+      "F013"
+    ],
+    "db/migrations/0023_housekeeping_outbox_and_cron_history_prune.sql": [
+      "F013"
+    ],
+    "db/seeds/secret-box-prize-loader.ts": [
+      "F010"
+    ],
+    "features/admin-moderation/components/review-export-button.tsx": [
+      "F015"
+    ],
+    "features/admin-overview/components/admin-overview-screen.tsx": [
+      "F015"
+    ],
+    "features/admin-overview/server/add-all-row.ts": [
+      "F015"
+    ],
+    "features/admin-overview/server/unit-stats-query.ts": [
+      "F015"
+    ],
+    "features/admin-overview/server/unit-stats-query.ts:23-25, 38-51": [
+      "F015"
+    ],
+    "features/admin-users/components/admin-user-role-menu.tsx": [
+      "F014"
+    ],
+    "features/admin-users/server/user-admin-sql-fragments.ts": [
+      "F014"
+    ],
+    "features/admin-users/server/user-admin-sql-fragments.ts:36-47,56-67": [
+      "F014"
+    ],
+    "features/admin-users/server/user-admin-sql-fragments.ts:48,61-62,81-85": [
+      "F014"
+    ],
+    "features/admin-users/server/user-filter-options-query.ts": [
+      "F014"
+    ],
+    "features/admin-users/server/user-role-service.ts": [
+      "F014"
+    ],
+    "features/awards-portal/components/awards-anchor-menu.tsx": [
+      "F006"
+    ],
+    "features/awards-portal/components/rules-close-button.tsx": [
+      "F006"
+    ],
+    "features/awards-portal/components/use-server-clock-now.ts": [
+      "F006"
+    ],
+    "features/awards-portal/countdown-parts.ts": [
+      "F006"
+    ],
+    "features/awards-portal/data/awards-data.ts": [
+      "F006"
+    ],
+    "features/awards-portal/server/prelaunch-gate.ts": [
+      "F006"
+    ],
+    "features/hero-badges/server/tier-from-count.ts": [
+      "F013"
+    ],
+    "features/kudos-authoring/server/kudo-write-window.ts": [
+      "F012"
+    ],
+    "features/kudos-feed/components/kudo-card-sender.tsx": [
+      "F012"
+    ],
+    "features/kudos-feed/components/live-board-spotlight-slot.tsx": [
+      "F008"
+    ],
+    "features/kudos-feed/server/kudo-row-mask.ts": [
+      "F012"
+    ],
+    "features/kudos-hearts/server/heart-ranking-query.ts": [
+      "F010"
+    ],
+    "features/kudos-hearts/server/heart-stats-query.ts": [
+      "F010"
+    ],
+    "features/notifications/components/notification-bell-slot.tsx": [
+      "F013"
+    ],
+    "features/notifications/components/notification-panel.tsx": [
+      "F013"
+    ],
+    "features/notifications/components/notification-row.tsx": [
+      "F013"
+    ],
+    "features/notifications/hooks/use-notification-list.ts:15-17,78-107": [
+      "F013"
+    ],
+    "features/notifications/hooks/use-notification-list.ts:56-62,128-158": [
+      "F013"
+    ],
+    "features/notifications/lib/notification-list-merge.ts": [
+      "F013"
+    ],
+    "features/notifications/lib/notification-message.ts": [
+      "F013"
+    ],
+    "features/notifications/lib/notification-relative-time.ts": [
+      "F013"
+    ],
+    "features/notifications/server/detect-hero-tier-up.ts": [
+      "F013"
+    ],
+    "features/notifications/server/map-event-to-notifications.ts": [
+      "F013"
+    ],
+    "features/notifications/server/map-event-to-notifications.ts:32-41,49-57": [
+      "F013"
+    ],
+    "features/notifications/server/notification-api-session.ts": [
+      "F013"
+    ],
+    "features/notifications/server/notification-event-processor.ts": [
+      "F013"
+    ],
+    "features/notifications/server/notification-event-processor.ts:12-19,60-79,101-107": [
+      "F013"
+    ],
+    "features/notifications/server/notification-event-processor.ts:12-29,35-38,81-99": [
+      "F013"
+    ],
+    "features/notifications/server/notification-read-state.ts:6-10,14-33": [
+      "F013"
+    ],
+    "features/notifications/server/notification-view-mapper.ts": [
+      "F013"
+    ],
+    "features/notifications/server/notification-writer.ts": [
+      "F013"
+    ],
+    "features/notifications/server/notification-writer.ts:6-8,22-26": [
+      "F013"
+    ],
+    "features/profile/components/avatar-hover-card.tsx": [
+      "F012"
+    ],
+    "features/profile/components/locked-recipient-composer.tsx": [
+      "F012"
+    ],
+    "features/profile/components/profile-send-kudo-button.tsx": [
+      "F012"
+    ],
+    "features/profile/components/use-profile-kudos-list.ts": [
+      "F012"
+    ],
+    "features/profile/lib/profile-kudos-filter.ts": [
+      "F012"
+    ],
+    "features/profile/lib/sunner-card-cache.ts": [
+      "F012"
+    ],
+    "features/profile/server/profile-kudo-counts-query.ts": [
+      "F012"
+    ],
+    "features/profile/server/profile-page-data.ts": [
+      "F010",
+      "F012"
+    ],
+    "features/secret-box-rewards/components/latest-gift-winners-list.tsx": [
+      "F010"
+    ],
+    "features/secret-box-rewards/components/personal-stats-panel.tsx": [
+      "F010"
+    ],
+    "features/secret-box-rewards/components/secret-box-opener.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/icon-collection-service.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/national-kudos-finalize-job.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/prize-draw-service.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/secret-box-api-session.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/secret-box-grant-service.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/secret-box-grant-service.ts:29-51, 54-66": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/secret-box-open-service.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/secret-box-sweep-job.ts": [
+      "F010"
+    ],
+    "features/secret-box-rewards/server/secret-box-tick-job.ts": [
+      "F010"
+    ],
+    "features/spotlight-board/components/spotlight-name-cloud.tsx": [
+      "F008"
+    ],
+    "features/spotlight-board/components/spotlight-search-input.tsx": [
+      "F008"
+    ],
+    "features/spotlight-board/hooks/use-fullscreen-toggle.ts": [
+      "F008"
+    ],
+    "features/spotlight-board/hooks/use-spotlight-channel.ts": [
+      "F008"
+    ],
+    "features/spotlight-board/lib/spotlight-channel-state.ts": [
+      "F008"
+    ],
+    "features/spotlight-board/lib/spotlight-cloud-layout.ts": [
+      "F008"
+    ],
+    "features/spotlight-board/lib/spotlight-resync-scheduler.ts": [
+      "F008"
+    ],
+    "features/spotlight-board/lib/spotlight-state-reducer.ts": [
+      "F008"
+    ],
+    "features/spotlight-board/server/spotlight-snapshot-query.ts": [
+      "F008"
+    ],
+    "shared/auth/admin-guard.ts": [
+      "F014",
+      "F015"
+    ],
+    "shared/auth/current-user.ts": [
+      "F008"
+    ],
+    "shared/auth/route-access-policy.ts": [
+      "F012"
+    ],
+    "shared/auth/supabase-browser-client.ts": [
+      "F013"
+    ],
+    "shared/db/schema/secret-box-rewards.ts": [
+      "F010"
+    ],
+    "shared/events/domain-event-outbox.ts": [
+      "F010"
+    ],
+    "shared/events/domain-event-types.ts": [
+      "F013"
+    ]
+  }
 }

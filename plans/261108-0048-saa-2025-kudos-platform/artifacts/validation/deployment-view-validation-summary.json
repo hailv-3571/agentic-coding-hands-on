@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-11-24T02:30:38Z",
+  "overall_status": "WARN",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 1
+  },
+  "validators": {
+    "deployment_view": {
+      "issues": [
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\architecture.md",
+            "line": 223
+          },
+          "message": "No infrastructure-as-code found in repository \u2014 Deployment View degraded to the N/A line (expected behavior, not a defect)",
+          "rule_id": "DeploymentView.no_iac",
+          "severity": "warning",
+          "validator": "deployment_view"
+        }
+      ],
+      "status": "WARN",
+      "summary": {
+        "critical": 0,
+        "warning": 1
+      }
+    }
+  }
+}

@@ -1,9 +1,27 @@
 {
+  "doc_shas": {
+    "api-map.md": "998268aefcc20b19a9aff3fdf5a37aba79eceb7110acfd41db86fe5bcf65efbf",
+    "behavior-logic.md": "b845a3bda52d17135f518fa01e08ab554b395807135a1f62322ac7d4a1179174",
+    "data-model.md": "7496e70b40de54fedb97fbd4e8b6d80ad12cb375eec63a5b61d0d0097aca6df7",
+    "feature-list.md": "0d80f08ecc1b20fe2e57d93ebb61646850c1f7c2c473dbfea18373079ac264dd",
+    "permissions.md": "f14f87f65f97887d4802e8957edd126a33adb098ef9c9f801417b6a14d6e8b74",
+    "route-list.md": "f850d71923985925bfee6c67bb0c7289ea1327ed3e358839daaee9bf42d2ff1b",
+    "screen-flow.md": "4e576ec3e34581cfbf972d6a620128e8057af5467594c395b89b63bc06c891d7",
+    "screen-list.md": "a611bed97067062c79f41c04f9cf16953414e0d1cda63c278c83fb9e63ba9797",
+    "system-overview.md": "a169497ee50b5fb1535e672686fb98b69d2214665cafd563dc162c6e982f4a9a",
+    "user-stories.md": "f33fb7e1a979562bf0d3b157f24153b1c4baf08c1f56a02a707482826dcf9845"
+  },
+  "fcode_index_sha": "25d9daf7ddd023560bda19e4d81005a1dccde130e007d160be6f47c65f983792",
+  "last_api_contracts_run_sha": "",
+  "last_feature_spec_run_sha": "6e34454be286ddd20f3d960db132a33c249d9f66",
+  "last_flows_run_sha": "",
+  "last_glossary_run_sha": "",
+  "last_rebuild_sha": "6e34454be286ddd20f3d960db132a33c249d9f66",
+  "last_test_cases_run_sha": "",
+  "mode": "full",
   "primary_lang": "vi",
-  "last_rebuild_sha": "",
-  "last_feature_spec_run_sha": "491df4931f379c56ea1e897263b34749eeaef4e8",
-  "fcode_index_sha": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-  "doc_shas": {},
+  "rebuilt_at": "2026-11-24T04:14:47Z",
+  "schema_version": "22.1.0",
   "screen_spec_shas": {
     "SCR001": "414923f15faf4bd5d6b2f4480440bf9d0662d5ed48a1f793794590c1d800f16f",
     "SCR002": "ffa5332fa3f44f0256cbe49843f92b107e3770b950e7df789ae740946c13dc98",
@@ -32,5 +50,6 @@
     "SCR025": "2308d9b2695a1f0527b40317372f8ad3329dee3d1ccf1bec7bece6a9c91246d0",
     "SCR026": "5844afacba266ab0a1e23ec9019248679d048768e90f611821b7f6df692eafb4",
     "SCR027": "b355f56893b105a0d22d60208423af020ff20dd827009730936ff42df68b2414"
-  }
+  },
+  "translations": {}
 }

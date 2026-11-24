@@ -1,0 +1,11 @@
+{
+  "issues": [],
+  "root": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform\\artifacts",
+  "status": "PASS",
+  "summary": {
+    "critical": 0,
+    "warning": 0
+  },
+  "timestamp": "2026-11-24T03:35:16Z",
+  "validator": "feature_api_link"
+}

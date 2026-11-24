@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-11-24T01:57:23Z",
+  "overall_status": "WARN",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 2
+  },
+  "validators": {
+    "behavior_logic": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    },
+    "feature_existence": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    },
+    "id_contiguity": {
+      "issues": [
+        {
+          "artifact": "screen-list",
+          "location": {
+            "file": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\screen-list.md",
+            "line": null
+          },
+          "message": "REG002 missing in SCR020_OnboardingDepartment block",
+          "rule_id": "contiguity.gap",
+          "severity": "warning",
+          "validator": "id_contiguity"
+        },
+        {
+          "artifact": "screen-list",
+          "location": {
+            "file": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\screen-list.md",
+            "line": null
+          },
+          "message": "REG003 missing in SCR020_OnboardingDepartment block",
+          "rule_id": "contiguity.gap",
+          "severity": "warning",
+          "validator": "id_contiguity"
+        }
+      ],
+      "status": "WARN",
+      "summary": {
+        "critical": 0,
+        "warning": 2
+      }
+    },
+    "route_list": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    },
+    "screen_flow": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    },
+    "screen_list": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,517 @@
+{
+  "generated_at": "2026-11-24T01:57:23Z",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "features": [
+    {
+      "fcode": "F001",
+      "name": "Auth",
+      "slug": "F001_Auth",
+      "priority": "P0",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR001_Login",
+          "SCR020_OnboardingDepartment"
+        ],
+        "user_stories": [
+          "US016_SignInWithGoogle",
+          "US018_ChooseDepartment",
+          "US019_SignOut"
+        ],
+        "routes": [
+          "(GET) /auth/callback — ROUTE020",
+          "(POST) server action signInWithGoogle — ROUTE021",
+          "(POST) server action chooseDepartment — ROUTE022",
+          "(POST) server action signOut — ROUTE035"
+        ],
+        "models": [
+          "MODEL001_Department",
+          "MODEL004_Profile"
+        ],
+        "bl": [
+          "BL001_SeedDatabaseCli",
+          "BL004_GoogleOAuthCallback",
+          "BL005_GoogleSignInStart",
+          "BL011_SupabaseServerClient",
+          "BL018_BeforeUserCreatedHook",
+          "BL019_CreateSunnerProfile",
+          "BL020_RejectForeignDomainOnEmailChange",
+          "BL021_RejectForeignDomainOnInsert",
+          "BL022_SyncProfileEmail"
+        ],
+        "perms": [
+          "PERM001_PublicPathAllowlist",
+          "PERM002_SessionRequiredOnProtectedPaths",
+          "PERM003_AdminAreaProxyGate",
+          "PERM005_CompanyEmailDomainAdmission",
+          "PERM006_EnvAdminPromotion",
+          "PERM007_SafeNextRedirect",
+          "PERM008_SunnerAreaGate",
+          "PERM009_OnboardingDepartmentChoice",
+          "PERM010_ApiSunnerGate",
+          "PERM011_SessionOnlyApiGate",
+          "PERM014_AdminPageAndActionGuard",
+          "PERM015_AdminApiGate",
+          "PERM035_DatabaseRlsBaseline"
+        ]
+      }
+    },
+    {
+      "fcode": "F002",
+      "name": "App Shell",
+      "slug": "F002_AppShell",
+      "priority": "P0",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR002_AdminLayout",
+          "SCR003_AppLayout",
+          "SCR004_Error403",
+          "SCR005_Error404"
+        ],
+        "user_stories": [
+          "US001_NavigateAdminSections",
+          "US002_OpenAdminDashboard",
+          "US017_ReturnToLoginFromNotFound",
+          "US020_SwitchLanguage",
+          "US021_NavigateSunnerPages",
+          "US022_ReturnHomeFromErrorPage"
+        ],
+        "routes": [
+          "(POST) server action setLocaleAction — ROUTE036"
+        ],
+        "models": [],
+        "bl": [],
+        "perms": [
+          "PERM012_PreferenceAndSignOutActions",
+          "PERM013_LocaleCookieSecureFlag",
+          "PERM016_AdminMenuVisibility"
+        ]
+      }
+    },
+    {
+      "fcode": "F003",
+      "name": "Kudos Authoring",
+      "slug": "F003_KudosAuthoring",
+      "priority": "P0",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR007_KudosLiveBoardFeed/REG001_KudoComposer"
+        ],
+        "user_stories": [
+          "US026_CreateKudo",
+          "US027_AttachKudoImage",
+          "US028_EditKudo",
+          "US029_SendKudoToSunner"
+        ],
+        "routes": [
+          "(GET) /api/kudos/[id]/edit — ROUTE009",
+          "(POST) /api/kudos/images/sign — ROUTE010",
+          "(GET) /api/hashtags — ROUTE013",
+          "(GET) /api/sunners/search — ROUTE018",
+          "(POST) server action createKudo — ROUTE023",
+          "(POST) server action updateKudo — ROUTE024"
+        ],
+        "models": [
+          "MODEL002_Hashtag",
+          "MODEL003_Kudo",
+          "MODEL005_KudoHashtag",
+          "MODEL006_KudoImage",
+          "MODEL007_KudoImageUpload"
+        ],
+        "bl": [
+          "BL006_KudoImageBrowserUpload",
+          "BL007_KudoImagePreviewSigning",
+          "BL008_KudoImageUploadSigning",
+          "BL012_SupabaseServiceClient"
+        ],
+        "perms": [
+          "PERM022_EventWritingWindow",
+          "PERM023_KudoCreate",
+          "PERM024_KudoImageUploadSigning",
+          "PERM025_KudoOwnerEdit",
+          "PERM026_KudoEditButtonVisibility",
+          "PERM036_KudoImageStorageAccess"
+        ]
+      }
+    },
+    {
+      "fcode": "F004",
+      "name": "Kudos Feed",
+      "slug": "F004_KudosFeed",
+      "priority": "P1",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR006_KudoDetail",
+          "SCR007_KudosLiveBoardFeed",
+          "SCR007_KudosLiveBoardFeed/REG002_SunnerProfileSearch",
+          "SCR007_KudosLiveBoardFeed/REG003_HighlightKudos",
+          "SCR007_KudosLiveBoardFeed/REG005_AllKudosFeed"
+        ],
+        "user_stories": [
+          "US030_SearchSunnerProfile",
+          "US031_BrowseHighlightKudos",
+          "US032_LoadMoreKudos",
+          "US033_OpenKudoDetail",
+          "US036_ViewKudoImage",
+          "US039_CopyKudoLink"
+        ],
+        "routes": [
+          "(GET) /api/kudos — ROUTE007",
+          "(GET) /api/kudos/highlight — ROUTE008"
+        ],
+        "models": [
+          "MODEL003_Kudo"
+        ],
+        "bl": [
+          "BL009_KudoImageReadSigning"
+        ],
+        "perms": [
+          "PERM028_AnonymousSenderMask",
+          "PERM029_SpamKudoVisibility"
+        ]
+      }
+    },
+    {
+      "fcode": "F005",
+      "name": "Kudos Hearts",
+      "slug": "F005_KudosHearts",
+      "priority": "P1",
+      "type": "ui",
+      "related": {
+        "screens": [],
+        "user_stories": [
+          "US037_GiveHeartToKudo",
+          "US038_WithdrawHeartFromKudo"
+        ],
+        "routes": [
+          "(POST) server action addHeartAction — ROUTE025",
+          "(POST) server action removeHeartAction — ROUTE026"
+        ],
+        "models": [
+          "MODEL008_KudoHeart",
+          "MODEL009_Campaign"
+        ],
+        "bl": [],
+        "perms": [
+          "PERM027_KudoHeartToggle"
+        ]
+      }
+    },
+    {
+      "fcode": "F006",
+      "name": "Awards Portal",
+      "slug": "F006_AwardsPortal",
+      "priority": "P1",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR008_AwardsSystem",
+          "SCR009_CommunityStandards",
+          "SCR010_CountdownPrelaunch",
+          "SCR011_Homepage",
+          "SCR012_Rules"
+        ],
+        "user_stories": [
+          "US045_OpenAwardsFromHomepage",
+          "US046_OpenKudosBoard",
+          "US047_JumpToAwardSection",
+          "US048_CloseRulesPage"
+        ],
+        "routes": [],
+        "models": [],
+        "bl": [
+          "BL013_PrelaunchGate"
+        ],
+        "perms": [
+          "PERM004_PrelaunchGate"
+        ]
+      }
+    },
+    {
+      "fcode": "F007",
+      "name": "Admin Moderation",
+      "slug": "F007_AdminModeration",
+      "priority": "P1",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR013_AdminReviewContent"
+        ],
+        "user_stories": [
+          "US005_BrowseKudosForReview",
+          "US006_MarkKudoSpam",
+          "US007_RestoreSpamKudo",
+          "US008_ExportKudoReviewCsv"
+        ],
+        "routes": [
+          "(GET) /api/admin/kudos — ROUTE001",
+          "(GET) /api/admin/kudos/export — ROUTE002",
+          "(POST) /admin/review — ROUTE027 (server action markKudoSpam)",
+          "(POST) /admin/review — ROUTE028 (server action unSpamKudo)"
+        ],
+        "models": [
+          "MODEL003_Kudo"
+        ],
+        "bl": [],
+        "perms": [
+          "PERM019_AdminKudoModeration",
+          "PERM021_AdminRealSenderView"
+        ]
+      }
+    },
+    {
+      "fcode": "F008",
+      "name": "Spotlight Board",
+      "slug": "F008_SpotlightBoard",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR007_KudosLiveBoardFeed/REG004_SpotlightBoard"
+        ],
+        "user_stories": [
+          "US042_SearchSpotlightNames",
+          "US043_ToggleSpotlightFullscreen"
+        ],
+        "routes": [
+          "(GET) /api/spotlight — ROUTE017"
+        ],
+        "models": [
+          "MODEL003_Kudo"
+        ],
+        "bl": [
+          "BL003_SpotlightChannelListener",
+          "BL023_SpotlightPublishKudoEvent"
+        ],
+        "perms": [
+          "PERM037_SpotlightRealtimeChannelRead"
+        ]
+      }
+    },
+    {
+      "fcode": "F009",
+      "name": "Hero Badges",
+      "slug": "F009_HeroBadges",
+      "priority": "P2",
+      "type": "background",
+      "related": {
+        "screens": [],
+        "user_stories": [
+          "US040_ViewHeroBadgeTooltip"
+        ],
+        "routes": [],
+        "models": [
+          "MODEL003_Kudo"
+        ],
+        "bl": [
+          "BL014_HeroTierUpDetection"
+        ],
+        "perms": []
+      }
+    },
+    {
+      "fcode": "F010",
+      "name": "Secret Box Rewards",
+      "slug": "F010_SecretBoxRewards",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR007_KudosLiveBoardFeed/REG006_RewardsColumn"
+        ],
+        "user_stories": [
+          "US044_OpenSecretBox"
+        ],
+        "routes": [
+          "(POST) /api/internal/secret-box/tick — ROUTE006",
+          "(GET) /api/secret-boxes/me — ROUTE015",
+          "(POST) /api/secret-boxes/open — ROUTE016"
+        ],
+        "models": [
+          "MODEL010_SecretBoxPrize",
+          "MODEL011_SecretBox",
+          "MODEL012_UserIcon",
+          "MODEL013_MysteryGiftAward",
+          "MODEL014_NationalKudo"
+        ],
+        "bl": [
+          "BL027_SecretBoxTickEndpoint",
+          "BL028_SecretBoxTickCron",
+          "BL032_NationalKudosFinalize",
+          "BL033_SecretBoxSweep",
+          "BL034_SecretBoxTick"
+        ],
+        "perms": [
+          "PERM033_SecretBoxOwnerOnly",
+          "PERM034_InternalJobSecretGuards"
+        ]
+      }
+    },
+    {
+      "fcode": "F011",
+      "name": "Admin Campaigns",
+      "slug": "F011_AdminCampaigns",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR014_AdminCampaignSettings"
+        ],
+        "user_stories": [
+          "US013_CreateCampaign",
+          "US014_EditCampaign",
+          "US015_DeleteCampaign"
+        ],
+        "routes": [
+          "(POST) /admin/settings — ROUTE029 (server action createCampaign)",
+          "(POST) /admin/settings — ROUTE030 (server action updateCampaign)",
+          "(POST) /admin/settings — ROUTE031 (server action removeCampaign)"
+        ],
+        "models": [
+          "MODEL009_Campaign"
+        ],
+        "bl": [],
+        "perms": [
+          "PERM020_AdminCampaignManagement"
+        ]
+      }
+    },
+    {
+      "fcode": "F012",
+      "name": "Profile",
+      "slug": "F012_Profile",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR015_OtherProfile",
+          "SCR016_OwnProfile"
+        ],
+        "user_stories": [
+          "US034_OpenSunnerProfile",
+          "US035_PreviewSunnerCard",
+          "US041_BrowseProfileKudos"
+        ],
+        "routes": [
+          "(GET) /api/profile/:userId/kudos — ROUTE014",
+          "(GET) /api/sunners/:userId/card — ROUTE019"
+        ],
+        "models": [
+          "MODEL003_Kudo",
+          "MODEL004_Profile"
+        ],
+        "bl": [],
+        "perms": [
+          "PERM030_ProfileSentListOwnerOnly",
+          "PERM031_SunnerCardFieldWhitelist"
+        ]
+      }
+    },
+    {
+      "fcode": "F013",
+      "name": "Notifications",
+      "slug": "F013_Notifications",
+      "priority": "P2",
+      "type": "mixed",
+      "related": {
+        "screens": [
+          "SCR003/REG001_NotificationBell",
+          "SCR017_AllNotifications"
+        ],
+        "user_stories": [
+          "US023_BrowseNotifications",
+          "US024_OpenNotification",
+          "US025_MarkAllNotificationsRead"
+        ],
+        "routes": [
+          "(POST) /api/internal/notifications/drain — ROUTE005",
+          "(GET) /api/notifications — ROUTE011",
+          "(GET) /api/notifications/unread-count — ROUTE012",
+          "(POST) /notifications — ROUTE033 (server action markNotificationRead; chuông ở AppLayout và trang này dùng chung)",
+          "(POST) /notifications — ROUTE034 (server action markAllNotificationsRead; chuông ở AppLayout và trang này dùng chung)"
+        ],
+        "models": [
+          "MODEL015_DomainEventOutbox",
+          "MODEL016_Notification"
+        ],
+        "bl": [
+          "BL002_NotificationChannelListener",
+          "BL010_SupabaseBrowserClient",
+          "BL015_NotificationEventContextLoad",
+          "BL016_EventToNotificationMapping",
+          "BL017_NotificationWrite",
+          "BL024_NotificationsPublishSignal",
+          "BL025_NotificationOutboxDrainEndpoint",
+          "BL026_NotificationOutboxDrain",
+          "BL029_NotificationsDrainCron",
+          "BL030_CronHistoryPrune",
+          "BL031_OutboxPrune"
+        ],
+        "perms": [
+          "PERM032_NotificationRecipientOnly",
+          "PERM038_NotificationsRealtimeChannelRead"
+        ]
+      }
+    },
+    {
+      "fcode": "F014",
+      "name": "Admin User Management",
+      "slug": "F014_AdminUserManagement",
+      "priority": "P2",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR018_AdminUser"
+        ],
+        "user_stories": [
+          "US009_BrowseUsers",
+          "US010_PromoteUserToAdmin",
+          "US011_DemoteAdminToUser",
+          "US012_ExportUsersCsv"
+        ],
+        "routes": [
+          "(GET) /api/admin/users/export — ROUTE004",
+          "(POST) /admin/users — ROUTE032 (server action setUserRoleAction)"
+        ],
+        "models": [
+          "MODEL004_Profile"
+        ],
+        "bl": [],
+        "perms": [
+          "PERM017_AdminUserRoleChange",
+          "PERM018_AdminRoleMenuState"
+        ]
+      }
+    },
+    {
+      "fcode": "F015",
+      "name": "Admin Overview",
+      "slug": "F015_AdminOverview",
+      "priority": "P3",
+      "type": "ui",
+      "related": {
+        "screens": [
+          "SCR019_AdminOverview"
+        ],
+        "user_stories": [
+          "US003_FilterOverviewByDateRange",
+          "US004_ExportOverviewCsv"
+        ],
+        "routes": [
+          "(GET) /api/admin/overview/export — ROUTE003"
+        ],
+        "models": [
+          "MODEL001_Department",
+          "MODEL003_Kudo",
+          "MODEL004_Profile",
+          "MODEL011_SecretBox"
+        ],
+        "bl": [],
+        "perms": []
+      }
+    }
+  ]
+}

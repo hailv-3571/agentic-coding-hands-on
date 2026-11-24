@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-11-23T16:25:56Z",
+  "overall_status": "PASS",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 0
+  },
+  "validators": {
+    "api_map": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    }
+  }
+}

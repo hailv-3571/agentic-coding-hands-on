@@ -1,170 +1,50 @@
----
-status: implemented
-authored_by: takumi
-created: 2026-11-08
-lang: vi
----
-
 # Permissions
 
-**Project**: SAA 2025 "ROOT FURTHER" — Cổng giải thưởng + Sun* Kudos + gamification + Admin
-**Generated**: 2026-11-08
-**Analysis Scope**: Toàn hệ thống (F001–F015), web only. Bản nháp forward-authored từ các spec feature; mọi mã `PERM###` = `TBD (draft)`, sẽ được máy cấp ở bước reconcile.
+**Project**: SAA 2025 Kudos Platform
+**Generated**: 2026-11-23
+**Analysis Scope**: `proxy.ts`, `shared/auth/*`, guard từng feature, Route Handler, Server Action và RLS/trigger trong `db/migrations`
 
-> **Curated, plain-language view.** Tài liệu cho PM, BA, khách hàng; không có mã `PERM###` và không có bảng ma trận. Ma trận thô nằm ở `docs/generated/permissions-matrix.md` (do Core pass sinh, không viết ở đây). Lý do chọn mô hình phân quyền thuộc về ADR, không nằm trong bản nháp này.
+> **Bản tóm tắt dễ đọc.** Tài liệu này dành cho PM, BA và khách hàng muốn nắm ai làm được gì mà không phải
+> đọc mã kỹ thuật. Bản chi tiết đầy đủ nằm ở
+> [permissions-matrix.md](../generated/permissions-matrix.md); nội dung ở đây được rút ra từ bản đó.
 
 ## Authorization System Type
 
-**System Type**: `hybrid` — hai role (`rbac`) cộng quyền theo chủ sở hữu (`ownership`) và quy tắc hiển thị theo trạng thái nội dung (`abac` nhẹ: Kudo `public`/`spam`, cờ ẩn danh).
+**System Type**: hybrid
+
+Hệ thống kết hợp bốn lớp luật: vai trò hai mức (`user` và `admin`, lưu ở `profiles.role`), quyền sở hữu tài nguyên (chủ Kudo, người nhận thông báo, chủ Secret Box), cửa sổ thời gian theo ngày ra mắt và ngày kết thúc sự kiện, và secret riêng cho các job nền. Vai trò luôn đọc từ cơ sở dữ liệu ở mỗi request, không lấy từ cookie hay token, nên đổi quyền có hiệu lực ngay.
 
 **Identified Roles**:
-- Guest — chưa đăng nhập.
-- User (Sunner) — đã đăng nhập bằng Google `@sun-asterisk.com`, `profiles.role = user` (mặc định).
-- Admin — `profiles.role = admin`; email nằm trong `ADMIN_EMAILS` (env) tự thành Admin ở mỗi lần đăng nhập; các Admin khác do Admin cấp từ trang User (F014).
+- `guest` — chưa đăng nhập.
+- `sunner` — nhân viên công ty đã đăng nhập, vai trò `user`. Lần đầu phải chọn phòng ban mới dùng được ứng dụng.
+- `admin` — thành viên ban tổ chức, vai trò `admin`.
+- `scheduler` — job nền (pg_cron hoặc cron của máy chủ), không phải người dùng.
 
 ## Curated View
 
-### Theo role
-
-- **Guest** chỉ thấy màn đăng nhập, trang callback đăng nhập, tài nguyên tĩnh và trang lỗi 404. Màn Countdown (`/countdown`) công khai; `/awards` không công khai trước giờ mở (không nằm trong danh sách cho phép). Mọi trang và API khác chuyển về đăng nhập (trang) hoặc trả 401 (dữ liệu). Guest không bao giờ đọc được dữ liệu nghiệp vụ.
-- **User (Sunner)** dùng toàn bộ khu Sunner: xem Kudo công khai, viết và sửa Kudo của mình, thả tim, xem Spotlight, huy hiệu Hero, Secret Box của mình, thông báo của mình, profile. Không vào được khu Admin (nhận 403) và không gọi được hành động của Admin dù gọi trực tiếp.
-- **Admin** làm được mọi việc của User, cộng khu `/admin`: duyệt và đánh dấu Spam Kudo, quản lý Campaign, quản lý người dùng và đổi role, xem Overview, Export. Admin không được tự hạ role của mình và không được để hệ thống hết Admin.
-
-### Theo feature (mỗi dòng là một quy tắc truy cập, đặt tên mô tả)
-
-**F001_Auth**
-- *Chỉ email công ty được vào*: email ngoài `@sun-asterisk.com` bị từ chối ở máy chủ (trước khi tài khoản được tạo), không chỉ ẩn ở giao diện.
-- *Mỗi tài khoản một hồ sơ, role mặc định User*: không bao giờ tự tạo Admin.
-- *Khách bị đưa về đăng nhập, người đã đăng nhập vào trang Login thì về trang chủ*; đích quay lại chỉ nhận đường dẫn nội bộ (chặn open redirect).
-- *Role đọc từ cơ sở dữ liệu ở mỗi request*, không từ cookie hay dữ liệu client; hạ role có hiệu lực ngay ở request kế.
-- *Khu Admin chỉ cho Admin*: một hàm kiểm tra dùng chung (`AdminGuard#requireAdmin`), mọi action Admin tự gọi lại, không dựa vào việc layout chặn.
-
-**F002_AppShell**
-- *Trang 404 cho mọi người, kể cả Guest*; *trang 403 cho User đã đăng nhập mà không đủ quyền*, không lộ nội dung khu Admin.
-- *Mục Admin Dashboard trong menu avatar chỉ hiện với Admin* — chỉ để gọn giao diện, không phải lớp bảo vệ.
-- *Đổi ngôn ngữ* lưu bằng cookie, không ghi hồ sơ; trang công khai (Login, Countdown) có nút đổi ngôn ngữ và đổi ngôn ngữ luôn mở, kể cả trước giờ mở.
-
-**F003_KudosAuthoring**
-- *Người gửi luôn là người đang đăng nhập*: không nhận `sender_id` từ client.
-- *Chỉ chủ bài được sửa Kudo*: `updateKudo` và `GET /api/kudos/{id}/edit` so `sender_id` với session, người khác nhận 403 `FORBIDDEN` không kèm nội dung; Admin không có ngoại lệ (cùng 403). Id lạ hoặc sai dạng nhận 404 `NOT_FOUND`.
-- *Kudo `spam` không sửa được*: chủ bài nhận 423 `SPAM_LOCKED` khi lưu; route nạp dữ liệu trả `locked: true` để hiện thông báo chỉ đọc.
-- *Không đổi được người nhận khi sửa*: gửi `recipientId` ở `updateKudo` bị từ chối (`recipientImmutable`). Không có thao tác xóa Kudo.
-- *Cửa ghi đóng từ `EVENT_END_AT`*: tạo, sửa và xin URL upload ảnh đều trả 403 `WRITING_CLOSED`, kiểm lại ở server mỗi lần gọi.
-- *Không đặt được trạng thái Kudo*: Kudo mới luôn `public`; luồng tạo/sửa không nhận `status`.
-- *Ảnh đính kèm chỉ nhận đường dẫn do chính người gửi xin ký* (bảng `kudo_image_uploads`) và object đã tồn tại, tối đa 5; không tham chiếu được ảnh của người khác. Mỗi người giữ tối đa 20 lượt ký chưa dùng trong 24 giờ (429 `UPLOAD_LIMIT`); body yêu cầu ký tối đa 4 KB (413).
-- *Tìm Sunner làm người nhận hoặc người được nhắc* dành cho mọi User đã chọn phòng ban (chưa chọn: 403 `ONBOARDING_REQUIRED`); tham số `excludeSelf` loại chính mình, ô Người nhận luôn bật.
-- *Không tự gửi Kudo cho chính mình*: chặn ở server (`SELF_SEND` 422) và ở DB (CHECK `kudos_no_self_send`).
-
-**F004_KudosFeed**
-- *Chỉ Kudo `public` được hiển thị*: Highlight, All Kudos, chi tiết. Ngoại lệ duy nhất: Kudo spam mở được ở màn chi tiết `/kudos/{id}` cho chính người gửi, chỉ đọc (`isSpam: true`, không tim, không Copy Link, không nút sửa). Id sai dạng, id lạ và spam của người khác trả cùng một kết quả `notFound()`, không phân biệt được.
-- *Kudo ẩn danh không lộ người gửi* (xem mục Quyền riêng tư Kudo ẩn danh bên dưới).
-- *Sao chép liên kết* chỉ là thao tác ở trình duyệt; người mở liên kết vẫn phải đăng nhập.
-
-**F005_KudosHearts**
-- *Chỉ thả tim cho Kudo `public` của người khác*: tự thả tim cho Kudo của mình bị 403, Kudo spam bị 404.
-- *Tim luôn gắn với người đang đăng nhập*; mỗi người một tim cho mỗi Kudo; bỏ tim khi chưa thả vẫn thành công.
-- *Hệ số x2 gắn lúc thả* và giữ nguyên sau khi campaign kết thúc hoặc bị xoá.
-
-**F006_AwardsPortal**
-- *Trước giờ mở (`LAUNCH_AT`) người dùng thường chỉ thấy Countdown*; `/awards` cũng bị chặn trước giờ mở. Admin bỏ qua cổng này (vai trò đọc từ DB, lỗi đọc coi như không phải Admin), nhưng không ghi được trước giờ mở (cửa ghi chung `LAUNCH_AT ≤ now < EVENT_END_AT`).
-- *Thể lệ, Tiêu chuẩn cộng đồng, Hệ thống giải là trang tĩnh, không có ô nhập, không có dữ liệu cá nhân.*
-
-**F007_AdminModeration**
-- *Chỉ Admin duyệt Kudo*: xem bảng mọi Kudo (cả `public` lẫn `spam`), lọc, tìm, Export, Mark Spam, Un Spam; kiểm role ở server cho từng action.
-- *Chủ bài chỉ thấy Kudo spam do chính mình gửi*, kèm thẻ "Spam" và lớp cảnh báo vi phạm; người khác không bao giờ thấy.
-- *Chủ bài không tự gỡ spam được*: bảng `kudos` không có đường ghi cho client; luồng sửa của F003 không nhận `status`.
-- *Mark Spam không thu hồi Secret Box đã cấp hay đã mở*; số đếm (tim, huy hiệu Hero, thống kê) tự loại Kudo spam khi truy vấn.
-
-**F008_SpotlightBoard**
-- *Mọi User đã đăng nhập xem được Spotlight*; chỉ có người nhận, tổng số Kudo `public`; không bao giờ có người gửi, kể cả Kudo ẩn danh.
-- *Kênh thời gian thực là kênh riêng tư*: chỉ tài khoản đã xác thực nhận được.
-
-**F009_HeroBadges**
-- *Huy hiệu Hero chỉ dựng cho người đã đăng nhập*, không có endpoint công khai; client chỉ nhận tên cấp, không nhận danh sách người gửi.
-- *Chỉ Kudo `public` và người gửi khác người nhận được tính vào cấp.*
-
-**F010_SecretBoxRewards**
-- *Bảng thống kê và nút Mở Secret Box chỉ của chính mình*; mở hộp luôn chỉ tìm hộp của người đang đăng nhập, không mở được hộp của người khác.
-- *Bộ sưu tập icon của người khác và danh sách 10 Sunner nhận quà mới nhất* đọc được với mọi User đã đăng nhập (tên, avatar, quà hiện vật; không có icon thường).
-- *Kết quả bốc hộp do máy chủ quyết định*; client không chọn được phần thưởng.
-- *Việc chốt Kudos Quốc Dân chỉ chạy bằng khoá dịch vụ phía máy chủ*, không có đường gọi từ trình duyệt.
-- *Kudo ẩn danh vẫn được tính tim, hộp, Kudos Quốc Dân cho người gửi.*
-
-**F011_AdminCampaigns**
-- *Chỉ Admin thêm, sửa, xoá Campaign*; campaign đã kết thúc không sửa/xoá được; campaign đang chạy không đổi được giờ bắt đầu.
-- *Bảng `campaigns` chỉ đi qua máy chủ*; F005 và F010 đọc campaign hiệu lực qua hàm nội bộ, không có endpoint công khai.
-
-**F012_Profile**
-- *Bảng thống kê cá nhân và danh sách "Đã gửi" chỉ cho chủ profile*; xem "Đã gửi" của người khác bị 403.
-- *Profile người khác chỉ hiện Kudo `public` họ đã nhận*, người gửi ẩn danh vẫn bị che.
-- *Thẻ nhanh khi rê chuột chỉ có tên, avatar, phòng ban, cấp Hero*, không email, không thống kê; *người gửi ẩn danh không có thẻ nhanh và không sinh request nào*.
-- *Kudo spam của mình hiện trong "Đã gửi" với thẻ "Spam"; không bao giờ trong "Đã nhận" của ai.*
-
-**F013_Notifications**
-- *Mọi thao tác chỉ trên thông báo của chính mình*: thông báo của người khác trả 404; không đọc, không đánh dấu đọc được.
-- *Kênh thời gian thực theo từng người*: chỉ chủ nhận thông báo của mình.
-- *Thông báo Kudo ẩn danh không có người gửi* (`actor` rỗng, không có tên hay id).
-- *Việc sinh thông báo chạy phía máy chủ bằng khoá dịch vụ*, không có đường gọi từ trình duyệt.
-
-**F014_AdminUserManagement**
-- *Chỉ Admin xem bảng người dùng, lọc, Export, đổi role*: trang `/admin/users` và server action `setUserRoleAction` gọi `requireAdmin()` trước mọi việc; người gọi lấy từ session, input chỉ có `userId` và `role`. Route `GET /api/admin/users/export` (và `/api/admin/overview/export`) gọi `requireAdminApi()` trước khi đọc tham số: chưa đăng nhập 401 `unauthorized`, không phải Admin 403 `forbidden`, thân lỗi chỉ có `{code}`.
-- *Ba chốt khi hạ về User*, kiểm trong cùng transaction với việc ghi: không tự hạ role của chính mình (`SELF_DEMOTE`, kể cả khi còn Admin khác); không hạ Admin có email trong `ADMIN_EMAILS` (`ENV_ADMIN`, vì lần đăng nhập sau sẽ tự lên Admin lại; bảng hiện nhãn "Admin · env" và tắt "Set as User"); hệ thống luôn còn ít nhất một Admin (`LAST_ADMIN`). Đổi role là server action nên các từ chối trả về dạng mã lỗi trong kết quả `{ ok: false, error }` (cùng `NOT_FOUND`, `FORBIDDEN`), không phải mã HTTP.
-- *Hai Admin hạ nhau cùng lúc chỉ một lệnh thành công*: mọi lần đổi role khoá các dòng Admin theo thứ tự id rồi đọc lại; bên thua nhận `LAST_ADMIN`, không bao giờ về 0 Admin.
-- *Kiểm lại người thao tác trong transaction*: người thao tác phải còn nằm trong nhóm Admin vừa khoá, nếu không nhận `FORBIDDEN` và không ghi được gì (Admin bị hạ giữa chừng không đổi được role nữa). Nếu role đích đã đúng thì trả trạng thái hiện tại, không ghi.
-- *Dấu vết kiểm toán*: mỗi lần đổi role ghi `profiles.role_updated_by` (id người thao tác) và `profiles.role_updated_at`; hai Admin nâng cùng một người cùng lúc thì chỉ một lần ghi, `role_updated_by` là người ghi trước.
-- *Role chỉ đổi qua hành động này*: Sunner không tự nâng role được qua API Supabase công khai. Ngoại lệ duy nhất: đăng nhập bằng email trong `ADMIN_EMAILS` tự đặt `role = admin` (F001).
-
-**F015_AdminOverview**
-- *Chỉ Admin xem Overview và Export*; chỉ đọc, không ghi.
+- **`guest`** chỉ mở được trang đăng nhập, trang đếm ngược trước ngày ra mắt và trang báo "không có quyền truy cập". Mọi trang khác tự chuyển về đăng nhập, mọi API trả lỗi 401. Đăng nhập chỉ thành công với tài khoản Google đúng domain công ty; domain khác bị từ chối ngay ở cơ sở dữ liệu lẫn ở ứng dụng.
+- **`sunner` đăng nhập lần đầu** chưa vào được các trang chính. Người này chỉ thấy trang chọn phòng ban và chỉ chọn được một lần, khi hồ sơ còn chưa có phòng ban.
+- **`sunner` đã chọn phòng ban** vào được trang chủ, giải thưởng, tiêu chuẩn cộng đồng, thể lệ, Live board, chi tiết Kudo, thông báo và hồ sơ cá nhân. Người này xem được Kudo công khai của mọi người, gửi Kudo cho Sunner khác (không gửi cho chính mình, có thể đính ảnh), sửa Kudo của chính mình khi Kudo chưa bị đánh dấu spam, thả hoặc bỏ tim cho Kudo công khai của người khác, đọc và đánh dấu đã đọc thông báo của mình, mở Secret Box của mình. Người này không thấy được người gửi thật của Kudo ẩn danh, không thấy Kudo spam của người khác và không xem được danh sách "Đã gửi" trên hồ sơ của người khác.
+- **`admin`** làm được mọi việc của `sunner` với cùng điều kiện, cộng thêm khu quản trị: xem tổng quan và xuất CSV, duyệt nội dung (đánh dấu hoặc bỏ đánh dấu spam, thấy người gửi thật của Kudo ẩn danh, xuất CSV), cài campaign nhân đôi tim (tạo, sửa, xóa), xem danh sách người dùng, xuất CSV và nâng hoặc hạ vai trò. Admin không có đặc quyền sửa Kudo, đọc thông báo hay mở Secret Box thay người khác, và vẫn bị khóa ngoài cửa sổ ghi như mọi người. Admin không tự hạ quyền mình, không hạ tài khoản thuộc danh sách admin cấu hình sẵn và không hạ admin cuối cùng.
+- **`scheduler`** chỉ gọi được hai endpoint nội bộ (tick Secret Box mỗi phút, xả hàng đợi thông báo mỗi 5 giây) và phải gửi đúng secret. Không có người dùng nào, kể cả admin, gọi được hai endpoint này từ giao diện.
 
 ## Access Boundaries
 
-### Ranh giới Guest / User / Admin
-
-- Giữa Guest và User: session Supabase hợp lệ (`getUser()`), email đúng domain. Cổng này đặt ở lớp proxy (khách chuyển `/login?next=…`, đường dẫn `/api/` trả JSON 401) và nhắc lại ở đầu mọi page, route handler, server action qua `requireSunner()`.
-- Giữa User và Admin: role đọc từ cơ sở dữ liệu. Với `/admin/*`, proxy trả luôn 403 cho người không phải Admin (trang tải: HTML của `/access-denied` với status 403; non-GET hoặc server action: JSON 403), vì dưới Cache Components layout không đổi được status. Layout chỉ là UX: mỗi page, action và truy vấn Admin tự gọi `requireAdmin()` (layout không chạy lại ở mỗi lần điều hướng phía client và không bảo vệ server action). Chi tiết: `architecture.md`, mục Session proxy.
-- Khu Admin gồm: Overview, Review content, User, Settings (Campaign), cùng mọi route `/admin/*` và `/api/admin/*`. Không có khu vực nào chỉ dành cho một Sunner cụ thể ngoài dữ liệu của chính người đó.
-
-### Quyền sở hữu (ownership)
-
-- Chủ Kudo (người gửi): sửa Kudo của mình, thấy Kudo spam của mình, thấy bài ẩn danh của mình.
-- Chủ hộp / thông báo / thống kê: chỉ người đó; `userId` luôn lấy từ session, không từ body, đường dẫn hay query.
-
-### Quyền riêng tư Kudo ẩn danh
-
-- Máy chủ cắt bỏ mọi trường nhận diện người gửi (id, tên, avatar, phòng ban, cấp Hero) khỏi mọi dữ liệu gửi tới trình duyệt: thẻ Kudo, chi tiết, Highlight, danh sách trên profile (kể cả "Đã gửi" của chính người gửi), Spotlight (ảnh chụp và sự kiện realtime), thông báo. Việc che nằm ở tầng truy vấn (`KudoPublicQuery`, truy vấn Spotlight, hàm trigger, bộ sinh thông báo), không dựa vào giao diện và không dựa vào RLS.
-- Chỉ chính người gửi biết bài của mình (cờ "chủ bài" do máy chủ tính, chỉ trả cho đúng người đó).
-- Người gửi ẩn danh vẫn được tính điểm: tim, Secret Box, Kudos Quốc Dân, số liệu Admin. Ẩn danh chỉ là chuyện hiển thị.
-- Avatar người gửi ẩn danh không có thẻ nhanh; thẻ nhanh không gắn với Kudo nên không suy ra được người gửi.
-- Admin: đã chốt — Admin thấy người gửi thật kèm nhãn "Ẩn danh" trong bảng Review, bộ lọc người gửi và Export (cột "Ẩn danh" = Có, để truy vết vi phạm); người dùng thường không bao giờ thấy.
-
-### Quy tắc hiển thị Kudo spam
-
-- Kudo `spam` biến mất khỏi mọi nơi công khai: Highlight, All Kudos, chi tiết (404 cho mọi người trừ chủ bài, xem dòng sau), Spotlight, profile "Đã nhận", mọi số đếm (tim, Hero, tổng Kudo, thống kê Admin).
-- Chủ bài thấy Kudo spam của chính mình (một thẻ "Spam" ở "Đã gửi" trên profile, trang chi tiết `/kudos/{id}` ở dạng chỉ đọc kèm thẻ "Spam", và lớp cảnh báo "Cảnh báo vi phạm tiêu chuẩn cộng đồng"); người khác không bao giờ thấy, kể cả khi biết id.
-- Admin thấy cả hai trạng thái trong bảng Review với huy hiệu `Public`/`Spam`.
-- Chỉ Admin đổi được trạng thái; chủ bài nhận thông báo "Kudo bị tạm ẩn".
-
-### Quy tắc dữ liệu: Supabase RLS
-
-- Drizzle chạy bằng vai trò server nên bỏ qua RLS: mọi kiểm quyền, kiểm sở hữu và che dữ liệu **phải nằm ở tầng server**, không được trông vào RLS.
-- RLS **bật** ở mọi bảng nghiệp vụ (`profiles`, `kudos`, `kudo_hearts`, `campaigns`, `secret_boxes` và các bảng thưởng, `notifications`, `domain_event_outbox`, …) làm lớp phòng thủ thứ hai. **Không có policy ghi** (INSERT/UPDATE/DELETE) nào cho vai trò `anon`/`authenticated`: mọi ghi đi qua server.
-- Không có policy đọc cho `anon`/`authenticated` trên `kudos` và các bảng khác chứa thông tin nhạy cảm (người gửi ẩn danh, Kudo spam): nếu cần đọc trực tiếp từ client trong tương lai, phải thêm policy tối thiểu riêng cho từng bảng và rà lại quy tắc che dữ liệu. (Câu chữ "RLS yêu cầu đã đăng nhập" ở F001 cần hiểu theo hướng này — xem Consistency Check trong `architecture.md`, C-20.)
-- Ngoại lệ duy nhất là chính sách đọc trên `realtime.messages` (Supabase Realtime): cho vai trò đã xác thực nhận kênh `spotlight` và kênh `notifications:{auth.uid()}` của chính mình. Kênh Realtime công khai phải tắt.
-- Khoá dịch vụ (service role) chỉ ở phía máy chủ, không bao giờ gửi xuống client: dùng cho bộ xử lý outbox (F013) và job chốt Kudos Quốc Dân (F010). Khoá công khai (anon) đi cùng RLS như trên.
-- Storage ảnh Kudo: bucket `kudo-images` riêng tư; upload qua signed upload URL do server cấp, đường dẫn `kudos/{uuid}.{ext}` không chứa id người gửi. Đọc ảnh khi sửa bằng signed read URL 10 phút (`previewUrl`); đường đọc cho feed thuộc phase 05.
+- **Khách và Sunner**: ranh giới là phiên đăng nhập hợp lệ do Supabase Auth xác nhận. Phiên bị thu hồi thì mất quyền ngay; nếu Auth không trả lời được, hệ thống coi như chưa đăng nhập.
+- **Sunner và admin**: ranh giới là vai trò trong hồ sơ. Khu `/admin` bị chặn ngay ở cổng đầu vào (trả 403), và mỗi trang quản trị, mỗi thao tác quản trị còn tự kiểm lại một lần nữa. Riêng các API quản trị `/api/admin/*` không có cổng ở cổng đầu vào, chỉ được chặn bên trong từng API.
+- **Quyền sở hữu**: chỉ chủ Kudo mới sửa Kudo của mình, và chỉ khi Kudo còn công khai. Thông báo và Secret Box luôn gắn với người dùng của phiên, không nhận mã người dùng từ phía trình duyệt. Danh sách "Đã gửi" chỉ có trên hồ sơ của chính mình, vì cho lọc theo người gửi trên hồ sơ người khác sẽ lộ người gửi ẩn danh.
+- **Kudo ẩn danh**: mọi màn hình công khai chỉ hiện biệt danh, không hiện tên, ảnh đại diện, phòng ban hay hạng của người gửi, kể cả với admin. Chỉ truy vấn riêng của khu quản trị mới thấy người gửi thật.
+- **Kudo spam**: bị loại khỏi mọi danh sách công khai; chỉ người gửi còn xem được (ở dạng chỉ đọc). Người khác mở đường dẫn của Kudo spam nhận kết quả giống Kudo không tồn tại.
+- **Ẩn nút trên giao diện không phải là phân quyền**: mục Dashboard của admin, nút sửa Kudo, nút tim và menu đổi vai trò đều chỉ ẩn hoặc khóa cho gọn; máy chủ vẫn kiểm lại từng thao tác.
+- **Cơ sở dữ liệu**: mọi bảng bật RLS và không cấp quyền cho trình duyệt, nên trình duyệt không đọc ghi bảng nào trực tiếp. Ứng dụng truy cập qua máy chủ bằng vai trò bỏ qua RLS, vì vậy các kiểm tra ở tầng máy chủ mới là phân quyền thật. Ảnh Kudo nằm trong kho private, chỉ xem được qua đường dẫn ký sẵn của máy chủ; hai kênh realtime (Spotlight, thông báo) cũng có policy riêng, kênh thông báo chỉ nghe được thông báo của chính mình.
 
 ## Special Conditions
 
-- **Trước giờ mở (`LAUNCH_AT`)**: khách và người dùng thường chỉ vào được `/login`, `/auth/callback`, `/countdown`, `/access-denied` (cùng hai đường nội bộ có khoá riêng: tick Secret Box, drain thông báo); trang khác chuyển về Countdown, còn Server Action, `/api/*` và request không phải GET nhận JSON 403 `{code:"prelaunch"}`. Admin bỏ qua cổng nhưng không ghi được. Sau giờ mở `/countdown` về trang chủ. Chỉ suy ra từ giờ máy chủ, không lưu cờ. Cổng này chỉ là lớp tiện lợi, quyền dữ liệu vẫn kiểm ở từng truy vấn.
-- **Khung giờ campaign x2 tim**: hệ số của tim gắn lúc thả theo campaign đang hiệu lực `[starts_at, ends_at)`; không đổi hồi tố.
-- **Sau `EVENT_END_AT`**: khoá gửi/sửa Kudo và thả tim (không còn tim mới nên không cấp hộp mới); hộp đã có vẫn mở được. Không có mốc `SECRET_BOX_LOCK_AT` riêng. Kudos Quốc Dân chốt đúng một lần ở mốc `NATIONAL_KUDOS_FINALIZE_AT`.
-- **Phiên hết hạn / hạ role giữa chừng**: coi như chưa có session (chuyển Login kèm đích quay lại) hoặc bị 403 ở request kế (role đọc lại từ DB). Quyền kênh Realtime chỉ cập nhật khi token hết hạn.
-- **Giới hạn nhập**: lời nhắn tối đa 1.000 ký tự, tối đa 5 ảnh; Export tối đa `EXPORT_MAX_ROWS` dòng, ô CSV bắt đầu bằng `= + - @` bị vô hiệu hoá.
-- **Gọi trực tiếp API / server action khi chưa đủ quyền**: bị từ chối theo cùng quy tắc như đi qua giao diện (401 chưa đăng nhập, 403 không đủ quyền, 404 với tài nguyên không được phép biết là tồn tại: Kudo spam, thông báo của người khác).
-- **Cấu hình môi trường**: `ALLOWED_EMAIL_DOMAIN` chỉ là gợi ý cho màn chọn tài khoản Google; chốt chặn thật nằm ở auth hook `before_user_created` cùng trigger trên `auth.users` (INSERT và đổi email), chung vị từ `is_sunner_email()`.
-
-### Quyết định còn mở liên quan phân quyền
-
-- Không còn quyết định phân quyền nào mở về cổng trước giờ mở hay người gửi ẩn danh (đã chốt, xem trên). Còn chờ BTC xác nhận câu chữ lỗi, không phải quyền: xem `plans/261108-0048-saa-2025-kudos-platform/handover-open-decisions.md`.
-- Chủ bài xem Kudo spam của mình: đã chốt là có, chỉ đọc (trang chi tiết và "Đã gửi"); sửa thì không (F003, 423).
+- **Trước giờ ra mắt**: chỉ admin vào được ứng dụng; Sunner thường bị đưa về trang đếm ngược (các thao tác khác trả 403). Sau giờ ra mắt, trang đếm ngược tự chuyển về trang chủ cho mọi người.
+- **Cửa sổ ghi**: từ giờ ra mắt đến hết thời điểm kết thúc sự kiện mới gửi, sửa Kudo, tải ảnh lên, thả hoặc bỏ tim được. Ngoài khoảng này nút bị khóa và máy chủ từ chối, admin cũng không ngoại lệ. Hai mốc thời gian cấu hình theo môi trường, mốc kết thúc phải sau mốc ra mắt.
+- **Admin cấu hình sẵn**: email nằm trong danh sách admin của môi trường được nâng lên admin ở mỗi lần đăng nhập, nên không hạ quyền được từ giao diện (bảng người dùng ghi "Admin · env").
+- **Domain email**: chỉ domain công ty được phép. Hook kiểm tra của Supabase phải bật thủ công trên bản hosted; nếu quên, trigger trong cơ sở dữ liệu vẫn chặn nhưng người dùng chỉ thấy lỗi chung thay vì thông báo "sai domain".
+- **Job nền**: hai secret nội bộ phải đủ dài (tối thiểu 32 ký tự) và là tuỳ chọn; chưa cấu hình thì endpoint trả 503 và job không chạy được.
+- **Giới hạn upload ảnh**: mỗi người tối đa 20 ảnh đang chờ gắn vào Kudo trong 24 giờ.
+- **Cookie ngôn ngữ**: chỉ gắn cờ bảo mật ở môi trường production.
+- Không có feature flag, A/B test hay nhánh theo ngôn ngữ nào ảnh hưởng tới quyền truy cập. Chi tiết từng luật nằm trong [permissions-matrix.md](../generated/permissions-matrix.md).

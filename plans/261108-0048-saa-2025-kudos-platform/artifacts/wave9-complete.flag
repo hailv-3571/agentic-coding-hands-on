@@ -1,0 +1,17 @@
+# Wave 9 complete — 2026-11-24T02:33:29Z
+# Wave 9.5 complete (core cursor advanced by orchestrator)
+# Scope: core
+# Mode: full
+# Affected artifacts: all
+3a61f00713a8884e7e5d026906edff3f8b554bfedff0989ad9481f777fa63047  docs\system\architecture.md
+f850d71923985925bfee6c67bb0c7289ea1327ed3e358839daaee9bf42d2ff1b  docs\generated\route-list.md
+7496e70b40de54fedb97fbd4e8b6d80ad12cb375eec63a5b61d0d0097aca6df7  docs\generated\entities.md
+a611bed97067062c79f41c04f9cf16953414e0d1cda63c278c83fb9e63ba9797  docs\generated\screen-list.md
+4e576ec3e34581cfbf972d6a620128e8057af5467594c395b89b63bc06c891d7  docs\generated\screen-flow.md
+b845a3bda52d17135f518fa01e08ab554b395807135a1f62322ac7d4a1179174  docs\generated\behavior-logic.md
+998268aefcc20b19a9aff3fdf5a37aba79eceb7110acfd41db86fe5bcf65efbf  docs\generated\api-map.md
+f14f87f65f97887d4802e8957edd126a33adb098ef9c9f801417b6a14d6e8b74  docs\system\permissions.md
+26752c8b1245a332895b5f57c4e8af5737bbae8fb1bd068a0d68e201acf2d1ac  docs\generated\permissions-matrix.md
+f33fb7e1a979562bf0d3b157f24153b1c4baf08c1f56a02a707482826dcf9845  docs\generated\user-stories.md
+0d80f08ecc1b20fe2e57d93ebb61646850c1f7c2c473dbfea18373079ac264dd  docs\generated\feature-list.md
+a169497ee50b5fb1535e672686fb98b69d2214665cafd563dc162c6e982f4a9a  docs\system\overview.md

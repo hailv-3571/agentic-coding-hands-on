@@ -1,0 +1,98 @@
+{
+  "plan_dir": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform",
+  "specs": {
+    "F006_AwardsPortal": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F006_AwardsPortal"
+    },
+    "F008_SpotlightBoard": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F008_SpotlightBoard"
+    },
+    "F010_SecretBoxRewards": {
+      "issues": [
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+            "line": 271
+          },
+          "message": "A5 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+          "rule_id": "FeatureSpec.state_rung_missing",
+          "severity": "warning",
+          "validator": "feature_spec"
+        },
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+            "line": 309
+          },
+          "message": "A6 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+          "rule_id": "FeatureSpec.state_rung_missing",
+          "severity": "warning",
+          "validator": "feature_spec"
+        },
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+            "line": 397
+          },
+          "message": "A10 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+          "rule_id": "FeatureSpec.state_rung_missing",
+          "severity": "warning",
+          "validator": "feature_spec"
+        }
+      ],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards"
+    },
+    "F012_Profile": {
+      "issues": [
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F012_Profile\\technical-spec.md",
+            "line": 74
+          },
+          "message": "A1 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung (_pre_fill)",
+          "rule_id": "FeatureSpec.state_rung_missing",
+          "severity": "warning",
+          "validator": "feature_spec"
+        }
+      ],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F012_Profile"
+    },
+    "F013_Notifications": {
+      "issues": [
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications\\technical-spec.md",
+            "line": 196
+          },
+          "message": "A5 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+          "rule_id": "FeatureSpec.state_rung_missing",
+          "severity": "warning",
+          "validator": "feature_spec"
+        },
+        {
+          "location": {
+            "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications\\technical-spec.md",
+            "line": 376
+          },
+          "message": "A13 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+          "rule_id": "FeatureSpec.state_rung_missing",
+          "severity": "warning",
+          "validator": "feature_spec"
+        }
+      ],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications"
+    },
+    "F014_AdminUserManagement": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F014_AdminUserManagement"
+    },
+    "F015_AdminOverview": {
+      "issues": [],
+      "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F015_AdminOverview"
+    }
+  },
+  "timestamp": "2026-11-24T04:09:29Z",
+  "validator": "feature_spec"
+}
