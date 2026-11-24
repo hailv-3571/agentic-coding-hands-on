@@ -160,7 +160,8 @@
         ],
         "routes": [
           "(GET) /api/kudos — ROUTE007",
-          "(GET) /api/kudos/highlight — ROUTE008"
+          "(GET) /api/kudos/highlight — ROUTE008",
+          "(GET) /api/sunners/search — ROUTE018"
         ],
         "models": [
           "MODEL003_Kudo"
@@ -250,7 +251,8 @@
           "(GET) /api/admin/kudos — ROUTE001",
           "(GET) /api/admin/kudos/export — ROUTE002",
           "(POST) /admin/review — ROUTE027 (server action markKudoSpam)",
-          "(POST) /admin/review — ROUTE028 (server action unSpamKudo)"
+          "(POST) /admin/review — ROUTE028 (server action unSpamKudo)",
+          "(GET) /api/sunners/search — ROUTE018"
         ],
         "models": [
           "MODEL003_Kudo"
@@ -418,7 +420,7 @@
       "type": "mixed",
       "related": {
         "screens": [
-          "SCR003/REG001_NotificationBell",
+          "SCR003_AppLayout/REG001_NotificationBell",
           "SCR017_AllNotifications"
         ],
         "user_stories": [

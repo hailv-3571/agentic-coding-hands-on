@@ -166,7 +166,7 @@ sequenceDiagram
 - **BR-007 — Snapshot tải lại có tiếng nói cuối về số đếm.** Hẹn tải lại sau mỗi lần join (ngẫu nhiên 0-2 giây), 2-3 giây sau sự kiện `removed`/`restored` (trailing debounce: yêu cầu mới thay yêu cầu đang chờ), và ngay khi tab hiện lại; `added` không hẹn vì A5 đã chống trùng theo `kudoId`. *(§ 4.4)*
 - **INT-001 — Nhận broadcast do A3 phát qua Supabase Realtime.** Chỉ nhận qua kênh riêng tư đã xác thực; sự kiện lỡ khi đứt kết nối không được phát lại mà được bù bằng lần tải lại sau join. *(§ 4.5)*
 **Result** · không ghi DB. Cập nhật `status` cho banner, gọi `onEvent` (→ A5) cho mỗi sự kiện hợp lệ và `onResync` (→ A2) theo lịch trên. Tab hiện lại vẫn tải lại ngay kể cả khi đang `failed`. Gỡ kênh và mọi listener (`visibilitychange`, `online`, `offline`, `onAuthStateChange`) khi unmount; lỗi lấy phiên/`setAuth` chỉ `console.error` rồi vẫn thử join.
-**State** · `SM-001`: `connecting` → `live`, `live` → `reconnecting`, `reconnecting` → `failed` *(§ 4.3)*
+**State** · `SM-001`: `[*]` → `connecting` (mở trang hoặc `retry()`), `connecting` → `live`, `connecting` → `reconnecting`, `live` → `reconnecting`, `reconnecting` → `live`, `reconnecting` → `reconnecting` (lỗi lần 2-4 hoặc `online`), `reconnecting` → `failed` (lỗi thứ 5 liên tiếp), `failed` → `connecting` (bấm Thử lại) *(§ 4.3)*
 **Source:** `features/spotlight-board/hooks/use-spotlight-channel.ts:31-120` → `features/spotlight-board/lib/spotlight-channel-state.ts:20-33` → `features/spotlight-board/lib/spotlight-resync-scheduler.ts:24-49` → `features/spotlight-board/lib/fetch-spotlight-snapshot.ts:9-11` → `features/spotlight-board/components/spotlight-connection-banner.tsx:19-36` → `shared/auth/supabase-browser-client.ts:14-20`
 
 <!-- Không có diagram: thuần client, không ghi bảng; trình tự đã ở sơ đồ cấp capability. -->
@@ -301,6 +301,7 @@ sequenceDiagram
 | A8 | Thoát bằng Esc | `fullscreenchange` đồng bộ lại nút về "Phóng to bảng" |
 | A8 | Trình duyệt không hỗ trợ hoặc từ chối | Toast "Không thể phóng to bảng.", bảng giữ nguyên |
 | A1-A8 | Chưa đăng nhập | Trang → `/login`; API → 401; anon bị Realtime từ chối vào kênh — cite A0 § 4.4 |
+| A1 · A2 | Trước `LAUNCH_AT`, Sunner đã đăng nhập nhưng không phải admin | Cổng prelaunch ở proxy (sau kiểm phiên, trước trang và handler): trang `/kudos` → 307 `/countdown`; `GET /api/spotlight` → 403 `{ code: "prelaunch" }`, handler không chạy (cổng thuộc F006) — cite A0 § 4.4 |
 
 ## 4. Shared Foundation
 
@@ -406,8 +407,8 @@ stateDiagram-v2
 #### Bin 3 — cross-cutting, belongs to no single action
 
 **A0 · FR-601 / FR-002 — mọi action yêu cầu phiên đăng nhập hợp lệ, và feature không bao giờ ghi dữ liệu Kudo.**
-Đây là rule **cross-cutting**, áp dụng cho cả tám action, không phải rule riêng của một action. Trang dựng lần đầu: `requireSunner()` (khách → `/login`, chưa chọn phòng ban → onboarding). Đường API: proxy trả 401 JSON khi không có phiên và `getSessionUser()` trong handler kiểm lại trước khi đọc DB (không đòi phòng ban). Kênh Broadcast là kênh riêng tư: policy `spotlight_authenticated_read` trên `realtime.messages` chỉ cho vai trò `authenticated` đọc, kiểm cả `realtime.topic()` lẫn cột `topic` của dòng (policy permissive được OR với nhau, thiếu một vế thì đọc được topic khác) và `extension = 'broadcast'`; không có policy INSERT/UPDATE/DELETE nên client không thể giả mạo sự kiện. Truy vấn chỉ SELECT; hàm phát sự kiện không sửa `kudos`. Cơ chế phiên thuộc F001, kênh dùng chung socket thuộc F013 (BL010).
-**Source:** `shared/auth/current-user.ts:18-31` · `shared/auth/current-user.ts:48-53` · `db/migrations/0017_spotlight_realtime.sql:79-81` · `shared/auth/session-proxy.ts:71-75`
+Đây là rule **cross-cutting**, áp dụng cho cả tám action, không phải rule riêng của một action. Trang dựng lần đầu: `requireSunner()` (khách → `/login`, chưa chọn phòng ban → onboarding). Đường API: proxy trả 401 JSON khi không có phiên và `getSessionUser()` trong handler kiểm lại trước khi đọc DB (không đòi phòng ban). Kênh Broadcast là kênh riêng tư: policy `spotlight_authenticated_read` trên `realtime.messages` chỉ cho vai trò `authenticated` đọc, kiểm cả `realtime.topic()` lẫn cột `topic` của dòng (policy permissive được OR với nhau, thiếu một vế thì đọc được topic khác) và `extension = 'broadcast'`; không có policy INSERT/UPDATE/DELETE nên client không thể giả mạo sự kiện. Truy vấn chỉ SELECT; hàm phát sự kiện không sửa `kudos`. Trước `LAUNCH_AT`, bước (5) của proxy (cổng prelaunch của F006) chạy sau bước kiểm phiên của proxy nhưng trước trang và handler: người đã đăng nhập mà không phải admin mở trang `/kudos` bị chuyển 307 về `/countdown`, gọi `GET /api/spotlight` (ROUTE017) nhận 403 JSON `{ code: "prelaunch" }`; admin đi qua. Cơ chế phiên thuộc F001, kênh dùng chung socket thuộc F013 (BL010).
+**Source:** `shared/auth/current-user.ts:18-31` · `shared/auth/current-user.ts:48-53` · `db/migrations/0017_spotlight_realtime.sql:79-81` · `shared/auth/session-proxy.ts:71-75` · `shared/auth/session-proxy.ts:112-120` · `features/awards-portal/server/prelaunch-gate.ts:56-70` · `features/awards-portal/server/prelaunch-gate-step.ts:14-30`
 
 #### Bin 2 — used by ≥2 named actions
 
@@ -605,7 +606,3 @@ mở trang -> A1 (requireSunner, SpotlightSnapshotQuery) -> snapshot -> A5 initS
 | Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | BL003, BL023, BL010 | [x] |
 | Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | PERM037, PERM008 | [x] |
 | User Stories | [user-stories.md](../../generated/user-stories.md) | US042, US043 | [x] |
-
-**Codes are written BARE — no braces.**
-
-**Rule:** Every code listed in Codes Used MUST exist in its source artifact. Orphan refs = reviewer critical.

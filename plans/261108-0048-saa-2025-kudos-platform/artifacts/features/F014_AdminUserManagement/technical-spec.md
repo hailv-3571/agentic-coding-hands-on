@@ -188,7 +188,7 @@ COMMIT
 | A3 | Hai Admin hạ nhau cùng lúc khi chỉ có hai Admin | Cả hai khoá hàng admin theo thứ tự `id`; một lệnh thành công, lệnh còn lại đọc lại thấy một Admin và nhận `LAST_ADMIN`; không deadlock (BR-003) |
 | A3 | Admin gửi thẳng action hạ chính mình (bỏ qua giao diện) | `SELF_DEMOTE` kể cả khi còn nhiều Admin; role không đổi (BR-002) |
 | A3 | Hạ tài khoản trong `ADMIN_EMAILS` | `ENV_ADMIN`; giao diện đã khoá mục "Set as User" (BR-007, DEC-001) |
-| A3 | Admin bị hạ trong lúc đang mở trang rồi bấm đổi role | `requireAdmin()` đọc lại role và chặn 403 trước khi vào service; nếu lọt qua thì `FORBIDDEN` trong giao dịch; không ghi gì (A0) |
+| A3 | Admin bị hạ trong lúc đang mở trang rồi bấm đổi role | proxy bước 4b đọc lại role và trả JSON 403 `{ code: "forbidden" }` cho POST Server Action (`requireAdmin()` cũng chặn nếu tới được action); phía client lệnh gọi action ném lỗi, `setRoleSafely` bắt và trả `UNEXPECTED` → hộp hiện "Không cập nhật được role. Vui lòng thử lại." (key `failed`, suy từ code, chưa chạy trên trình duyệt); `FORBIDDEN` ("Bạn không còn quyền Admin.") chỉ xảy ra khi actor bị hạ trong lúc giao dịch chờ khoá; không ghi gì (A0) — `shared/auth/session-proxy.ts:93-110`, `features/admin-users/components/admin-user-role-menu.tsx:24-33`, `features/admin-users/lib/admin-user-role-menu-state.ts:29-37` |
 | A3 | Người đích đã bị xoá trong lúc hộp xác nhận đang mở | `NOT_FOUND` hiện trong hộp (DEC-005) |
 | A3 | `userId` không phải uuid hoặc `role` ngoài `admin`/`user` | `INVALID` trước khi chạm DB; hộp hiện lỗi chung (DEC-005) |
 | A1 · A4 | `q` dài hơn 100 ký tự, lặp khoá hoặc giá trị ngoài whitelist | A1 hiện lỗi lọc trên trang 1 chưa lọc (DEC-004); A4 trả 400 `invalid_params` |

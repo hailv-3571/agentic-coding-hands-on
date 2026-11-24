@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-24T04:14:47Z",
+  "generated_at": "2026-11-24T10:19:37Z",
   "index": {
     "app/(app)/awards/page.tsx": [
       "F006"
@@ -7,7 +7,15 @@
     "app/(app)/community-standards/page.tsx": [
       "F006"
     ],
+    "app/(app)/kudos/[id]/page.tsx": [
+      "F004"
+    ],
+    "app/(app)/kudos/page.tsx": [
+      "F003",
+      "F004"
+    ],
     "app/(app)/layout.tsx": [
+      "F002",
       "F006"
     ],
     "app/(app)/notifications/page.tsx": [
@@ -28,20 +36,48 @@
     "app/(public)/countdown/page.tsx": [
       "F006"
     ],
+    "app/(public)/login/page.tsx": [
+      "F001"
+    ],
+    "app/access-denied/page.tsx": [
+      "F002"
+    ],
     "app/admin/page.tsx": [
+      "F002",
       "F015"
+    ],
+    "app/admin/settings/page.tsx": [
+      "F011"
     ],
     "app/admin/users/page.tsx": [
       "F014"
     ],
+    "app/api/admin/kudos/route.ts": [
+      "F007"
+    ],
     "app/api/admin/users/export/route.ts": [
       "F014"
+    ],
+    "app/api/hashtags/route.ts": [
+      "F003"
     ],
     "app/api/internal/notifications/drain/route.ts": [
       "F013"
     ],
     "app/api/internal/secret-box/tick/route.ts": [
       "F010"
+    ],
+    "app/api/kudos/[id]/edit/route.ts": [
+      "F003"
+    ],
+    "app/api/kudos/highlight/route.ts": [
+      "F004"
+    ],
+    "app/api/kudos/images/sign/route.ts": [
+      "F003"
+    ],
+    "app/api/kudos/route.ts": [
+      "F004"
     ],
     "app/api/notifications/route.ts": [
       "F013"
@@ -64,6 +100,24 @@
     "app/api/sunners/[userId]/card/route.ts": [
       "F012"
     ],
+    "app/api/sunners/search/route.ts": [
+      "F003"
+    ],
+    "app/auth/callback/route.ts": [
+      "F001"
+    ],
+    "app/not-found.tsx": [
+      "F002"
+    ],
+    "app/onboarding/department/page.tsx": [
+      "F001"
+    ],
+    "db/migrations/0002_rls_baseline.sql": [
+      "F001"
+    ],
+    "db/migrations/0005_auth_user_triggers.sql": [
+      "F001"
+    ],
     "db/migrations/0016_secret_box_tick_cron.sql": [
       "F010"
     ],
@@ -79,11 +133,72 @@
     "db/migrations/0023_housekeeping_outbox_and_cron_history_prune.sql": [
       "F013"
     ],
+    "db/seeds/run-seeds.ts": [
+      "F001"
+    ],
     "db/seeds/secret-box-prize-loader.ts": [
       "F010"
     ],
+    "features/admin-campaigns/components/campaign-delete-dialog.tsx": [
+      "F011"
+    ],
+    "features/admin-campaigns/components/campaign-row-menu.tsx": [
+      "F011"
+    ],
+    "features/admin-campaigns/components/use-campaign-form.ts": [
+      "F011"
+    ],
+    "features/admin-campaigns/schemas/campaign-input-schema.ts": [
+      "F011"
+    ],
+    "features/admin-campaigns/server/campaign-active-reader.ts": [
+      "F011"
+    ],
+    "features/admin-campaigns/server/campaign-overlap-check.ts": [
+      "F011"
+    ],
+    "features/admin-campaigns/server/campaign-phase.ts": [
+      "F011"
+    ],
+    "features/admin-campaigns/server/campaign-time-format.ts": [
+      "F011"
+    ],
+    "features/admin-campaigns/server/campaign-write-transaction.ts": [
+      "F011"
+    ],
+    "features/admin-moderation/components/review-content-screen.tsx": [
+      "F007"
+    ],
     "features/admin-moderation/components/review-export-button.tsx": [
+      "F007",
       "F015"
+    ],
+    "features/admin-moderation/components/review-moderation-button.tsx": [
+      "F007"
+    ],
+    "features/admin-moderation/components/review-person-filter.tsx": [
+      "F007"
+    ],
+    "features/admin-moderation/components/spam-alert-overlay.tsx": [
+      "F007"
+    ],
+    "features/admin-moderation/server/admin-kudo-row-select.ts:20-23, 95-103": [
+      "F007"
+    ],
+    "features/admin-moderation/server/admin-kudo-row-select.ts:24, 56-59, 88": [
+      "F007"
+    ],
+    "features/admin-moderation/server/admin-kudo-where-builder.ts": [
+      "F007"
+    ],
+    "features/admin-moderation/server/kudo-admin-query.ts": [
+      "F007"
+    ],
+    "features/admin-moderation/server/kudo-moderation-service.ts": [
+      "F007"
+    ],
+    "features/admin-moderation/server/kudo-moderation-service.ts:1-16, 23-27": [
+      "F007"
     ],
     "features/admin-overview/components/admin-overview-screen.tsx": [
       "F015"
@@ -115,6 +230,22 @@
     "features/admin-users/server/user-role-service.ts": [
       "F014"
     ],
+    "features/app-shell/components/account-menu.tsx": [
+      "F001",
+      "F002"
+    ],
+    "features/app-shell/components/language-switcher.tsx": [
+      "F002"
+    ],
+    "features/auth/components/department-picker-form.tsx": [
+      "F001"
+    ],
+    "features/auth/components/google-sign-in-form.tsx": [
+      "F001"
+    ],
+    "features/auth/server/sign-in-with-google-action.ts": [
+      "F001"
+    ],
     "features/awards-portal/components/awards-anchor-menu.tsx": [
       "F006"
     ],
@@ -133,26 +264,124 @@
     "features/awards-portal/server/prelaunch-gate.ts": [
       "F006"
     ],
+    "features/hero-badges/components/active-hero-tooltip-store.ts": [
+      "F009"
+    ],
+    "features/hero-badges/components/hero-badge.tsx": [
+      "F009"
+    ],
+    "features/hero-badges/server/hero-tier-query.ts": [
+      "F009"
+    ],
     "features/hero-badges/server/tier-from-count.ts": [
+      "F009",
       "F013"
+    ],
+    "features/kudos-authoring/components/kudo-composer-dialog.tsx": [
+      "F003"
+    ],
+    "features/kudos-authoring/components/kudo-composer-form.tsx": [
+      "F003"
+    ],
+    "features/kudos-authoring/components/kudo-image-picker.tsx": [
+      "F003"
+    ],
+    "features/kudos-authoring/components/kudo-markdown-format.ts": [
+      "F003"
+    ],
+    "features/kudos-authoring/components/use-kudo-image-uploads.ts": [
+      "F003"
+    ],
+    "features/kudos-authoring/schemas/kudo-body-link-policy.ts": [
+      "F003"
+    ],
+    "features/kudos-authoring/schemas/kudo-input-schema.ts": [
+      "F003"
+    ],
+    "features/kudos-authoring/server/kudo-edit-query.ts": [
+      "F003"
+    ],
+    "features/kudos-authoring/server/kudo-image-upload-service.ts": [
+      "F003"
     ],
     "features/kudos-authoring/server/kudo-write-window.ts": [
       "F012"
     ],
+    "features/kudos-feed/components/all-kudos-feed.tsx": [
+      "F004"
+    ],
+    "features/kudos-feed/components/highlight-carousel.tsx": [
+      "F004"
+    ],
+    "features/kudos-feed/components/highlight-section.tsx": [
+      "F004"
+    ],
+    "features/kudos-feed/components/kudo-card-hero-badge-slot.tsx": [
+      "F009"
+    ],
+    "features/kudos-feed/components/kudo-card-images.tsx": [
+      "F004"
+    ],
     "features/kudos-feed/components/kudo-card-sender.tsx": [
       "F012"
+    ],
+    "features/kudos-feed/components/kudo-copy-link-button.tsx": [
+      "F004"
     ],
     "features/kudos-feed/components/live-board-spotlight-slot.tsx": [
       "F008"
     ],
+    "features/kudos-feed/components/sunner-profile-search.tsx": [
+      "F004"
+    ],
+    "features/kudos-feed/server/enrich-heart-summary.ts": [
+      "F005"
+    ],
+    "features/kudos-feed/server/kudo-card-enrichment.ts": [
+      "F009"
+    ],
+    "features/kudos-feed/server/kudo-feed-cursor.ts": [
+      "F004"
+    ],
+    "features/kudos-feed/server/kudo-highlight-query.ts": [
+      "F004"
+    ],
+    "features/kudos-feed/server/kudo-image-read-urls.ts": [
+      "F004"
+    ],
+    "features/kudos-feed/server/kudo-public-query.ts:51-62, 89-95": [
+      "F004"
+    ],
     "features/kudos-feed/server/kudo-row-mask.ts": [
+      "F004",
       "F012"
     ],
+    "features/kudos-hearts/components/kudo-heart-button.tsx": [
+      "F005"
+    ],
+    "features/kudos-hearts/server/heart-multiplier-resolver.ts": [
+      "F005"
+    ],
     "features/kudos-hearts/server/heart-ranking-query.ts": [
+      "F005",
       "F010"
     ],
     "features/kudos-hearts/server/heart-stats-query.ts": [
+      "F005",
       "F010"
+    ],
+    "features/kudos-hearts/server/kudo-heart-actions.ts": [
+      "F005"
+    ],
+    "features/kudos-hearts/server/kudo-heart-query.ts": [
+      "F005"
+    ],
+    "features/kudos-hearts/server/kudo-heart-service.ts": [
+      "F005",
+      "F011"
+    ],
+    "features/kudos-hearts/server/kudo-heart-service.ts:32-42,61-69": [
+      "F005"
     ],
     "features/notifications/components/notification-bell-slot.tsx": [
       "F013"
@@ -179,7 +408,11 @@
       "F013"
     ],
     "features/notifications/server/detect-hero-tier-up.ts": [
+      "F009",
       "F013"
+    ],
+    "features/notifications/server/load-notification-event-context.ts": [
+      "F009"
     ],
     "features/notifications/server/map-event-to-notifications.ts": [
       "F013"
@@ -299,27 +532,66 @@
     "features/spotlight-board/server/spotlight-snapshot-query.ts": [
       "F008"
     ],
+    "messages/vi.json": [
+      "F009"
+    ],
+    "proxy.ts": [
+      "F001",
+      "F002"
+    ],
+    "shared/auth/access-denied-response.ts": [
+      "F002"
+    ],
     "shared/auth/admin-guard.ts": [
+      "F007",
       "F014",
       "F015"
     ],
     "shared/auth/current-user.ts": [
+      "F003",
+      "F004",
       "F008"
     ],
     "shared/auth/route-access-policy.ts": [
       "F012"
     ],
+    "shared/auth/safe-next-path.ts": [
+      "F001"
+    ],
+    "shared/auth/session-profile-query.ts": [
+      "F002"
+    ],
+    "shared/auth/session-proxy.ts": [
+      "F011"
+    ],
     "shared/auth/supabase-browser-client.ts": [
       "F013"
+    ],
+    "shared/config/event-window.ts": [
+      "F003",
+      "F005"
+    ],
+    "shared/db/schema/profiles.ts": [
+      "F001"
     ],
     "shared/db/schema/secret-box-rewards.ts": [
       "F010"
     ],
     "shared/events/domain-event-outbox.ts": [
+      "F003",
       "F010"
     ],
     "shared/events/domain-event-types.ts": [
       "F013"
+    ],
+    "shared/i18n/resolve-locale.ts": [
+      "F002"
+    ],
+    "shared/i18n/set-locale-action.ts": [
+      "F002"
+    ],
+    "shared/ui/app-routes.ts": [
+      "F002"
     ]
   }
 }

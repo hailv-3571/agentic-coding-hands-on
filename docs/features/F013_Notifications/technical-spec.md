@@ -209,7 +209,7 @@ sequenceDiagram
 
 #### A6 · Show the unread dot and keep it live *(client only)*
 `—` → `` `useNotificationChannel` ``
-`FR-101` `FR-401` `FR-402` `FR-409` `FR-410` `DEC-003` `INT-002` `INT-004` `US023` · `SCR003/REG001_NotificationBell` · BL002 · BL010
+`FR-101` `FR-401` `FR-402` `FR-409` `FR-410` `DEC-003` `INT-002` `INT-004` `US023` · `SCR003_AppLayout/REG001_NotificationBell` · BL002 · BL010
 
 **Who** · Sunner đã đăng nhập, ở bất kỳ trang nào có header của F002 *(gate A0 — § 4.4)*
 **FE** · `NotificationBellSlot` (server) đọc `getUnreadCount(userId)` lúc dựng layout và truyền `initialUnread` vào `NotificationBell` (đọc lỗi thì 0 và ghi log, lần join kênh đầu sẽ đọc lại); slot gắn vào header qua `bellSlot`. `NotificationBell` (client) vẽ chấm đỏ `size-2` không kèm số, nút có `aria-expanded`/`aria-controls`, `aria-label` đổi giữa "Thông báo" và "Thông báo (có thông báo chưa đọc)", một vùng `role="status"` đọc "Bạn có thông báo mới" (thêm/bớt khoảng trắng cuối để tin lặp vẫn được đọc lại), bấm thì bật/tắt `NotificationPanel` (A9). Hook `useNotificationChannel` khi mount lấy `browserSupabase()` (`INT-004` — client Supabase phía trình duyệt, một bản mỗi tab, chỉ dùng để vào kênh *(§ 4.5)*), `auth.getSession()` rồi `realtime.setAuth(token)`, mở kênh `notifications:{userId}` với `{ config: { private: true } }` và nghe broadcast event `notification`; payload qua `isNotificationSignal` mới tới `onSignal`; mỗi lần `SUBSCRIBED` (kể cả lần đầu), `visibilitychange` sang visible, hoặc `online` trở lại thì gọi `onResync` vì Broadcast không phát lại; `TOKEN_REFRESHED` gọi lại `setAuth`; `offline` đóng kênh, `online` đóng rồi mở kênh mới; unmount gỡ kênh và mọi listener. `onSignal`: tăng `countSeq` (huỷ kết quả đọc số đang bay), bật chấm, đọc thông báo, phát sự kiện đồng bộ `incoming` để danh sách đang mở gộp trang đầu mới; `onResync`: gọi A7 và phát `incoming`. Nghe lại sự kiện đồng bộ nguồn khác: `all-read` tắt chấm ngay, `read` gọi lại A7. `features/notifications/components/notification-bell-slot.tsx:9-17`; `features/notifications/components/notification-bell.tsx:29-97`; `features/notifications/hooks/use-notification-channel.ts:24-87`
@@ -231,7 +231,7 @@ sequenceDiagram
 
 #### A7 · Read the unread count
 `GET /api/notifications/unread-count` → `` `unread-count/route#GET` ``
-`FR-401` `FR-409` `US023` · ROUTE012 · `SCR003/REG001_NotificationBell`
+`FR-401` `FR-409` `US023` · ROUTE012 · `SCR003_AppLayout/REG001_NotificationBell`
 
 **Who** · Sunner đã đăng nhập *(gate A0 — § 4.4)*
 **FE** · `fetchUnreadCount` gọi route này ở A6 sau `SUBSCRIBED`, khi tab hiện lại, khi `online` trở lại và sau mỗi lần đánh dấu đọc đã chốt (A10, A11). `features/notifications/lib/fetch-notifications.ts:27-30`
@@ -263,10 +263,10 @@ sequenceDiagram
 
 #### A9 · List notifications for the current user
 `GET /api/notifications` → `` `NotificationQuery#list` ``
-`FR-002` `FR-102` `FR-201` `FR-202` `FR-203` `FR-302` `FR-410` `FR-411` `BR-006` `BR-009` `BR-010` `DEC-001` `DEC-002` `DEC-004` `SM-003` `ALG-003` `ALG-004` `ALG-005` `US023` · ROUTE011 · `SCR003/REG001_NotificationBell` · `SCR017_AllNotifications`
+`FR-002` `FR-102` `FR-201` `FR-202` `FR-203` `FR-302` `FR-410` `FR-411` `BR-006` `BR-009` `BR-010` `DEC-001` `DEC-002` `DEC-004` `SM-003` `ALG-003` `ALG-004` `ALG-005` `US023` · ROUTE011 · `SCR003_AppLayout/REG001_NotificationBell` · `SCR017_AllNotifications`
 
 **Who** · Sunner đã đăng nhập, chỉ thấy dòng của chính mình *(gate A0 — § 4.4)*
-**FE** · ba phần dùng chung một đường đọc. (1) Panel của chuông (`NotificationPanel`) chỉ mount khi mở, mỗi lần mở nạp `NOTIFICATION_DROPDOWN_LIMIT` dòng mới nhất; hộp thoại không modal, nhận focus khi mở, Esc hoặc bấm ra ngoài đóng (do `useDismissable` của F002 trong chuông xử lý), tiêu đề "Thông báo", liên kết "Xem tất cả" tới `/notifications` (FR-102) và nút biểu tượng đánh dấu đọc tất cả (A11). (2) Trang A8 nạp `NOTIFICATION_PAGE_SIZE` dòng mỗi lần. (3) `NotificationList` dùng chung: khung chờ 3 dòng, trạng thái lỗi, trạng thái rỗng, `NotificationRow` (biểu tượng 40 px theo loại, câu chữ, `<time>` tương đối, chấm đỏ cho dòng chưa đọc, toàn dòng là một liên kết tới `href`; dòng `kudo_hidden_spam` có thêm liên kết "Tiêu chuẩn cộng đồng" tới `/community-standards`). Cuộn vô hạn: `useInfiniteScrollSentinel` quan sát một phần tử đáy bằng `IntersectionObserver` với `rootMargin` 160 px và gọi `loadMore` khi `status == ready`, còn `nextCursor` và `moreStatus == idle`; observer dựng lại mỗi khi số dòng đổi nên trang ngắn vẫn tiếp tục nạp; `useMinuteClock` làm mới thời gian tương đối mỗi phút. Hook `useNotificationList` nạp trang đầu lúc mount, nối trang cũ hơn bằng `ALG-005` — hàm thuần khử trùng theo id khi nối và gộp trang đầu *(§ 4.5)*, và bỏ phản hồi trang đầu cũ hơn lần yêu cầu mới nhất. `features/notifications/components/notification-panel.tsx:31-107`; `features/notifications/components/notification-list.tsx:50-110`; `features/notifications/components/notification-row.tsx:27-69`; `features/notifications/hooks/use-infinite-scroll-sentinel.ts:11-35`; `features/notifications/hooks/use-notification-list.ts:37-126`
+**FE** · ba phần dùng chung một đường đọc. (1) Panel của chuông (`NotificationPanel`) chỉ mount khi mở, mỗi lần mở nạp `NOTIFICATION_DROPDOWN_LIMIT` dòng mới nhất, và đây là cỡ trang chứ không phải giới hạn: panel truyền `onLoadMore`/`scrollRoot` cho `NotificationList` nên cuộn trong bảng nạp tiếp từng trang 10 dòng cũ hơn; hộp thoại không modal, nhận focus khi mở, Esc hoặc bấm ra ngoài đóng (do `useDismissable` của F002 trong chuông xử lý), tiêu đề "Thông báo", liên kết "Xem tất cả" tới `/notifications` (FR-102) và nút biểu tượng đánh dấu đọc tất cả (A11). (2) Trang A8 nạp `NOTIFICATION_PAGE_SIZE` dòng mỗi lần. (3) `NotificationList` dùng chung: khung chờ 3 dòng, trạng thái lỗi, trạng thái rỗng, `NotificationRow` (biểu tượng 40 px theo loại, câu chữ, `<time>` tương đối, chấm đỏ cho dòng chưa đọc, toàn dòng là một liên kết tới `href`; dòng `kudo_hidden_spam` có thêm liên kết "Tiêu chuẩn cộng đồng" tới `/community-standards`). Cuộn vô hạn: `useInfiniteScrollSentinel` quan sát một phần tử đáy bằng `IntersectionObserver` với `rootMargin` 160 px và gọi `loadMore` khi `status == ready`, còn `nextCursor` và `moreStatus == idle`; observer dựng lại mỗi khi số dòng đổi nên trang ngắn vẫn tiếp tục nạp; `useMinuteClock` làm mới thời gian tương đối mỗi phút. Hook `useNotificationList` nạp trang đầu lúc mount, nối trang cũ hơn bằng `ALG-005` — hàm thuần khử trùng theo id khi nối và gộp trang đầu *(§ 4.5)*, và bỏ phản hồi trang đầu cũ hơn lần yêu cầu mới nhất. `features/notifications/components/notification-panel.tsx:31-107`; `features/notifications/components/notification-list.tsx:50-110`; `features/notifications/components/notification-row.tsx:27-69`; `features/notifications/hooks/use-infinite-scroll-sentinel.ts:11-35`; `features/notifications/hooks/use-notification-list.ts:37-126`
 **Request** · query `limit` *(số nguyên dương, mặc định `NOTIFICATION_PAGE_SIZE`, kẹp ở `NOTIFICATION_MAX_PAGE_SIZE`; mẫu `^[1-9]\d{0,5}$`)*, `cursor` *(chuỗi mờ, bộ mã hoá `(timestamp µs, uuid)` chặt dùng chung với feed Kudo của F004; sai thì 400)*. `features/notifications/server/notification-list-params.ts:9-24`
 **BE** · `requireNotificationUser()` (401 trước mọi truy vấn) → `parseNotificationListParams` (400 `invalid_request`) → `NotificationQuery#list` chạy một câu SQL: `notifications n` `LEFT JOIN kudos` (chỉ với `kudo_received`, `heart_received`; `params->>'kudoId'` qua kiểm mẫu UUID rồi ép `uuid`) `LEFT JOIN profiles` cho tên người gửi và tên người nhận Kudo, `WHERE n.recipient_id = userId`, sắp `occurred_at DESC, id DESC`, phân trang keyset `(occurred_at, id) < cursor`, lấy `limit + 1` dòng để biết còn trang sau và mã hoá `nextCursor` từ dòng cuối bằng `cursor_at` (µs). `toNotificationView` đổi từng dòng thành `{ id, type, occurredAt, read, href, params }` (`href` do `ALG-003` tính, `params` theo loại). `app/api/notifications/route.ts:13-26`; `features/notifications/server/notification-query.ts:34-73`; `features/notifications/server/notification-view-mapper.ts:63-91`
 **Rule** · các quyết định hiển thị của danh sách:
@@ -299,7 +299,7 @@ sequenceDiagram
 
 #### A10 · Mark one notification read
 `Server Action` → `` `markNotificationRead` ``
-`FR-103` `FR-403` `BR-007` `BR-018` `BR-019` `DEC-005` `SM-001` `ALG-003` `US024` · ROUTE033 · `SCR003/REG001_NotificationBell` · `SCR017_AllNotifications`
+`FR-103` `FR-403` `BR-007` `BR-018` `BR-019` `DEC-005` `SM-001` `ALG-003` `US024` · ROUTE033 · `SCR003_AppLayout/REG001_NotificationBell` · `SCR017_AllNotifications`
 
 **Who** · Sunner đã đăng nhập, chỉ với thông báo của chính mình *(gate A0 — § 4.4)*
 **FE** · bấm vào dòng (`NotificationRow`, toàn dòng là liên kết tới `href`) gọi `onOpen(item)`; việc điều hướng tới `href` do liên kết đảm nhiệm và không chờ phản hồi. Ở panel `openItem` đóng panel trước rồi, nếu dòng chưa đọc, `list.markRead(item)` và sau khi xong phát sự kiện đồng bộ `read`; ở trang thì không đóng gì. `markRead` bỏ qua dòng đã đọc hoặc đã đánh dấu cục bộ, thêm id vào `locallyRead`, đổi dòng thành đã đọc ngay, gọi Server Action ở nền; thất bại (ném lỗi hoặc `{ ok: false }`) thì `revert` trả dòng về chưa đọc. `features/notifications/components/notification-row.tsx:41-52`; `features/notifications/components/notification-panel.tsx:48-52`; `features/notifications/components/notification-list-page-client.tsx:32-35`; `features/notifications/hooks/use-notification-list.ts:128-148`
@@ -326,7 +326,7 @@ sequenceDiagram
 
 #### A11 · Mark all notifications read
 `Server Action` → `` `markAllNotificationsRead` ``
-`FR-404` `BR-007` `BR-019` `SM-001` `US025` · ROUTE034 · `SCR003/REG001_NotificationBell` · `SCR017_AllNotifications`
+`FR-404` `BR-007` `BR-019` `SM-001` `US025` · ROUTE034 · `SCR003_AppLayout/REG001_NotificationBell` · `SCR017_AllNotifications`
 
 **Who** · Sunner đã đăng nhập *(gate A0 — § 4.4)*
 **FE** · biểu tượng đánh dấu đọc tất cả ở panel (nhãn truy cập "Đánh dấu đọc tất cả") và nút chữ cùng tên ở trang; bấm thì không hỏi xác nhận: bỏ qua nếu đang đánh dấu (`markingAll`, `aria-disabled`), phát sự kiện đồng bộ `all-read` (chuông tắt chấm ngay), `list.markAllRead()` đổi mọi dòng đang nạp thành đã đọc rồi gọi Server Action (thất bại thì `revert` đúng các id đó), rồi phát `read` — chuông đọc lại số thật nên chấm trở lại nếu server lỗi. `features/notifications/components/notification-panel.tsx:54-61,80-89`; `features/notifications/components/notification-list-page-client.tsx:37-44,52-55`; `features/notifications/hooks/use-notification-list.ts:151-158`
@@ -411,6 +411,7 @@ sequenceDiagram
 | A9 | `cursor` hỏng hoặc `limit` không phải số nguyên dương | 400 `invalid_request`; FE hiện trạng thái lỗi và cho "Thử lại" từ đầu |
 | A9 | `limit` lớn hơn trần | kẹp xuống `NOTIFICATION_MAX_PAGE_SIZE` (50), không lỗi |
 | A9 | Nạp trang kế thất bại | giữ các dòng đã có, hiện cảnh báo và nút "Thử lại" riêng (`moreStatus == 'error'`) |
+| A3 · A9 | Kudo ẩn danh được sửa thành không ẩn danh sau khi đã có thông báo | `actor_id` vẫn `NULL` (ghi lúc A3), A9 trả cả `actorName` lẫn `anonymousNickname` rỗng nên dòng hiện câu "Một Sunner ẩn danh…" (DEC-001); chiều ngược lại (không ẩn danh → ẩn danh) chỉ còn biệt danh (BR-006) |
 | A9 | Kudo đích đã Spam khi Sunner bấm dòng cũ | dòng vẫn hiện (BR-008); đích dẫn tới trang chi tiết Kudo, chủ Kudo vẫn xem được Kudo bị ẩn của mình, người khác nhận trang không tìm thấy *(do F004 quyết định)* |
 | A10 | Id lạ, sai dạng hoặc của người khác | `{ ok: false, code: "not_found" }` cùng một phản hồi (BR-018) |
 | A10 | Hai tab cùng bấm một dòng | `read_at` đầu tiên được giữ, lần sau thành công không đổi gì (BR-007) |
@@ -602,7 +603,7 @@ Không có đường nào xoá hay ghi đè dòng `notifications` ngoài hai ngo
 #### Bin 2 — used by ≥2 named actions
 
 **BR-006 — Kudo ẩn danh không bao giờ để lộ người gửi trong thông báo, ở bất kỳ dữ liệu nào đến trình duyệt.**
-Used in: **A3** · **A9**. Che ở nguồn, hai lớp: A3 ghi `actor_id = NULL` khi `kudos.is_anonymous` đúng lúc xử lý và không đưa id hay tên người gửi vào `params`; với Kudos Quốc Dân, `items[].senderId` là người gửi thật và chỉ dùng để chọn người nhận, `params` giữ `{ kudoId, rank }`. A9 quyết theo trạng thái hiện tại của Kudo (có thể sửa sau): chỉ chọn tên người gửi khi Kudo hiện không ẩn danh, chỉ chọn biệt danh khi hiện ẩn danh, và `paramsOf` cho biệt danh thắng, không bao giờ đặt tên thật cạnh nó. Không dựa vào việc FE ẩn đi.
+Used in: **A3** · **A9**. Che ở nguồn, hai lớp: A3 ghi `actor_id = NULL` khi `kudos.is_anonymous` đúng lúc xử lý và không đưa id hay tên người gửi vào `params`; với Kudos Quốc Dân, `items[].senderId` là người gửi thật và chỉ dùng để chọn người nhận, `params` giữ `{ kudoId, rank }`. A9 quyết theo trạng thái hiện tại của Kudo (có thể sửa sau): chỉ chọn tên người gửi khi Kudo hiện không ẩn danh, chỉ chọn biệt danh khi hiện ẩn danh, và `paramsOf` cho biệt danh thắng, không bao giờ đặt tên thật cạnh nó. Hệ quả bất đối xứng: Kudo đổi từ không ẩn danh sang ẩn danh thì A9 chỉ còn trả biệt danh; Kudo đổi từ ẩn danh sang không ẩn danh thì `actor_id` đã là `NULL` từ lúc A3 ghi, nên A9 không có tên lẫn biệt danh và giao diện hiện câu ẩn danh chung (DEC-001 dòng 3). Không dựa vào việc FE ẩn đi.
 **Source:** `features/notifications/server/map-event-to-notifications.ts:32-41,49-57` · `features/notifications/server/notification-query.ts:28-33,42-44` · `features/notifications/server/notification-view-mapper.ts:63-68`
 ```text
 A3:  actor_id = kudo.is_anonymous ? NULL : kudo.sender_id
@@ -823,9 +824,9 @@ OUTBOX_DRAIN_SECRET = <env, tuỳ chọn, tối thiểu 32 ký tự>   # chưa �
 ```
 
 **Client behavior:** see
-[`behavior-logic.md`](../../docs/generated/behavior-logic.md) (client-side patterns — debounce, optimistic UI, polling, upload, realtime),
-[`permissions.md`](../../docs/system/permissions.md) (feature flags / experiments / env / locale gates),
-[`architecture.md`](../../docs/system/architecture.md) (guards / deep-link state restoration / unsaved-changes protection).
+[`behavior-logic.md`](../../generated/behavior-logic.md) (client-side patterns — debounce, optimistic UI, polling, upload, realtime),
+[`permissions.md`](../../system/permissions.md) (feature flags / experiments / env / locale gates),
+[`architecture.md`](../../system/architecture.md) (guards / deep-link state restoration / unsaved-changes protection).
 
 ## 5. Verification & Technical Notes
 
@@ -935,14 +936,14 @@ Kiểm thử: `tests/unit/notifications/`, `tests/unit/notifications-ui/`, `test
 
 | Artifact | File | Codes Used | Reviewed |
 |----------|------|------------|----------|
-| System Overview | [overview.md](../../docs/system/overview.md) | — | [x] |
-| Architecture | [architecture.md](../../docs/system/architecture.md) | — | [x] |
-| Feature List | [feature-list.md](../../docs/generated/feature-list.md) | F013 | [x] |
-| API Map | [api-map.md](../../docs/generated/api-map.md) | ROUTE005, ROUTE011, ROUTE012, ROUTE033, ROUTE034 | [x] |
-| Entities | [entities.md](../../docs/generated/entities.md) | MODEL015, MODEL016 | [x] |
-| Screens | [functional-spec.md § 6](../../docs/features/F013_Notifications/functional-spec.md#6-screens) | SCR017, SCR003/REG001 | [x] |
-| Behavior Logic | [behavior-logic.md](../../docs/generated/behavior-logic.md) | BL002, BL010, BL014, BL015, BL016, BL017, BL024, BL025, BL026, BL029, BL030, BL031 | [x] |
-| Permissions Matrix | [permissions-matrix.md](../../docs/generated/permissions-matrix.md) | PERM032, PERM038 | [x] |
-| User Stories | [user-stories.md](../../docs/generated/user-stories.md) | US023, US024, US025 | [x] |
+| System Overview | [overview.md](../../system/overview.md) | — | [x] |
+| Architecture | [architecture.md](../../system/architecture.md) | — | [x] |
+| Feature List | [feature-list.md](../../generated/feature-list.md) | F013 | [x] |
+| API Map | [api-map.md](../../generated/api-map.md) | ROUTE005, ROUTE011, ROUTE012, ROUTE033, ROUTE034 | [x] |
+| Entities | [entities.md](../../generated/entities.md) | MODEL015, MODEL016 | [x] |
+| Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | SCR017, SCR003/REG001 | [x] |
+| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | BL002, BL010, BL014, BL015, BL016, BL017, BL024, BL025, BL026, BL029, BL030, BL031 | [x] |
+| Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | PERM032, PERM038 | [x] |
+| User Stories | [user-stories.md](../../generated/user-stories.md) | US023, US024, US025 | [x] |
 
 **Rule:** Mọi mã trong Codes Used phải tồn tại trong artifact nguồn. `ROUTE###` ở hàng API Map là cầu tới cột `Code` của `route-list.md`; BL014 do F009 sở hữu và chỉ được tham chiếu như phụ thuộc nhà sản xuất của `hero_tier_up`.

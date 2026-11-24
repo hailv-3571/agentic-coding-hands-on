@@ -211,7 +211,7 @@ erDiagram
 
 ### MODEL004_Profile
 
-**Description**: Hồ sơ Sunner, mỗi dòng ứng với đúng một dòng `auth.users` của Supabase Auth. Trigger `create_sunner_profile` tạo dòng này ở lần đăng nhập đầu (tên và avatar lấy từ metadata Google, `ON CONFLICT (id) DO NOTHING` nên idempotent); trigger `sync_profile_email` giữ `email` theo auth. Cả hai thuộc artifact db-objects. Khóa ngoại `id` → `auth.users.id` được thêm bằng SQL tay ở migration 0005 vì Drizzle không nhìn thấy schema `auth`. Role luôn đọc từ bảng này, không đọc từ cookie. `role_updated_by` / `role_updated_at` chỉ lưu lần đổi role gần nhất (không có bảng lịch sử), do `UserRoleService` (`features/admin-users/server/user-role-service.ts`) ghi trong transaction đổi role. Tài khoản có email trong `ADMIN_EMAILS` được `completeLogin` (`features/auth/server/complete-login.ts`) đặt lại `role = 'admin'` ở mọi lần đăng nhập, và `UserRoleService` từ chối hạ quyền tài khoản đó (`ENV_ADMIN`). Chỉ mục: `profiles_department_id_idx` (`department_id`). Bảng bật RLS, không có policy cho client, `anon`/`authenticated` bị REVOKE ALL. Nguồn: `shared/db/schema/profiles.ts`, `db/migrations/0004_profiles.sql`, `db/migrations/0005_auth_user_triggers.sql`, `db/migrations/0022_profiles_role_audit.sql`.
+**Description**: Hồ sơ Sunner, mỗi dòng ứng với đúng một dòng `auth.users` của Supabase Auth. Trigger `create_sunner_profile` tạo dòng này ở lần đăng nhập đầu (tên và avatar lấy từ metadata Google, `ON CONFLICT (id) DO NOTHING` nên idempotent); trigger `sync_profile_email` giữ `email` theo auth. Hai trigger này được mô tả ở BL019_CreateSunnerProfile và BL022_SyncProfileEmail (behavior-logic). Khóa ngoại `id` → `auth.users.id` được thêm bằng SQL tay ở migration 0005 vì Drizzle không nhìn thấy schema `auth`. Role luôn đọc từ bảng này, không đọc từ cookie. `role_updated_by` / `role_updated_at` chỉ lưu lần đổi role gần nhất (không có bảng lịch sử), do `UserRoleService` (`features/admin-users/server/user-role-service.ts`) ghi trong transaction đổi role. Tài khoản có email trong `ADMIN_EMAILS` được `completeLogin` (`features/auth/server/complete-login.ts`) đặt lại `role = 'admin'` ở mọi lần đăng nhập, và `UserRoleService` từ chối hạ quyền tài khoản đó (`ENV_ADMIN`). Chỉ mục: `profiles_department_id_idx` (`department_id`). Bảng bật RLS, không có policy cho client, `anon`/`authenticated` bị REVOKE ALL. Nguồn: `shared/db/schema/profiles.ts`, `db/migrations/0004_profiles.sql`, `db/migrations/0005_auth_user_triggers.sql`, `db/migrations/0022_profiles_role_audit.sql`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -252,7 +252,7 @@ erDiagram
 <!-- domain: Kudos -->
 ### MODEL003_Kudo
 
-**Description**: Lời cảm ơn một Sunner gửi cho Sunner khác, là bảng ghi chính của luồng Kudo. Nội dung là Markdown rút gọn (không HTML), 1–1000 ký tự tính theo code point. Người nhận không đổi được sau khi tạo (luật ở tầng ứng dụng, DB không chặn). Kudo ẩn danh vẫn lưu `sender_id` (CHECK chống gửi cho chính mình dựa vào cột này), còn giao diện chỉ hiện `anonymous_nickname`. `status` luôn là `public` lúc tạo; admin đánh dấu spam rồi ghi `moderated_by`/`moderated_at` (chỉ lưu lần kiểm duyệt gần nhất, không có bảng lịch sử). `updated_at` do ứng dụng đặt `now()` khi sửa Kudo (`features/kudos-authoring/server/kudo-write-repository.ts`), không có trigger. Chỉ mục: `kudos_status_created_at_id_idx` (`status`, `created_at DESC`, `id DESC`) cho Live board và Highlight; `kudos_recipient_id_created_at_id_idx` và `kudos_sender_id_created_at_id_idx` cho trang theo người nhận và người gửi; `kudos_public_recipient_sender_idx` (`recipient_id`, `sender_id`, một phần `WHERE status = 'public'`) cho phép đếm số người gửi khác nhau trong tính hạng Hero. Trigger `spotlight_publish_kudo_event` (AFTER INSERT OR UPDATE OF `status`) phát sự kiện Realtime cho Spotlight Board, thuộc artifact db-objects. Bảng bật RLS, không có policy cho client, `anon`/`authenticated` bị REVOKE ALL. Nguồn: `shared/db/schema/kudos.ts`, `db/migrations/0006_kudos.sql`, `0007_kudos_constraints.sql`, `0008_kudos_review_fixes.sql`, `0009_kudos_feed_indexes.sql`, `0013_kudos_moderation_columns.sql`, `0014_kudos_hero_tier_index.sql`, `0017_spotlight_realtime.sql`.
+**Description**: Lời cảm ơn một Sunner gửi cho Sunner khác, là bảng ghi chính của luồng Kudo. Nội dung là Markdown rút gọn (không HTML), 1–1000 ký tự tính theo code point. Người nhận không đổi được sau khi tạo (luật ở tầng ứng dụng, DB không chặn). Kudo ẩn danh vẫn lưu `sender_id` (CHECK chống gửi cho chính mình dựa vào cột này), còn giao diện chỉ hiện `anonymous_nickname`. `status` luôn là `public` lúc tạo; admin đánh dấu spam rồi ghi `moderated_by`/`moderated_at` (chỉ lưu lần kiểm duyệt gần nhất, không có bảng lịch sử). `updated_at` do ứng dụng đặt `now()` khi sửa Kudo (`features/kudos-authoring/server/kudo-write-repository.ts`), không có trigger. Chỉ mục: `kudos_status_created_at_id_idx` (`status`, `created_at DESC`, `id DESC`) cho Live board và Highlight; `kudos_recipient_id_created_at_id_idx` và `kudos_sender_id_created_at_id_idx` cho trang theo người nhận và người gửi; `kudos_public_recipient_sender_idx` (`recipient_id`, `sender_id`, một phần `WHERE status = 'public'`) cho phép đếm số người gửi khác nhau trong tính hạng Hero. Trigger `spotlight_publish_kudo_event` (AFTER INSERT OR UPDATE OF `status`) phát sự kiện Realtime cho Spotlight Board, mô tả ở BL023_SpotlightPublishKudoEvent (behavior-logic). Bảng bật RLS, không có policy cho client, `anon`/`authenticated` bị REVOKE ALL. Nguồn: `shared/db/schema/kudos.ts`, `db/migrations/0006_kudos.sql`, `0007_kudos_constraints.sql`, `0008_kudos_review_fixes.sql`, `0009_kudos_feed_indexes.sql`, `0013_kudos_moderation_columns.sql`, `0014_kudos_hero_tier_index.sql`, `0017_spotlight_realtime.sql`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -305,7 +305,7 @@ erDiagram
 
 ### MODEL006_KudoImage
 
-**Description**: Ảnh đính kèm của Kudo, tối đa 5 ảnh, xếp theo `position` 0..4. Tệp nằm trong bucket Storage `kudo-images` (private, tối đa 5 MiB mỗi tệp, MIME `image/jpeg`, `image/png`, `image/webp`; bucket do migration 0003 tạo, thuộc artifact db-objects) và chỉ đọc qua URL ký bởi server. `storage_path` có dạng `kudos/{uuid}.{jpg|png|webp}`, không chứa id người gửi để Kudo ẩn danh không lộ tác giả qua URL ảnh. Sửa Kudo thì bộ ảnh được thay trọn bộ (xóa hết rồi chèn lại theo thứ tự mới). Không có khóa ngoại tới `kudo_image_uploads`: transaction ghi Kudo đối chiếu hai bảng qua `storage_path` rồi xóa dòng upload đã dùng. Bảng bật RLS, không có policy cho client, `anon`/`authenticated` bị REVOKE ALL. Nguồn: `shared/db/schema/kudos.ts`, `db/migrations/0006_kudos.sql`, `0007_kudos_constraints.sql`, `0003_storage_kudo_images_bucket.sql`.
+**Description**: Ảnh đính kèm của Kudo, tối đa 5 ảnh, xếp theo `position` 0..4. Tệp nằm trong bucket Storage `kudo-images` (private, tối đa 5 MiB mỗi tệp, MIME `image/jpeg`, `image/png`, `image/webp`; bucket do migration 0003 tạo; quyền truy cập ở PERM036_KudoImageStorageAccess, ký URL tải lên ở BL008_KudoImageUploadSigning) và chỉ đọc qua URL ký bởi server. `storage_path` có dạng `kudos/{uuid}.{jpg|png|webp}`, không chứa id người gửi để Kudo ẩn danh không lộ tác giả qua URL ảnh. Sửa Kudo thì bộ ảnh được thay trọn bộ (xóa hết rồi chèn lại theo thứ tự mới). Không có khóa ngoại tới `kudo_image_uploads`: transaction ghi Kudo đối chiếu hai bảng qua `storage_path` rồi xóa dòng upload đã dùng. Bảng bật RLS, không có policy cho client, `anon`/`authenticated` bị REVOKE ALL. Nguồn: `shared/db/schema/kudos.ts`, `db/migrations/0006_kudos.sql`, `0007_kudos_constraints.sql`, `0003_storage_kudo_images_bucket.sql`.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -373,7 +373,7 @@ erDiagram
 | updated_at | timestamptz | NOT NULL, DEFAULT `now()` | Thời điểm sửa gần nhất, do ứng dụng cập nhật |
 
 **Relationships**:
-- Không có khóa ngoại nào. Campaign liên hệ với KudoHeart (MODEL008_KudoHeart) chỉ gián tiếp: `HeartMultiplierResolver` tra campaign đang chạy tại lúc thả tim rồi chụp hệ số vào `kudo_hearts.multiplier`, sau đó hai bên không còn liên kết.
+- Không có khóa ngoại nào. Campaign liên hệ với KudoHeart (MODEL008_KudoHeart) chỉ gián tiếp (logic, 0..n, không có FK): `HeartMultiplierResolver` tra campaign đang chạy tại lúc thả tim rồi chụp hệ số vào `kudo_hearts.multiplier`, sau đó hai bên không còn liên kết.
 
 **Discriminator Fields**: None.
 
@@ -398,7 +398,7 @@ erDiagram
 
 **Relationships**:
 - One-to-Many với MODEL011_SecretBox qua `secret_boxes.prize_id` (FK `secret_boxes_prize_id_secret_box_prizes_id_fk`, ON DELETE NO ACTION); `prize_id` còn NULL tới khi hộp được mở
-- Liên hệ logic, không có FK: `icon_code` khớp `user_icons.icon_code` của MODEL012_UserIcon chỉ nhờ cùng bộ 6 mã trong CHECK
+- Liên hệ logic, 0..n, không có FK: `icon_code` khớp `user_icons.icon_code` của MODEL012_UserIcon chỉ nhờ cùng bộ 6 mã trong CHECK
 
 **Discriminator Fields**:
 
@@ -410,7 +410,7 @@ erDiagram
 
 ### MODEL011_SecretBox
 
-**Description**: Một Hộp bí mật đã cấp cho người dùng, bảng `secret_boxes` (`shared/db/schema/secret-box-rewards.ts`, `db/migrations/0015_secret_box_rewards.sql`). `seq` đánh số hộp của mỗi người từ 1 tới n: UNIQUE `(user_id, seq)` đỡ việc cấp bù đồng thời, UNIQUE `(user_id, open_request_id)` đỡ việc phát lại theo header `Idempotency-Key` khi mở. Chỉ chuyển `unopened` sang `opened`, kèm kết quả (giải, thời điểm mở, mã yêu cầu mở); CHECK `secret_boxes_opened_has_result` (`(status = 'opened') = (prize_id is not null and opened_at is not null and open_request_id is not null)`) buộc hộp đã mở có đủ ba trường kết quả và hộp chưa mở không có trường nào. Bật RLS, không policy cho client; không có trigger. Index: `secret_boxes_user_id_status_idx` (`user_id`, `status`) và `secret_boxes_status_opened_at_idx` (`status`, `opened_at` DESC NULLS LAST). `db/migrations/0016_secret_box_tick_cron.sql` không đổi cột nào, chỉ lập lịch job pg_cron `saa-secret-box-tick` mỗi phút gọi endpoint tick (thuộc artifact db-objects).
+**Description**: Một Hộp bí mật đã cấp cho người dùng, bảng `secret_boxes` (`shared/db/schema/secret-box-rewards.ts`, `db/migrations/0015_secret_box_rewards.sql`). `seq` đánh số hộp của mỗi người từ 1 tới n: UNIQUE `(user_id, seq)` đỡ việc cấp bù đồng thời, UNIQUE `(user_id, open_request_id)` đỡ việc phát lại theo header `Idempotency-Key` khi mở. Chỉ chuyển `unopened` sang `opened`, kèm kết quả (giải, thời điểm mở, mã yêu cầu mở); CHECK `secret_boxes_opened_has_result` (`(status = 'opened') = (prize_id is not null and opened_at is not null and open_request_id is not null)`) buộc hộp đã mở có đủ ba trường kết quả và hộp chưa mở không có trường nào. Bật RLS, không policy cho client; không có trigger. Index: `secret_boxes_user_id_status_idx` (`user_id`, `status`) và `secret_boxes_status_opened_at_idx` (`status`, `opened_at` DESC NULLS LAST). `db/migrations/0016_secret_box_tick_cron.sql` không đổi cột nào, chỉ lập lịch job pg_cron `saa-secret-box-tick` mỗi phút gọi endpoint tick (mô tả ở BL028_SecretBoxTickCron).
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -437,7 +437,7 @@ erDiagram
 
 ### MODEL012_UserIcon
 
-**Description**: Bộ sưu tập icon của từng người dùng, bảng `user_icons` (`shared/db/schema/secret-box-rewards.ts`, `db/migrations/0015_secret_box_rewards.sql`). Mỗi cặp (người dùng, icon) một dòng; nhận icon trùng chỉ tăng `quantity` (ghi bởi `features/secret-box-rewards/server/icon-collection-service.ts`). Bật RLS, không policy cho client; không có trigger. Bộ 6 mã icon chỉ là nhãn hiển thị/sưu tập, không có hành vi riêng theo từng giá trị nên không lập discriminator.
+**Description**: Bộ sưu tập icon của từng người dùng, bảng `user_icons` (`shared/db/schema/secret-box-rewards.ts`, `db/migrations/0015_secret_box_rewards.sql`). Mỗi cặp (người dùng, icon) một dòng; nhận icon trùng chỉ tăng `quantity` (ghi bởi `features/secret-box-rewards/server/icon-collection-service.ts`). Bật RLS, không policy cho client; không có trigger. Bộ 6 mã icon chỉ khác nhau ở ảnh huy hiệu hiển thị (chiều cao ảnh trong `features/secret-box-rewards/components/secret-box-format.ts`), không có nhánh nghiệp vụ nên không lập discriminator.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -448,7 +448,7 @@ erDiagram
 
 **Relationships**:
 - Many-to-One với MODEL004_Profile qua `user_id` (bắt buộc, ON DELETE CASCADE)
-- Liên hệ logic, không có FK: `icon_code` tương ứng icon của MODEL010_SecretBoxPrize (`kind = 'icon'`)
+- Liên hệ logic, 0..n, không có FK: `icon_code` tương ứng icon của MODEL010_SecretBoxPrize (`kind = 'icon'`)
 
 **Discriminator Fields**: None.
 
@@ -492,7 +492,7 @@ erDiagram
 <!-- domain: Outbox & Notifications -->
 ### MODEL015_DomainEventOutbox
 
-**Description**: Hộp thư sự kiện giao dịch (transactional outbox) dùng chung cho mọi tính năng, bảng `domain_event_outbox` (`shared/db/schema/domain-event-outbox.ts`, `shared/events/domain-event-types.ts`, `db/migrations/0001_domain_event_outbox.sql`). Dòng chỉ được ghi qua `DomainEventOutbox.add(tx, …)` (`shared/events/domain-event-outbox.ts`) bên trong transaction nghiệp vụ của bên phát (Kudo, tim, kiểm duyệt, Hộp bí mật), payload chỉ chứa id; `NotificationEventProcessor` (F013) là bên đọc duy nhất, quét các dòng chờ bằng `FOR UPDATE SKIP LOCKED` và biến thành `notifications`. Cột `event_type` không có CHECK ở DB; tập giá trị và hình dạng payload do Zod `domainEventSchema` (discriminated union theo `type`, `strictObject`) bảo đảm trước khi ghi. RLS bật ở `db/migrations/0002_rls_baseline.sql` (schema Drizzle không gọi `.enableRLS()`), không policy và không quyền cho client. Index một phần `domain_event_outbox_pending_idx` (`occurred_at`, `id`) với điều kiện `consumed_at is null and failed_at is null` phục vụ thứ tự quét. `next_attempt_at` thêm ở `db/migrations/0021_notifications_retry_backoff_and_event_fk.sql` cho backoff lũy thừa 1, 2, 4, 8 phút. Job pg_cron `saa-outbox-prune` (`db/migrations/0023_housekeeping_outbox_and_cron_history_prune.sql`) mỗi ngày xóa dòng đã xử lý quá 30 ngày; dòng chờ và dòng bị đỗ (`failed_at` có giá trị, `consumed_at` NULL) không bao giờ bị xóa. Không có trigger.
+**Description**: Hộp thư sự kiện giao dịch (transactional outbox) dùng chung cho mọi tính năng, bảng `domain_event_outbox` (`shared/db/schema/domain-event-outbox.ts`, `shared/events/domain-event-types.ts`, `db/migrations/0001_domain_event_outbox.sql`). Dòng chỉ được ghi qua `DomainEventOutbox.add(tx, …)` (`shared/events/domain-event-outbox.ts`) bên trong transaction nghiệp vụ của bên phát (Kudo, tim, kiểm duyệt, Hộp bí mật), payload chỉ chứa id; `NotificationEventProcessor` là bên đọc duy nhất, quét các dòng chờ bằng `FOR UPDATE SKIP LOCKED` và biến thành `notifications`. Cột `event_type` không có CHECK ở DB; tập giá trị và hình dạng payload do Zod `domainEventSchema` (discriminated union theo `type`, `strictObject`) bảo đảm trước khi ghi. RLS bật ở `db/migrations/0002_rls_baseline.sql` (schema Drizzle không gọi `.enableRLS()`), không policy và không quyền cho client. Index một phần `domain_event_outbox_pending_idx` (`occurred_at`, `id`) với điều kiện `consumed_at is null and failed_at is null` phục vụ thứ tự quét. `next_attempt_at` thêm ở `db/migrations/0021_notifications_retry_backoff_and_event_fk.sql` cho backoff lũy thừa 1, 2, 4, 8 phút. Job pg_cron `saa-outbox-prune` (`db/migrations/0023_housekeeping_outbox_and_cron_history_prune.sql`) mỗi ngày xóa dòng đã xử lý quá 30 ngày; dòng chờ và dòng bị đỗ (`failed_at` có giá trị, `consumed_at` NULL) không bao giờ bị xóa. Không có trigger.
 
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
@@ -729,10 +729,10 @@ Quy tắc lấy từ ràng buộc DB (CHECK/UNIQUE/EXCLUDE/FK trong migration), 
 
 | Domain | Slug | MODEL range | Entities |
 |--------|------|-------------|----------|
-| Identity & Reference | identity-reference | MODEL001–MODEL004 | 3 |
-| Kudos | kudos | MODEL003–MODEL007 | 4 |
+| Identity & Reference | identity-reference | MODEL001, MODEL002, MODEL004 | 3 |
+| Kudos | kudos | MODEL003, MODEL005–MODEL007 | 4 |
 | Hearts & Campaigns | hearts-campaigns | MODEL008–MODEL009 | 2 |
 | Secret Box & Rewards | secret-box-rewards | MODEL010–MODEL014 | 5 |
 | Outbox & Notifications | outbox-notifications | MODEL015–MODEL016 | 2 |
 
-Ngoài phạm vi (thuộc artifact db-objects): hàm và trigger (`is_sunner_email`, `create_sunner_profile`, `spotlight_publish_kudo_event`, `notifications_publish_signal`, `f_unaccent`), job pg_cron, policy Realtime, bucket Storage `kudo-images`, extension. `features/*/schemas/*.ts` là DTO/view, không phải bảng.
+Ngoài phạm vi của artifact này (stack web-js-ts không sinh artifact db-objects): hàm và trigger được mô tả ở behavior-logic (`is_sunner_email` qua BL018/BL020/BL021, `create_sunner_profile` BL019, `sync_profile_email` BL022, `spotlight_publish_kudo_event` BL023, `notifications_publish_signal` BL024; `f_unaccent` không có mục riêng), job pg_cron ở BL028-BL031, policy RLS/Realtime ở PERM035, PERM037, PERM038, bucket Storage `kudo-images` ở PERM036 và BL008, extension không được liệt kê. `features/*/schemas/*.ts` là DTO/view, không phải bảng.

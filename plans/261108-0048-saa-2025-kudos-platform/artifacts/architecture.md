@@ -162,7 +162,7 @@ Broadcast không phát lại sự kiện đã lỡ, nên client luôn tải lạ
 | Scheduler | `pg_cron` + `pg_net` + Vault trong Postgres | N/A — phiên bản extension không có trong source |
 | Cache | N/A — không tìm thấy kho cache hay chỉ thị cache dữ liệu trong source | — |
 | Queue | Bảng `domain_event_outbox` (outbox giao dịch tự viết, không dùng thư viện hàng đợi) | — |
-| Test | Vitest (project `unit`, `integration`), Playwright (e2e, prelaunch) | `vitest ^5.1.0`, `@playwright/test ^1.65.1` |
+| Test | Vitest (project `unit`, `integration`), Playwright (e2e, prelaunch), Testing Library + happy-dom (component), coverage-v8 | `vitest ^5.1.0`, `@playwright/test ^1.65.1`, `@testing-library/react 16.3.3`, `@testing-library/dom 10.4.2`, `happy-dom 21.0.4`, `@vitest/coverage-v8 5.1.0` |
 | Tooling | TypeScript, ESLint, tsx, Supabase CLI | `typescript ^5` (cài `5.9.3`), `eslint ^9`, `tsx ^4.23.15`, `supabase ^3.1.0` |
 
 Nguồn: `package.json`, các `node_modules/*/package.json` tương ứng, `next.config.ts`, `supabase/config.toml`.

@@ -59,3 +59,37 @@ Task tools (TaskCreate/TaskUpdate) unavailable in this harness; waves tracked he
 - FS.5: batch-01 (F006,F008,F010,F012,F013) failed=0 warnings=9; batch-02 (F014,F015) failed=2 warnings=3 → merged feature-review-report.md failed=2 → FS.6 cycle 1: 2 per-file implementer fixes (F014, F015 technical-spec § 5.1 SC coverage), balanced tier (sonnet/general-purpose-high).
 - FS.6 cycle 1: F014 (+SC-012/013), F015 (SC-001/010 extended, +SC-011); FS.2 re-run PASS for both; re-reviewer: C1/C2 FIXED → failed=0, warnings=12 (carried), missing=0.
 - FS.7: gate OK (validator WARN, failed 0, missing 0); promote_drafts --scope features (shim) → 14 files; 7 confidence reports; docs/features/.stale cleared; cursor feature-specs → last_feature_spec_run_sha=6e34454, reverse index 106 entries; fs7-complete.flag; navigation refreshed; "Secondary languages: none registered"; check_translation_gate feature-specs exit 0.
+
+== FEATURE-SPECS PASS 2 (--features F001,F002,F003,F004,F005,F007,F009,F011) — 2026-11-24 ==
+- Notice: [BEHAVIOR CHANGE v5] --features now runs the standalone feature-specs pass (was: default-pipeline W6 narrowing)
+- Preflight OK (feature-list.md, entities.md present; no flows/glossary stale markers). docs_root=docs, profile web-js-ts, REBUILD_NO_GRAPH=1.
+- Pass-1 review/validation artifacts archived to _archive-fs-pass1-F006-F015/.
+- decide_action_chunking (published specs): all chunk=false (4-8 actions).
+- FS.1 wave 1 dispatched: F001, F002, F003, F004, F005.
+- FS.1 F005 done (547/247 lines; validator 0 critical 0 warning).
+- Side work during FS.1 (docs/ OOB edits, verified against code): docs/_canonical-fcodes.json synced from plan canonical; ROUTE018 owner → F003, F004, F007 (route-list, feature-list F004/F007, both canonical JSONs); pass-1 feature warnings W1-W12 fixed in docs/features/F008/F012/F013/F014/F015; core W7a warnings W6/W7/W8/W9/W10/W11/W15/W16/W18 fixed in docs/generated + docs/system.
+- FS.1 wave 1: F001 (717/289; 0 crit, 2 state_rung_missing warn), F002 (556/330; 0/0), F004 (664/397; 0/0), F005 (547/247; 0/0) done; F003 running.
+- F004 draft aligned to ROUTE018 shared ownership (A10 cites ROUTE018).
+- Footer copy fixed in screen-list/screen-flow/user-stories ("Tiêu chuẩn chung", shell.nav.*) per F002 finding.
+== SCREEN-SPECS PASS (--screen-specs) started in parallel (pass is parallel-safe; global cap respected: F003 + 4 SS.1 = 5) ==
+- Preflight: screen-list.md present, 20 SCR; all affected (renumber changed every section; old docs/screens are takumi drafts).
+- SS.1 batches 01-04 dispatched (5 screens each). FS.1 wave 2 (F007, F009, F011) queued until slots free.
+- FS.1 F003 done (880/381; 0 crit, 2 alg_file_schema_missing warn). Wave 1 complete. F007 dispatched (slot freed). PERM025 clarified (edit-load route has no write-window check).
+- SS.1 batch-01 done (SCR001-005). Verified+applied: screen-flow SCR002 account-menu exits (Profile/Dashboard/Logout, table+mermaid), SCR003 header/footer triggers; Login label 'LOGIN With Google' in feature-list/screen-list/user-stories. Left [UNVERIFIED] in specs: SCR005 guest branch reachability, SCR004 prelaunch exit. F009 dispatched.
+- SS.1 batch-02 (SCR006-010) and batch-03 (SCR011-015) done. Verified+applied to docs/generated: screen-flow SCR010→SCR001 trigger (typed URL), SCR007/REG003→SCR015 row, SCR015 self-exit row, Rules Đóng logic (Navigation API first); screen-list SCR013 anonymous display, SCR014 CampaignTable (no status column, phase active), SCR015 'Đã nhận: {count} Kudos'. F011 dispatched.
+- FS.1 F009 done (420/180; 0 crit). US040 screens += SCR006 (KudoDetail uses KudoCardPeople).
+- SS.1 batch-04 (SCR016-020) done; SS.1 complete. SS.2 batches 01-04 dispatched (01-03 first, 04 after F007 freed a slot).
+- Batch-04/F007 findings verified+applied: requireSunner onboarding redirect has no `next`; SCR020 `unexpected` error; SCR019 date range navigates on single end; SCR018 12 cols incl ID, own-row role button locked, unit-options error keeps fixed entries, demoted-admin row; SCR013 export 422 → tooLarge toast. F007 route-list claim (proxy role gate on /api/admin) checked: route-list does not claim it — no change.
+- FS.1 F007 done (697/347; 0/0).
+- FS.1 F011 done (427/270; 0/0). FS.1 COMPLETE (8/8).
+- FS.2 (combined fs-validation-summary.json): overall WARN, 0 critical; warnings F001 state_rung_missing ×2, F003 alg_file_schema_missing ×2 (accepted by authors), F009 link.pre_migration (background feature, no SCR); F010/F012/F013 warnings are pass-1 drafts (not in scope). No FS.2 fix cycle.
+- FS.5 batches 01 (F001-F005) and 02 (F007, F009, F011) dispatched.
+- FS.1.5 done manually: 15 fragments (8 new + 7 pass-1 audit copies) consolidated into docs/generated/screen-flow.md § Feature Entry Points, replacing the HTML stub + template brace text; REG refs normalized to SCR###_Slug/REG###_Slug; SCR002 route fixed to /admin shell. validate_screen_flow PASS.
+- Screen drafts: 35 screen-flow.md:NN citations re-pointed by content (script + 6 manual overrides) after the insert shifted lines.
+- SS.2 batch-01 PASS (0/7), batch-03 PASS (0/4). SCR005 guest branch corrected in screen-flow/screen-list (only reachable by session without profile).
+- SS.2 batch-02 FAIL (1 critical C1: SCR010 out-of-range cites) → fixed directly (6 ranges). Own scan of all drafts + docs for out-of-range file:line cites (validator misses these): 16 in screen drafts fixed (clamped whole-file ranges, 4 partial ranges re-pointed), 2 in docs/generated/permissions-matrix.md (callback route) fixed. Re-scan: 0.
+- SS.2 batch-04 PASS (0/8). SS.2 merged: failed 0 (after C1 fix), warnings 25 → one fix agent dispatched for all screen warnings.
+- FS.5 batch-01: failed 5 (C1-C5 FR→SC coverage holes F001-F005), warnings 4. FS.6 cycle 1: fixers dispatched F001, F002, F003 (F003 also W1 links); F004/F005 queued for free slots.
+- FS.5 batch-02: failed 3 (C1-C3 FR→SC holes F007/F009/F011), warnings 3. Merged feature-review-report.md: failed 8, warnings 7. F004 fixer dispatched.
+- FS.6 cycle 1: 8 per-file fixes done (F001-F005, F007, F009, F011; incl. W1 F003 links, W2 F004 trailer + region refs, W3 F005, F007 W1/W2, F009 trailer). Mechanical FR→SC diff empty for all 8; FS.2 re-run 0 critical (WARN). Re-reviewer dispatched. Note: peak concurrency briefly hit 6 agents (screen fixer + 5 FS.6 fixers) — miscount, over the 5 cap by one.
+- FS.7 + SS.3 promoted (16 feature files, 20 screen specs). 22 stale docs/screens dirs deleted. Cursors → b68d523; stale screen_spec_shas keys removed. Traceability rebuilt (PASS), navigation refreshed, translation gates exit 0. Final grep clean. Report: plans/reports/rebuild-spec-261124-screen-sync-and-fixes.md

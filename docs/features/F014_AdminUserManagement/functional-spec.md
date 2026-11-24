@@ -151,7 +151,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 - [ ] Dòng của Sunner role User (không phải dòng của mình) có nút "⋯" mở menu một mục "Set as Admin"; chọn mục mở hộp xác nhận nêu tên và email, có "Xác nhận" và "Huỷ", "Huỷ" giữ focus ban đầu.
 - [ ] Esc hoặc "Huỷ" đóng hộp mà không ghi gì; trong lúc lưu cả hai nút bị khoá kèm trạng thái chờ và Esc không đóng hộp.
 - [ ] Xác nhận thành công thì đóng hộp, ô Role của dòng đổi sang Admin ngay, hiện thông báo thành công; số liệu và bộ lọc Role khớp lại sau khi trang làm mới.
-- [ ] Người đã là Admin thì được báo trạng thái hiện tại và không ghi lần hai; không thấy người dùng hoặc người thao tác đã bị hạ thì hiện lỗi trong hộp và hộp ở lại.
+- [ ] Người đã là Admin thì được báo trạng thái hiện tại và không ghi lần hai; không thấy người dùng hoặc người thao tác bị hạ trong lúc lệnh đang chờ lượt xử lý thì hiện lỗi trong hộp và hộp ở lại.
 - [ ] Role mới có hiệu lực từ lần truy cập kế tiếp của người được nâng.
 
 ### US011_DemoteAdminToUser — Demote Admin To User
@@ -164,7 +164,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 - [ ] Dòng Admin khác có menu một mục "Set as User"; chọn mục mở hộp xác nhận giống Promote.
 - [ ] Dòng của chính mình: nút "⋯" bị khoá kèm chú thích, không có menu.
 - [ ] Dòng Admin cấu hình sẵn có nhãn "Admin · env": mục "Set as User" hiện nhưng bị khoá kèm chú thích, chọn không mở hộp.
-- [ ] Server từ chối theo thứ tự: tự hạ mình (kể cả khi còn Admin khác), tài khoản cấu hình sẵn, Admin cuối cùng, người thao tác đã bị hạ giữa chừng; lý do hiện trong hộp và hộp ở lại.
+- [ ] Server từ chối theo thứ tự: tự hạ mình (kể cả khi còn Admin khác), tài khoản cấu hình sẵn, Admin cuối cùng, người thao tác bị hạ trong lúc lệnh đang chờ lượt xử lý; lý do hiện trong hộp và hộp ở lại. Người thao tác đã bị hạ từ trước khi gửi lệnh thì bị chặn 403 ở lớp kiểm tra quyền, trước mọi chốt trên.
 - [ ] Hai Admin hạ nhau cùng lúc: người thứ hai bị từ chối vì Admin cuối cùng, hệ thống không bao giờ về 0 Admin.
 - [ ] Thành công thì dòng đổi sang User kèm thông báo; người bị hạ mất quyền vào khu Admin từ lần truy cập kế tiếp.
 
@@ -203,9 +203,13 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 
 **Given** Sunner X có role User, **When** Admin chọn "Set as Admin" ở dòng X rồi bấm "Xác nhận", **Then** hộp đóng, cột Role của X đổi sang Admin, hiện "Đã đặt X làm Admin." và lần truy cập kế của X vào được khu Admin.
 
-### US010_PromoteUserToAdmin — Error: người thao tác đã bị hạ
+### US010_PromoteUserToAdmin — Error: người thao tác đã bị hạ trước khi bấm Xác nhận
 
-**Given** Admin vừa bị Admin khác hạ role trong lúc đang mở hộp, **When** bấm "Xác nhận", **Then** thấy "Bạn không còn quyền Admin." trong hộp và role của người kia không đổi.
+**Given** Admin đã bị Admin khác hạ role trong lúc đang mở hộp, **When** bấm "Xác nhận", **Then** lệnh bị chặn ngay ở lớp kiểm tra quyền (403, hệ thống đọc lại role trước khi xử lý), role của người kia không đổi; hộp ở lại và hiện "Không cập nhật được role. Vui lòng thử lại." vì giao diện coi lệnh bị chặn là lưu thất bại.
+
+### US010_PromoteUserToAdmin — Error: người thao tác bị hạ trong lúc lệnh đang chờ khoá
+
+**Given** hai Admin thao tác cùng lúc và Admin này bị hạ trong khi lệnh của mình đang chờ lượt xử lý, **When** lệnh được xử lý, **Then** thấy "Bạn không còn quyền Admin." trong hộp và role của người kia không đổi.
 
 ### US010_PromoteUserToAdmin — Edge: đã là Admin
 
@@ -247,7 +251,8 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 | Hai Admin hạ nhau cùng lúc khi chỉ có hai Admin | Hệ thống xử lý lần lượt; lần thứ hai bị từ chối vì chỉ còn một Admin | "Không thể hạ Admin cuối cùng." |
 | Admin tự hạ chính mình bằng cách gọi thẳng vào hệ thống | Bị từ chối kể cả khi còn nhiều Admin; trên giao diện nút đã khoá sẵn | "Bạn không thể tự hạ role của mình." |
 | Hạ tài khoản trong danh sách Admin cấu hình sẵn | Bị từ chối vì đăng nhập sẽ đặt lại thành Admin; trên giao diện mục đã khoá sẵn | "Admin được cấu hình qua ADMIN_EMAILS. Hãy gỡ email khỏi ADMIN_EMAILS trước khi hạ role." |
-| Admin vừa bị hạ role trong lúc đang mở trang | Lần thao tác kế bị từ chối vì hệ thống đọc lại role; không ghi gì | "Bạn không còn quyền Admin." |
+| Admin vừa bị hạ role trong lúc đang mở trang | Lần thao tác kế bị chặn 403 ở lớp kiểm tra quyền vì hệ thống đọc lại role trước khi xử lý; không ghi gì. Mở lại trang thì thấy trang 403 | "Không cập nhật được role. Vui lòng thử lại." (trong hộp) |
+| Admin bị hạ trong lúc lệnh đổi role của chính họ đang chờ lượt xử lý | Lệnh bị từ chối trong lúc xử lý; không ghi gì, hộp ở lại | "Bạn không còn quyền Admin." |
 | Người dùng đã bị xoá trong lúc hộp xác nhận đang mở | Không ghi gì, hộp ở lại | "Người dùng này không còn tồn tại." |
 | Không lưu được role vì lỗi bất ngờ hoặc mất mạng | Không ghi gì, hộp ở lại để thử lại | "Không cập nhật được role. Vui lòng thử lại." |
 | Tham số trên địa chỉ trang sai (từ khoá quá 100 ký tự, lặp khoá, giá trị lạ) | Bảng quay về trang 1 chưa lọc | "Từ khoá tối đa 100 ký tự" hoặc "Bộ lọc không hợp lệ, đang hiện tất cả người dùng." |

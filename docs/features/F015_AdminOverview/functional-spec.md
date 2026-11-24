@@ -48,7 +48,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 | D006 | "Total received secret box" tính hộp đã cấp hay chỉ hộp đã mở? | Tính mọi hộp đã cấp trong khoảng ngày, cả đã mở lẫn chưa mở | "Received" nghĩa là đã nhận; hộp chưa mở vẫn là hộp đã nhận | no |
 | D008 | Khoảng ngày mặc định khi mở trang là gì? | Để trống, tức toàn thời gian | Mặc định theo "tháng này" sẽ gây bất ngờ khi BTC mở giữa kỳ | no |
 | D009 | Có làm mục chọn nhanh khoảng thời gian (thiết kế có khung "chọn thời gian") không? | Chưa làm; chỉ chọn khoảng ngày bằng hai ô ngày | Nội dung khung đó chưa rõ `[INFERRED]`; làm khi có yêu cầu rõ (YAGNI) | no |
-| D011 | Thứ tự các đơn vị trong bảng? | Theo tên A-Z (số trong tên xếp tự nhiên, CECV2 trước CECV10), "Chưa gán đơn vị" cuối cùng; không sắp xếp bằng cách bấm đầu cột | Thiết kế không có biểu tượng sắp xếp; số đơn vị ít | no |
+| D011 | Thứ tự các đơn vị trong bảng? | Theo tên A-Z (số trong tên xếp tự nhiên, CEVC2 trước CEVC10), "Chưa gán đơn vị" cuối cùng; không sắp xếp bằng cách bấm đầu cột | Thiết kế không có biểu tượng sắp xếp; số đơn vị ít | no |
 | D012 | Ngôn ngữ của bản tiếng Anh trang Overview và của tệp CSV: tiêu đề cột tiếng Anh và tên đơn vị luôn tiếng Việt trong tệp, kể cả khi giao diện đang tiếng Anh, có giữ không? | Giữ như hiện tại: tiêu đề cột tiếng Anh, tên đơn vị tiếng Việt; bản tiếng Anh của trang là bản tạm | Bản tiếng Anh và ngôn ngữ chung của các tệp xuất đang chờ BTC chốt | no |
 
 ## 4. Requirements
@@ -195,10 +195,12 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 | Màn hình hẹp | Bảng cuộn ngang trong khung riêng, trang không cuộn ngang | "None — silent handling" |
 | Tên đơn vị bắt đầu bằng ký tự công thức hoặc chứa dấu phẩy, nháy kép | Tệp thêm dấu nháy đứng đầu hoặc bọc nháy kép; Excel mở ra như chữ thường | "None — silent handling" |
 | Bấm Export hai lần liên tiếp | Lần bấm sau bị bỏ qua cho tới khi tệp đầu xong | "None — silent handling" |
-| Xuất lỗi (phiên hết hạn, mất quyền Admin, khoảng ngày sai, lỗi đọc) | Không có tệp; nút mở khoá lại | "Không xuất được tệp. Vui lòng thử lại." |
-| Sunner thường mở trang Admin hoặc gọi thẳng Export | Bị từ chối, không có số liệu | "Bạn không có quyền truy cập tài nguyên này." |
+| Xuất lỗi (phiên hết hạn, mất quyền Admin, lỗi đọc) | Không có tệp; nút mở khoá lại. Khoảng ngày sai trên giao diện không gây lỗi vì nút Export khi đó xuất toàn bộ thời gian; chỉ địa chỉ Export tự gõ tay mang ngày sai mới bị từ chối | "Không xuất được tệp. Vui lòng thử lại." |
+| Sunner thường mở trang Admin | Trang bị từ chối (trang 403), không có số liệu | "Bạn không có quyền truy cập tài nguyên này." |
+| Sunner thường gọi thẳng địa chỉ Export | Nhận lỗi 403 dạng JSON, không có tệp và không có số liệu | None — không có trang hay thông báo |
 | Khách chưa đăng nhập mở trang Overview | Được đưa về trang đăng nhập, sau đó quay lại trang đang định vào | "None — silent handling" |
-| Admin bị hạ role giữa chừng | Thao tác kế tiếp (đổi ngày, Export) bị từ chối | "Bạn không có quyền truy cập tài nguyên này." |
+| Admin bị hạ role giữa chừng rồi đổi ngày | Trang tải lại bị từ chối (trang 403) | "Bạn không có quyền truy cập tài nguyên này." |
+| Admin bị hạ role giữa chừng rồi bấm Export | Không có tệp; nút mở khoá lại | "Không xuất được tệp. Vui lòng thử lại." |
 
 ## 10. Edge Behaviours to Verify
 
@@ -207,7 +209,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 - **FR-101** → Tab "Overview" và mục "Dashboard" đều mở đúng trang.
 - **FR-102** → Vào địa chỉ gốc của khu Admin thì tới trang Overview.
 - **FR-201** → Bảng có đủ bảy cột đúng tên.
-- **FR-202** → Hàng "All" ở đầu; các đơn vị xếp theo tên, CECV2 đứng trước CECV10; "Chưa gán đơn vị" cuối.
+- **FR-202** → Hàng "All" ở đầu; các đơn vị xếp theo tên, CEVC2 đứng trước CEVC10; "Chưa gán đơn vị" cuối.
 - **FR-203** → Chọn khoảng ngày thì "Total member" giữ nguyên, bốn chỉ số còn lại đổi theo.
 - **FR-204** → Chọn ngày kết thúc 05/12 thì Kudo gửi 23 giờ 30 ngày 05/12 vẫn có mặt; để trống cả hai đầu cho số toàn thời gian.
 - **FR-205** → Đơn vị không có hoạt động vẫn hiện số 0; có Sunner chưa gán đơn vị thì hàng "Chưa gán đơn vị" hiện.

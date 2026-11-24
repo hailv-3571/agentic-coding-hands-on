@@ -57,7 +57,7 @@ flowchart LR
 | # | Action (handler) | Method · Path | Codes | Writes | Detail |
 |---|---|---|---|---|---|
 | **A0** | *cross-cutting — belongs to no single action* | — | FR-001, FR-002, FR-601 | — | § 4.4 |
-| **A1** | `OwnProfilePage#default` | `GET` `/profile` | FR-101, FR-201, FR-202, FR-203, FR-603, BR-002, BR-003, BR-004, BR-005, BR-006, BR-010, DEC-007, ALG-001, US034 | `secret_boxes`, `domain_event_outbox` | § 3.1 ▸ **diagram** |
+| **A1** | `OwnProfilePage#default` | `GET` `/profile` | FR-101, FR-201, FR-202, FR-203, FR-603, BR-002, BR-003, BR-004, BR-005, BR-006, BR-010, DEC-007, ALG-001, US034 | — *(read-only; ghi gián tiếp qua reconcile của F010, xem Result)* | § 3.1 ▸ **diagram** |
 | **A2** | `OtherProfilePage#default` | `GET` `/profile/:userId` | FR-102, FR-103, FR-104, FR-301, FR-302, FR-303, FR-305, BR-001, BR-003, BR-004, BR-005, BR-006, BR-010, DEC-001, DEC-007, US034 | — *(read-only)* | § 3.1 |
 | **A3** | `ProfileSendKudoButton#onClick` *(client only)* | — | FR-304, BR-009, BR-011, US034 | — *(client only)* | § 3.1 |
 | **A4** | `ProfileKudosRoute#GET` | `GET` `/api/profile/:userId/kudos` | FR-205, FR-602, FR-603, FR-604, BR-001, BR-002, BR-003, BR-006, DEC-002, ALG-001, US041 | — *(read-only)* | § 3.2 |
@@ -65,7 +65,7 @@ flowchart LR
 | **A6** | `SunnerCardRoute#GET` | `GET` `/api/sunners/:userId/card` | FR-407, FR-605, BR-005, BR-007, BR-008, BR-009, US035 | — *(read-only)* | § 3.3 |
 | **A7** | `AvatarHoverCard#openSoon` *(client only)* | — | FR-403, FR-404, FR-407, FR-408, BR-007, BR-009, BR-011, DEC-003, DEC-004, DEC-005, DEC-006, SM-001, ALG-002, US035 | — *(client only)* | § 3.3 |
 
-**Rung set** theo template: Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn. A1 là action duy nhất có `Writes`: ghi nằm trong đường đọc của F010 nhúng ở trang, không phải code của F012 (xem Result của A1).
+**Rung set** theo template: Who → FE → Request → BE → Rule → Result → State → Source. Rung vắng thì bỏ hẳn. A1 là action duy nhất gián tiếp ghi: ghi nằm trong đường đọc của F010 nhúng ở trang, không phải code của F012 (xem Result của A1).
 
 ## 3. Actions
 
@@ -727,9 +727,9 @@ GET /api/profile/:id/kudos?direction&cursor (A5 -> A4) -> requireApiSunner -> Zo
 | System Overview | [overview.md](../../system/overview.md) | — | [x] |
 | Architecture | [architecture.md](../../system/architecture.md) | — | [x] |
 | Feature List | [feature-list.md](../../generated/feature-list.md) | F012 | [x] |
-| API Map | [api-map.md](../../generated/api-map.md) | ROUTE014, ROUTE019 | [ ] |
+| API Map | [api-map.md](../../generated/api-map.md) | ROUTE014, ROUTE019 | [x] |
 | Entities | [entities.md](../../generated/entities.md) | MODEL001, MODEL003, MODEL004, MODEL011, MODEL012 | [x] |
 | Screens | [functional-spec.md § 6](./functional-spec.md#6-screens) | SCR015, SCR016 | [x] |
-| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | BL009 | [x] |
+| Behavior Logic | [behavior-logic.md](../../generated/behavior-logic.md) | BL009 *(gián tiếp: danh sách Kudo của hồ sơ dùng `KudoPublicQuery` của F004 → `buildKudoCardViews` → `signKudoImageReadUrls`)* | [x] |
 | Permissions Matrix | [permissions-matrix.md](../../generated/permissions-matrix.md) | PERM030, PERM031 | [x] |
 | User Stories | [user-stories.md](../../generated/user-stories.md) | US034, US035, US041 | [x] |

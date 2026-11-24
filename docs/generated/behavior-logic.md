@@ -1127,8 +1127,8 @@ Inventory: `SecretBoxTickJob.run` [SIGNAL_INFERRED] (scheduled-job: bộ điều
 ## Cross-Reference Validation
 
 - [x] All BL### codes are unique
-- [ ] All BL### codes are referenced in UserStories.md (type=system) (Wave 3 điền)
-- [ ] All BL### codes are referenced in FeatureList.md (Wave 5 điền)
+- [ ] All BL### codes are referenced in UserStories.md (type=system) (Wave 3 điền) — chưa đạt: 11 BL (BL001, BL012, BL020, BL022, BL025, BL027-BL032) chưa có US dẫn; backlog system US cho scheduler ở lần chạy đầy đủ sau
+- [x] All BL### codes are referenced in FeatureList.md (Wave 5 điền)
 - [x] All related route references are valid (ROUTE### in RouteList — validate_feature_api_link.py enforces this)
 - [x] All related data model references are valid (MODEL### in DataModel)
 - [x] No orphaned behavior logic references

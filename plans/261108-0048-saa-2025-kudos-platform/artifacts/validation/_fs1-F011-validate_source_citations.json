@@ -1,0 +1,151 @@
+{
+  "generated_at": "2026-11-24T09:51:01Z",
+  "overall_status": "PASS",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 15,
+    "warning": 0
+  },
+  "validators": {
+    "specs": {
+      "F001_Auth": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F001_Auth\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F002_AppShell": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F002_AppShell\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F003_KudosAuthoring": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F003_KudosAuthoring\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F004_KudosFeed": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F004_KudosFeed\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F005_KudosHearts": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F005_KudosHearts\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F006_AwardsPortal": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F006_AwardsPortal\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F007_AdminModeration": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F007_AdminModeration\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F008_SpotlightBoard": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F008_SpotlightBoard\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F009_HeroBadges": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F009_HeroBadges\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F010_SecretBoxRewards": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F011_AdminCampaigns": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F011_AdminCampaigns\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F012_Profile": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F012_Profile\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F013_Notifications": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F014_AdminUserManagement": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F014_AdminUserManagement\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F015_AdminOverview": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F015_AdminOverview\\technical-spec.md",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      }
+    }
+  }
+}

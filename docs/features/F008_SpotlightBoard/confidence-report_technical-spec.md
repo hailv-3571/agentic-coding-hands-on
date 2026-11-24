@@ -1,7 +1,7 @@
 ---
 source_artifact: docs\features\F008_SpotlightBoard\technical-spec.md
-claims_total: 55
-claims_with_evidence: 55
+claims_total: 58
+claims_with_evidence: 58
 confidence_derived: 1.0
 generated_by: derive_confidence_report.py
 ---
@@ -61,6 +61,9 @@ Legend: `○` = cited (Source file:line present) · `△` = marker-tagged (uncer
 | (unlabeled claim) | 4. Shared Foundation | shared/auth/current-user.ts:48-53 | ○ |
 | (unlabeled claim) | 4. Shared Foundation | db/migrations/0017_spotlight_realtime.sql:79-81 | ○ |
 | (unlabeled claim) | 4. Shared Foundation | shared/auth/session-proxy.ts:71-75 | ○ |
+| (unlabeled claim) | 4. Shared Foundation | shared/auth/session-proxy.ts:112-120 | ○ |
+| (unlabeled claim) | 4. Shared Foundation | features/awards-portal/server/prelaunch-gate.ts:56-70 | ○ |
+| (unlabeled claim) | 4. Shared Foundation | features/awards-portal/server/prelaunch-gate-step.ts:14-30 | ○ |
 | (unlabeled claim) | 4. Shared Foundation | features/spotlight-board/server/spotlight-snapshot-query.ts:21-48 | ○ |
 | (unlabeled claim) | 4. Shared Foundation | db/migrations/0017_spotlight_realtime.sql:36-44 | ○ |
 | (unlabeled claim) | 4. Shared Foundation | features/spotlight-board/server/spotlight-snapshot-query.ts:24-48 | ○ |

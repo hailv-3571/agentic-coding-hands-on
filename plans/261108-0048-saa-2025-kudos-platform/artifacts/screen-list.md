@@ -51,7 +51,7 @@
 
 ### Description
 
-Màn đăng nhập cho khách chưa có phiên: logo ROOT FURTHER, hai dòng giới thiệu và nút "Đăng nhập bằng Google" (chỉ tài khoản cùng tên miền công ty). Người đã đăng nhập bị proxy đưa về `/`. Query `next` được giữ qua OAuth để quay lại đúng trang; query `error` hiện banner `domain_not_allowed` hoặc `auth_failed`. Header (logo + đổi ngôn ngữ) và footer tối giản lấy từ layout `(public)`.
+Màn đăng nhập cho khách chưa có phiên: logo ROOT FURTHER, hai dòng giới thiệu và nút "LOGIN With Google" (chỉ tài khoản cùng tên miền công ty). Người đã đăng nhập bị proxy đưa về `/`. Query `next` được giữ qua OAuth để quay lại đúng trang; query `error` hiện banner `domain_not_allowed` hoặc `auth_failed`. Header (logo + đổi ngôn ngữ) và footer tối giản lấy từ layout `(public)`.
 
 ### Components
 
@@ -157,7 +157,7 @@ Khung bao mọi trang Sunner sau đăng nhập (route group `(app)`). Guard `req
 | LanguageSwitcher | control | Đổi vi/en qua `setLocaleAction` |
 | AccountMenu | menu | Profile; Dashboard chỉ hiện với admin (cosmetic); Logout qua `signOut` |
 | KudoComposerToastHost | toast host | Toast "đã gửi / đã lưu Kudo" sống trên mọi trang Sunner |
-| AppFooter | footer | 5 link: Về SAA, Thông tin giải, Sun* Kudos, Thể lệ, Tiêu chuẩn cộng đồng |
+| AppFooter | footer | 5 link: About SAA 2025, Award Information, Sun* Kudos, Thể lệ, Tiêu chuẩn chung (`shell.nav.*`) |
 
 ### Data Displayed
 
@@ -252,14 +252,14 @@ Báo người dùng đã đăng nhập nhưng không đủ quyền vào khu vừ
 
 ### Description
 
-Báo địa chỉ vừa vào không tồn tại và đưa về trang chính: người đã đăng nhập thấy nút Home, khách thấy nút Login (D005). Hiển thị với status 404.
+Báo địa chỉ vừa vào không tồn tại và đưa về trang chính: người đã đăng nhập thấy nút Home, nhánh không có người dùng thấy nút Login (D005). Khách thật không tới được trang này vì proxy chuyển mọi đường không công khai về `/login?next=` trước (`shared/auth/route-access-policy.ts:35-39`); nhánh Login thực tế chỉ gặp khi có phiên nhưng thiếu dòng profile. Hiển thị với status 404.
 
 ### Components
 
 | Component | Type | Purpose |
 |-----------|------|---------|
 | ErrorPanel | frame | Khung chung với 403: tiêu đề, minh hoạ 404, mô tả |
-| CTA Home / Login | button | Đích chọn theo `getShellUser()`: có phiên → `/`, khách → `/login` |
+| CTA Home / Login | button | Đích chọn theo `getShellUser()`: có người dùng → `/`, không có (phiên thiếu profile) → `/login` |
 
 ### Data Displayed
 
@@ -276,7 +276,7 @@ Báo địa chỉ vừa vào không tồn tại và đưa về trang chính: ng�
 ### Related Screens
 
 - SCR011_Homepage: Homepage (navigation, người đã đăng nhập)
-- SCR001_Login: Login (navigation, khách)
+- SCR001_Login: Login (navigation, khi `getShellUser()` trả rỗng)
 
 ---
 
@@ -635,7 +635,7 @@ Trang "Review content" của Admin: một bảng mọi Kudo (10 dòng mỗi tran
 ### Data Displayed
 
 - Data Entity 1: Kudo kèm hashtag và số tim (MODEL003_Kudo, MODEL005_KudoHashtag, MODEL008_KudoHeart)
-- Data Entity 2: Người gửi và người nhận (MODEL004_Profile); Kudo ẩn danh hiện biệt danh
+- Data Entity 2: Người gửi và người nhận (MODEL004_Profile); Kudo ẩn danh hiện tên thật người gửi kèm chip "Ẩn danh", biệt danh chỉ ở tooltip của chip (`features/admin-moderation/components/review-table-row.tsx:48-55`)
 - Data Entity 3: Nhãn người đã chọn trong bộ lọc (`resolveSelectedPeople`)
 
 ### Routes/URLs
@@ -670,7 +670,7 @@ Trang "Settings" của Admin: danh sách campaign "x2 tim" trong một bảng, m
 | Component | Type | Purpose |
 |-----------|------|---------|
 | CampaignSettingsPanel | screen body | Tiêu đề "Setting", nút Add Campaign, quản lý hộp thoại đang mở và toast |
-| CampaignTable | table | Cột ID, Name, Time, Actions; trạng thái upcoming/running/ended tính khi đọc |
+| CampaignTable | table | Cột ID, Name, Time, Actions; không có cột trạng thái. Pha `upcoming`/`active`/`ended` tính khi đọc (`features/admin-campaigns/server/campaign-phase.ts:8-12`) chỉ quyết định menu "⋯" (ẩn khi `ended`) và việc khoá Start Date khi `active` trong modal |
 | CampaignRowMenu | menu | Sửa hoặc xoá từng dòng |
 | CampaignFormModal | modal | Hộp Add/Edit Campaign (CampaignDialogFrame, CampaignFormField, `useCampaignForm`) |
 | CampaignDeleteDialog | dialog | Xác nhận xoá, gọi `removeCampaign` |
@@ -714,7 +714,7 @@ Hồ sơ đồng nghiệp tại `/profile/{userId}`: avatar, tên, mã phòng ba
 | ProfilePageFrame | frame | Khung trang hồ sơ |
 | ProfileHeader | header | UserAvatar, tên `<h1>`, mã phòng ban, KudoCardHeroBadgeSlot (HeroBadge + tooltip), IconCollection 6 ô |
 | ProfileSendKudoButton | button | Mở LockedRecipientComposer (KudoComposerModal tạo mới, người nhận bị khoá); khoá khi hết cửa sổ ghi |
-| ProfileKudosSection | section | Header "Đã nhận: n Kudo", KudoCard, "Tải thêm", trạng thái rỗng và lỗi |
+| ProfileKudosSection | section | Header "Đã nhận: {count} Kudos", KudoCard, "Tải thêm", trạng thái rỗng và lỗi |
 | SunnerNotFound | state | `not-found.tsx` của `/profile/:userId`: một thông báo và nút về Live board |
 
 ### Data Displayed
@@ -857,10 +857,10 @@ Trang "User" của Admin: bảng toàn bộ Sunner kèm số liệu tham gia (20
 |-----------|------|---------|
 | AdminUsersScreen / AdminUsersView | screen body | Trạng thái lọc optimistic và `router.replace` URL trong transition |
 | AdminUserFilters | filter bar | Dropdown Unit, Level, Role và ô tìm kiếm |
-| AdminUserTable | table | Cột User, Email, ∑ sent Kudos, ∑ Received Kudos, Total Heart, Level, Number of Badges, Time to get 6 Badges, Last Logged in, Role, Actions |
+| AdminUserTable | table | 12 cột: ID (8 ký tự đầu của uuid), User, Email, ∑ sent Kudos, ∑ Received Kudos, Total Heart, Level, Number of Badges, Time to get 6 Badges, Last Logged in, Role, Actions |
 | AdminUserSortableHeader | header | Sắp xếp theo cột số liệu |
 | AdminUserTableRow | row | Một Sunner, patch role ngay từ kết quả action |
-| AdminUserRoleMenu | menu | Đổi role, ẩn tự hạ quyền (`actorId`) |
+| AdminUserRoleMenu | menu | Đổi role; trên dòng của chính mình nút "⋯" vẫn hiện nhưng bị khoá kèm tooltip, không mở menu (`actorId`) |
 | AdminUserRoleDialog | dialog | Xác nhận đổi role |
 | ReviewPagination / ReviewExportButton | pagination / button | Chuyển trang; tải CSV từ `/api/admin/users/export` |
 | AdminLoadErrorPanel / AdminUsersSkeleton / error boundary | state | Lỗi đọc kèm thử lại; skeleton `loading.tsx`; `error.tsx` bắt lỗi render |
@@ -948,7 +948,7 @@ Bước chọn phòng ban ở lần đăng nhập đầu: một nhóm radio bắ
 |-----------|------|---------|
 | Onboarding card | section | Thẻ giữa màn hình với tiêu đề `<h1>` và mô tả |
 | DepartmentPickerForm | form | Radio group phòng ban, `useActionState` gọi `chooseDepartment`, gửi `next` ẩn |
-| Error message | state | Báo `invalid_department` |
+| Error message | state | Báo `invalid_department` hoặc `unexpected` ("Không lưu được lựa chọn, vui lòng thử lại.") |
 
 ### Data Displayed
 

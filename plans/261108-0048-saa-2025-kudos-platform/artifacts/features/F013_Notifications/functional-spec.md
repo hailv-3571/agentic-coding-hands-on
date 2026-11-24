@@ -13,7 +13,7 @@ authored_by: rebuild-spec
 
 **See also:** [`technical-spec.md`](./technical-spec.md) — luồng xử lý hàng chờ sự việc, chống sinh trùng, kênh realtime riêng tư, trích nguồn, thiết kế dữ liệu cho Dev/QA/SA.
 
-**Traceability:** F013_Notifications → SCR003/REG001_NotificationBell, SCR017_AllNotifications → US023_BrowseNotifications, US024_OpenNotification, US025_MarkAllNotificationsRead → BL002, BL010, BL014, BL015, BL016, BL017, BL024, BL025, BL026, BL029, BL030, BL031 → ROUTE005, ROUTE011, ROUTE012, ROUTE033, ROUTE034
+**Traceability:** F013_Notifications → SCR003_AppLayout/REG001_NotificationBell, SCR017_AllNotifications → US023_BrowseNotifications, US024_OpenNotification, US025_MarkAllNotificationsRead → BL002, BL010, BL014, BL015, BL016, BL017, BL024, BL025, BL026, BL029, BL030, BL031 → ROUTE005, ROUTE011, ROUTE012, ROUTE033, ROUTE034
 
 ## 1. Overview
 
@@ -38,7 +38,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
 | CAP-01 | Generate notifications from domain events | Nhận một thông báo đúng loại, đúng người, không trùng cho mỗi sự việc liên quan mình, kể cả khi hệ thống xử lý lại hoặc gặp lỗi tạm thời | N/A — chạy nền, không có user story riêng | FR-001, FR-004, FR-005, FR-006, FR-007, FR-405, FR-406, FR-407, FR-408, FR-603, FR-604 | BR-001, BR-002, BR-003, BR-004, BR-005, BR-006, BR-008, BR-011, BR-012, BR-015, BR-017, SM-002 | N/A — chạy nền, không có màn hình riêng |
 | CAP-02 | Bell badge and realtime sync | Thấy chấm đỏ trên chuông khi còn thông báo chưa đọc và thấy nó cập nhật ngay khi có thông báo mới hoặc khi kết nối trở lại, kể cả giữa chuông, danh sách và trang | N/A — nằm trong tiêu chí của story duyệt thông báo ở CAP-03 | FR-101, FR-401, FR-402, FR-409, FR-410, FR-602 | BR-016, DEC-003 | N/A — hiển thị trên vùng chuông thuộc CAP-03 |
-| CAP-03 | Browse notifications | Xem mười thông báo mới nhất ở chuông và toàn bộ ở trang riêng bằng cuộn vô hạn, với trạng thái đang tải, rỗng và lỗi | US023_BrowseNotifications | FR-002, FR-003, FR-102, FR-201, FR-202, FR-203, FR-301, FR-302, FR-411, FR-601 | BR-009, BR-010, DEC-001, DEC-002, DEC-004, SM-003 | SCR003/REG001_NotificationBell, SCR017_AllNotifications |
+| CAP-03 | Browse notifications | Xem thông báo ở chuông (nạp 10 dòng mới nhất, cuộn để nạp tiếp) và ở trang riêng, cả hai bằng cuộn vô hạn, với trạng thái đang tải, rỗng và lỗi | US023_BrowseNotifications | FR-002, FR-003, FR-102, FR-201, FR-202, FR-203, FR-301, FR-302, FR-411, FR-601 | BR-009, BR-010, DEC-001, DEC-002, DEC-004, SM-003 | SCR003_AppLayout/REG001_NotificationBell, SCR017_AllNotifications |
 | CAP-04 | Open a notification and manage read state | Bấm một thông báo để tới đối tượng liên quan và đánh dấu đã đọc, hoặc đánh dấu tất cả đã đọc bằng một lần bấm | US024_OpenNotification, US025_MarkAllNotificationsRead | FR-103, FR-403, FR-404 | BR-007, BR-018, BR-019, DEC-005, SM-001 | N/A — dùng chung màn hình với CAP-03 |
 | CAP-05 | Keep the outbox and cron history bounded | Hệ thống tự dọn sự việc đã xử lý quá 30 ngày và lịch sử chạy lịch quá 7 ngày, không đụng vào sự việc đang chờ hay đã dừng thử | N/A — công việc vận hành, không có user story | FR-008 | BR-013, BR-014 | N/A — chạy nền, không có màn hình |
 
@@ -71,7 +71,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 
 ### Notification Panel (2xx)
 
-- **FR-201** Danh sách của chuông có tiêu đề "Thông báo", liên kết "Xem tất cả", nút biểu tượng đánh dấu đọc tất cả và tối đa 10 thông báo mới nhất ở trên cùng; mỗi lần mở nạp lại.
+- **FR-201** Danh sách của chuông có tiêu đề "Thông báo", liên kết "Xem tất cả", nút biểu tượng đánh dấu đọc tất cả; mỗi lần mở nạp lại 10 thông báo mới nhất ở trên cùng, cuộn trong bảng thì nạp tiếp mỗi lần 10 dòng cũ hơn (10 là cỡ trang, không phải giới hạn).
 - **FR-202** Mỗi dòng có biểu tượng theo loại, nội dung, thời gian tương đối ("Vừa xong", "15 phút trước"), chấm đỏ bên phải nếu chưa đọc, và cả dòng là một liên kết nổi bật khi trỏ chuột hoặc focus.
 - **FR-203** Chưa có thông báo nào thì hiện "Bạn chưa có thông báo nào" thay vì khung trống.
 
@@ -135,7 +135,7 @@ Feature này chưa tham gia luồng liên-feature nào được ghi trong thư m
 
 | Screen Name | SCR### | What User Sees | What User Can Do |
 |-------------|--------|-----------------|-------------------|
-| Notification Bell and Panel | SCR003/REG001_NotificationBell | Chuông ở header với chấm đỏ khi còn thông báo chưa đọc; bấm chuông mở bảng thả xuống "Thông báo" gồm tiêu đề, "Xem tất cả", biểu tượng đánh dấu đọc tất cả và tối đa 10 dòng mới nhất (biểu tượng theo loại, nội dung, thời gian tương đối, chấm đỏ nếu chưa đọc) | Mở và đóng bảng (bấm chuông, Esc, bấm ra ngoài), bấm dòng để tới đối tượng, đánh dấu đọc tất cả, mở trang "Tất cả thông báo", cuộn trong bảng để nạp thêm |
+| Notification Bell and Panel | SCR003_AppLayout/REG001_NotificationBell | Chuông ở header với chấm đỏ khi còn thông báo chưa đọc; bấm chuông mở bảng thả xuống "Thông báo" gồm tiêu đề, "Xem tất cả", biểu tượng đánh dấu đọc tất cả và 10 dòng mới nhất ở lần nạp đầu, cuộn để nạp tiếp (biểu tượng theo loại, nội dung, thời gian tương đối, chấm đỏ nếu chưa đọc) | Mở và đóng bảng (bấm chuông, Esc, bấm ra ngoài), bấm dòng để tới đối tượng, đánh dấu đọc tất cả, mở trang "Tất cả thông báo", cuộn trong bảng để nạp thêm |
 | All Notifications | SCR017_AllNotifications | Khung tối ở giữa trang dưới hình nền Live board, tiêu đề "Thông báo", "Đánh dấu đọc tất cả" và danh sách dòng cùng kiểu với bảng của chuông; có khung chờ, trạng thái rỗng và trạng thái lỗi | Bấm dòng để tới đối tượng, đánh dấu đọc tất cả, cuộn để nạp thêm 20 dòng cũ hơn, thử lại khi lỗi |
 
 ### User Journey
@@ -252,7 +252,8 @@ journey
 | Sunner tự thả tim cho Kudo của chính mình | Không tạo thông báo | None — silent handling |
 | Nhiều Kudo tới gần nhau làm thăng hạng | Chỉ một thông báo thăng hạng cho mỗi hạng mới đạt, không báo đôi và không trượt hạng | None — silent handling |
 | Người gửi có hai Kudo trong Kudos Quốc Dân | Một thông báo liệt kê hạng tốt nhất; bấm vào đi tới Kudo xếp hạng cao nhất | None — silent handling |
-| Kudo ẩn danh được đổi sang không ẩn danh (hoặc ngược lại) sau khi đã có thông báo | Danh sách theo trạng thái hiện tại của Kudo: ẩn danh thì chỉ hiện biệt danh, không ẩn danh thì hiện tên | None — silent handling |
+| Kudo không ẩn danh được đổi sang ẩn danh sau khi đã có thông báo | Danh sách theo trạng thái hiện tại của Kudo: chỉ hiện biệt danh, không còn hiện tên | None — silent handling |
+| Kudo ẩn danh được đổi sang không ẩn danh sau khi đã có thông báo | Vẫn hiện câu ẩn danh, không hiện tên, vì người gửi không được lưu lúc tạo thông báo | "Một Sunner ẩn danh vừa gửi đến bạn lời ghi nhận đầy yêu thương!" |
 | Chưa có thông báo nào | Bảng và trang hiện trạng thái rỗng | "Bạn chưa có thông báo nào" |
 | Nạp danh sách lỗi | Hiện lỗi kèm nút thử lại, chuông không bị ảnh hưởng | "Không tải được thông báo. Vui lòng thử lại." |
 | Nạp thêm trang cũ hơn lỗi | Các dòng đã có giữ nguyên, hiện lỗi và nút thử lại riêng bên dưới | "Không tải được thông báo. Vui lòng thử lại." |
@@ -280,7 +281,7 @@ journey
 - **FR-101** → chuông có trong header, mở bảng khi bấm, đóng bằng Esc hoặc bấm ra ngoài
 - **FR-102** → "Xem tất cả" mở trang tất cả thông báo
 - **FR-103** → bấm từng loại đi tới đối tượng đúng
-- **FR-201** → bảng đủ tiêu đề, "Xem tất cả", nút đọc tất cả và tối đa 10 dòng mới nhất trước
+- **FR-201** → bảng đủ tiêu đề, "Xem tất cả", nút đọc tất cả, 10 dòng mới nhất ở lần nạp đầu và cuộn thì nạp tiếp 10 dòng cũ hơn
 - **FR-202** → dòng có biểu tượng, nội dung, thời gian tương đối; dòng chưa đọc có chấm đỏ bên phải
 - **FR-203** → chưa có thông báo thì hiện trạng thái rỗng
 - **FR-301** → trang đủ tiêu đề, hành động đọc tất cả và danh sách dài
@@ -335,7 +336,7 @@ journey
 ## 13. Configuration
 
 ```text
-NOTIFICATION_DROPDOWN_LIMIT = 10          # số thông báo mới nhất ở bảng của chuông mỗi lần mở
+NOTIFICATION_DROPDOWN_LIMIT = 10          # cỡ trang của bảng chuông: lần nạp đầu và mỗi lần cuộn nạp tiếp
 NOTIFICATION_PAGE_SIZE = 20               # số thông báo mỗi lượt nạp ở trang Tất cả thông báo
 NOTIFICATION_MAX_PAGE_SIZE = 50           # trần số dòng một lượt nạp
 DRAIN_INTERVAL_SECONDS = 5                # hệ thống xử lý hàng chờ sự việc mỗi 5 giây

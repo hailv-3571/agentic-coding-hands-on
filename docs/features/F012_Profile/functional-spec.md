@@ -37,8 +37,8 @@ Feature này chưa tham gia luồng liên-feature nào (chưa có tài liệu lu
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
 | CAP-01 | Xem hồ sơ Sunner | Mở hồ sơ của mình hoặc của đồng nghiệp từ tên hay avatar, xem huy hiệu, icon, bảng thống kê (chỉ của mình) và bấm gửi lời cảm ơn cho đồng nghiệp | US034 | FR-001, FR-002, FR-101, FR-102, FR-103, FR-104, FR-201, FR-202, FR-203, FR-301, FR-302, FR-303, FR-304, FR-601 | BR-004, BR-005, BR-009, BR-010, BR-011, DEC-001, DEC-007 | SCR015, SCR016 |
-| CAP-02 | Duyệt Kudo trên hồ sơ | Đọc danh sách Kudo trên hồ sơ (của mình theo đã gửi hoặc đã nhận, của người khác chỉ đã nhận), đổi hướng, tải thêm, thử lại khi lỗi | US041 | FR-204, FR-205, FR-305, FR-401, FR-402, FR-405, FR-406, FR-602, FR-603, FR-604 | BR-001, BR-002, BR-003, BR-006, DEC-002, DEC-008, SM-002 | vùng KUDOS nằm trên SCR015's và SCR016's |
-| CAP-03 | Xem nhanh một Sunner | Rê chuột hoặc đặt focus lên avatar và tên để xem thẻ tóm tắt mà không rời trang, gửi lời cảm ơn ngay từ thẻ | US035 | FR-403, FR-404, FR-407, FR-408, FR-605 | BR-007, BR-008, DEC-003, DEC-004, DEC-005, DEC-006, SM-001 | SCR006, SCR007/REG003, SCR007/REG005 |
+| CAP-02 | Duyệt Kudo trên hồ sơ | Đọc danh sách Kudo trên hồ sơ (của mình theo đã gửi hoặc đã nhận, của người khác chỉ đã nhận), đổi hướng, tải thêm, thử lại khi lỗi | US041 | FR-204, FR-205, FR-305, FR-401, FR-402, FR-405, FR-406, FR-602, FR-603, FR-604 | BR-001, BR-002, BR-003, BR-006, DEC-002, DEC-008, SM-002 | SCR015, SCR016 |
+| CAP-03 | Xem nhanh một Sunner | Rê chuột hoặc đặt focus lên avatar và tên để xem thẻ tóm tắt mà không rời trang, gửi lời cảm ơn ngay từ thẻ | US035 | FR-403, FR-404, FR-407, FR-408, FR-605 | BR-007, BR-008, DEC-003, DEC-004, DEC-005, DEC-006, SM-001 | SCR015, SCR016 |
 
 ## 3. Open Decisions
 

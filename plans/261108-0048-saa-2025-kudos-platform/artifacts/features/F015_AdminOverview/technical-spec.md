@@ -100,7 +100,7 @@ flowchart LR
 - **BR-005 — "Total received secret box" đếm `secret_boxes` theo `granted_at` trong khoảng, mọi `status`.** Hộp đã cấp không bị trừ khi Kudo sinh ra nó sau này bị Spam. *(§ 4.4)*
 - **BR-006 — Dòng "All" là tổng các dòng đã nhóm, kể cả "Chưa gán đơn vị".** Cộng ở TypeScript từ chính kết quả đã đọc, không chạy truy vấn riêng. *(§ 4.4)*
 
-**Result** · read-only — **không ghi DB**. Trả `UnitStatsTable` gồm `all` và `rows`: đơn vị xếp tự nhiên A-Z theo tên (CECV2 trước CECV10), "Chưa gán đơn vị" cuối cùng (`ALG-002`). Đơn vị không có hoạt động vẫn có hàng với số 0 (FR-205, `coalesce`). Chưa có đơn vị nào và không có profile chưa gán thì `rows` rỗng: bảng chỉ có hàng "All" cùng dòng "Chưa có đơn vị nào.". Trang không bao giờ trả 400: mọi lỗi tham số đi qua DEC-003 với HTTP 200.
+**Result** · read-only — **không ghi DB**. Trả `UnitStatsTable` gồm `all` và `rows`: đơn vị xếp tự nhiên A-Z theo tên (CEVC2 trước CEVC10), "Chưa gán đơn vị" cuối cùng (`ALG-002`). Đơn vị không có hoạt động vẫn có hàng với số 0 (FR-205, `coalesce`). Chưa có đơn vị nào và không có profile chưa gán thì `rows` rỗng: bảng chỉ có hàng "All" cùng dòng "Chưa có đơn vị nào.". Trang không bao giờ trả 400: mọi lỗi tham số đi qua DEC-003 với HTTP 200.
 **Source:** `features/admin-overview/components/admin-overview-screen.tsx:26-73` → `app/admin/overview/page.tsx:19-54` → `features/admin-overview/schemas/overview-params-schema.ts:30-37` → `features/admin-overview/server/unit-stats-query.ts:31-95` → `features/admin-overview/server/add-all-row.ts:18-28`
 
 <!-- Không có diagram: dưới ngưỡng (chỉ đọc, một câu truy vấn đồng bộ, không ghi bảng). Thứ tự các bước truy vấn nằm ở ALG-001 (§ 4.5); bảng DEC ở trên là nội dung rẽ nhánh nên đọc tốt hơn dạng bảng. -->
@@ -353,7 +353,7 @@ return rows with coalesce(metric, 0)
 **Used in:** A2, A4
 **Source:** `features/admin-overview/server/add-all-row.ts:9-28`
 **Input:** `UnitStatsRow[]` · **Output:** `UnitStatsTable { all, rows }` · **Complexity:** O(n log n) với n = số đơn vị
-**Description:** Hàm thuần: cộng năm cột của mọi hàng vào `all` (BR-006) rồi sắp bản sao của mảng, không đổi mảng gốc. So sánh bằng `Intl.Collator("vi", { numeric: true })` nên số trong tên xếp tự nhiên (CECV2 trước CECV10) và D đứng trước Đ; hàng `unitId = null` luôn đứng cuối. Bảng và tệp tải về dùng cùng thứ tự này.
+**Description:** Hàm thuần: cộng năm cột của mọi hàng vào `all` (BR-006) rồi sắp bản sao của mảng, không đổi mảng gốc. So sánh bằng `Intl.Collator("vi", { numeric: true })` nên số trong tên xếp tự nhiên (CEVC2 trước CEVC10) và D đứng trước Đ; hàng `unitId = null` luôn đứng cuối. Bảng và tệp tải về dùng cùng thứ tự này.
 
 **Pseudocode:**
 ```text
@@ -389,7 +389,7 @@ ADMIN_TIMEZONE = Asia/Ho_Chi_Minh   # mặc định (env-schema.ts:73-75) — c�
 - **SC-004** *(A2)* Người nhận nhiều Kudo chỉ tăng "Total users with at least 1 kudo" một lần; Kudo ẩn danh vẫn tính cho đơn vị người gửi (covers BR-002, BR-003)
 - **SC-005** *(A2, A3)* Đổi khoảng ngày làm "Total member" giữ nguyên, bốn cột còn lại đổi; địa chỉ chứa `from`/`to` và tải lại cho đúng số liệu (covers FR-203, FR-401, BR-004)
 - **SC-006** *(A2, A3)* Khoảng ngược gõ trong ô bị chặn tại chỗ, bảng và địa chỉ giữ nguyên; địa chỉ có ngày sai, ngày không có thật hoặc tham số lặp hiện `filterError` trên bảng toàn thời gian (covers FR-403, FR-404, DEC-003, DEC-004)
-- **SC-007** *(A2)* Đọc lỗi hiện `AdminLoadErrorPanel` kèm "Thử lại"; đơn vị xếp CECV2 trước CECV10, "Chưa gán đơn vị" cuối (covers FR-207, FR-202, ALG-002)
+- **SC-007** *(A2)* Đọc lỗi hiện `AdminLoadErrorPanel` kèm "Thử lại"; đơn vị xếp CEVC2 trước CEVC10, "Chưa gán đơn vị" cuối (covers FR-207, FR-202, ALG-002)
 - **SC-008** *(A4)* Tệp CSV trùng từng số với bảng cùng tham số, có BOM, hàng "All" đầu, tên tệp `overview-yyyyMMdd-HHmm.csv`; ô bắt đầu bằng `=`, `+`, `-`, `@` bị vô hiệu hoá; mọi câu trả lời mang `Cache-Control: private, no-store` (covers FR-402, FR-602, BR-007)
 - **SC-009** *(A4)* Khách nhận 401, người không phải Admin 403, kể cả khi khoảng ngày ngược; không đọc dữ liệu; FE báo lỗi và không tải tệp (covers FR-405, FR-601)
 - **SC-010** *(A1)* `/admin` chuyển về `/admin/overview`; tab "Overview" và mục "Dashboard" cùng mở trang đó (covers FR-101, FR-102)

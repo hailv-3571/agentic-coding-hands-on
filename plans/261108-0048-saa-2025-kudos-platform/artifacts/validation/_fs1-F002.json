@@ -1,0 +1,160 @@
+{
+  "generated_at": "2026-11-24T09:17:03Z",
+  "overall_status": "WARN",
+  "plan": "261108-0048-saa-2025-kudos-platform",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 9,
+    "warning": 6
+  },
+  "validators": {
+    "specs": {
+      "F002_AppShell": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F002_AppShell",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F005_KudosHearts": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F005_KudosHearts",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F006_AwardsPortal": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F006_AwardsPortal",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F008_SpotlightBoard": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F008_SpotlightBoard",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F010_SecretBoxRewards": {
+        "issues": [
+          {
+            "location": {
+              "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+              "line": 271
+            },
+            "message": "A5 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+            "rule_id": "FeatureSpec.state_rung_missing",
+            "severity": "warning",
+            "validator": "feature_spec"
+          },
+          {
+            "location": {
+              "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+              "line": 309
+            },
+            "message": "A6 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+            "rule_id": "FeatureSpec.state_rung_missing",
+            "severity": "warning",
+            "validator": "feature_spec"
+          },
+          {
+            "location": {
+              "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards\\technical-spec.md",
+              "line": 397
+            },
+            "message": "A10 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+            "rule_id": "FeatureSpec.state_rung_missing",
+            "severity": "warning",
+            "validator": "feature_spec"
+          }
+        ],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F010_SecretBoxRewards",
+        "status": "WARN",
+        "summary": {
+          "critical": 0,
+          "warning": 3
+        }
+      },
+      "F012_Profile": {
+        "issues": [
+          {
+            "location": {
+              "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F012_Profile\\technical-spec.md",
+              "line": 74
+            },
+            "message": "A1 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung (_pre_fill)",
+            "rule_id": "FeatureSpec.state_rung_missing",
+            "severity": "warning",
+            "validator": "feature_spec"
+          }
+        ],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F012_Profile",
+        "status": "WARN",
+        "summary": {
+          "critical": 0,
+          "warning": 1
+        }
+      },
+      "F013_Notifications": {
+        "issues": [
+          {
+            "location": {
+              "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications\\technical-spec.md",
+              "line": 196
+            },
+            "message": "A5 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+            "rule_id": "FeatureSpec.state_rung_missing",
+            "severity": "warning",
+            "validator": "feature_spec"
+          },
+          {
+            "location": {
+              "file": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications\\technical-spec.md",
+              "line": 376
+            },
+            "message": "A13 writes (Writes cell non-empty) in a feature that models a state machine (\u00a7 4.3 carries a real SM-### heading block) but renders no **State** rung",
+            "rule_id": "FeatureSpec.state_rung_missing",
+            "severity": "warning",
+            "validator": "feature_spec"
+          }
+        ],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F013_Notifications",
+        "status": "WARN",
+        "summary": {
+          "critical": 0,
+          "warning": 2
+        }
+      },
+      "F014_AdminUserManagement": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F014_AdminUserManagement",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      },
+      "F015_AdminOverview": {
+        "issues": [],
+        "spec_path": "plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F015_AdminOverview",
+        "status": "PASS",
+        "summary": {
+          "critical": 0,
+          "warning": 0
+        }
+      }
+    }
+  }
+}

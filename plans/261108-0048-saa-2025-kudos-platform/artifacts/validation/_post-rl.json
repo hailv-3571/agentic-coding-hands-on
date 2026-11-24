@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-11-24T09:42:21Z",
+  "overall_status": "PASS",
+  "plan": "docs",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 0
+  },
+  "validators": {
+    "route_list": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    }
+  }
+}

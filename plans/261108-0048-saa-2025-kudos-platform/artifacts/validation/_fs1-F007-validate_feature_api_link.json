@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-11-24T09:48:14Z",
+  "overall_status": "PASS",
+  "plan": "artifacts",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 0
+  },
+  "validators": {
+    "feature_api_link": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    }
+  }
+}

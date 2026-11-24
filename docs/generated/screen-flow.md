@@ -53,18 +53,129 @@ graph TD
     SCR002 -->|Menu User| SCR018[SCR018_AdminUser]
     SCR002 -->|Menu Settings| SCR014[SCR014_AdminCampaignSettings]
     SCR002 -->|Logo ADMIN| SCR011
+    SCR002 -->|Menu tài khoản Profile| SCR016
+    SCR002 -->|Menu tài khoản Dashboard| SCR019
+    SCR002 -->|Menu tài khoản Logout| SCR001
     SCR004 -->|Ve trang chu| SCR011
     SCR005 -->|CTA signed in| SCR011
-    SCR005 -->|CTA guest| SCR001
+    SCR005 -->|CTA no profile| SCR001
 ```
 
 ## Feature Entry Points
 
-{Populated by FS.1 researchers (feature-specs pass) AFTER feature-list.md exists. W2 ScreenFlow researcher leaves this section as the placeholder below — do NOT populate it during W2.}
+### F001_Auth
 
-<!-- Feature Entry Points: run /tkm:rebuild-spec --feature-specs to populate -->
+- **Entry screen**: SCR001_Login — `/login`
+- **Owned screens**:
+  - SCR001_Login — `/login` (atomic)
+  - SCR020_OnboardingDepartment — `/onboarding/department` (atomic)
+- **Exit screens**: SCR011_Homepage (on login completes with a department set, or on department chosen with default next)
 
-{FS.1 researcher pattern: each FS.1 researcher emits a fragment file `plans/<active>/artifacts/_feature-entry-points/F###.md` (one file per feature, no write contention). After all FS.1 tasks complete, the orchestrator consolidates all fragment files into this section (FS.1.5).}
+### F002_AppShell
+
+- **Entry screen**: SCR003_AppLayout — `/`
+- **Owned screens**:
+  - SCR003_AppLayout — `/ (khung bọc /awards, /community-standards, /kudos, /kudos/:id, /notifications, /profile, /profile/:userId, /rules)` (composite)
+  - SCR002_AdminLayout — `/admin (khung bọc /admin/overview, /admin/review, /admin/users, /admin/settings)` (atomic)
+  - SCR004_Error403 — `/access-denied` (atomic)
+  - SCR005_Error404 — `(mọi địa chỉ không khớp route)` (atomic)
+- **Exit screens**: SCR001_Login (on Logout hoặc khi khách bị cổng đưa về), SCR020_OnboardingDepartment (on Sunner chưa chọn đơn vị), SCR019_AdminOverview (on bấm Dashboard trong menu tài khoản), SCR011_Homepage (on bấm Về trang chủ ở trang lỗi hoặc logo ADMIN)
+
+### F003_KudosAuthoring
+
+- **Entry screen**: SCR007_KudosLiveBoardFeed/REG001_KudoComposer — `/kudos`
+- **Owned screens**:
+  - SCR007_KudosLiveBoardFeed/REG001_KudoComposer — `/kudos` (composite)
+- **Exit screens**: SCR007_KudosLiveBoardFeed (on send, save or cancel — the modal closes and the board refreshes); SCR015_OtherProfile (on send or cancel when the modal was opened from another Sunner's profile or card — the page stays as it was)
+
+### F004_KudosFeed
+
+- **Entry screen**: SCR007_KudosLiveBoardFeed — `/kudos`
+- **Owned screens**:
+  - SCR007_KudosLiveBoardFeed — `/kudos` (composite)
+  - SCR006_KudoDetail — `/kudos/{id}` (atomic)
+- **Exit screens**: SCR006_KudoDetail (on "Xem chi tiết" from a card); SCR007_KudosLiveBoardFeed (on "Đóng" or "Quay lại Live board" from the detail page); SCR015_OtherProfile (on picking a Sunner search result or a person's name on a card; own id forwards to SCR016_OwnProfile)
+
+### F005_KudosHearts
+
+- **Entry screen**: SCR007_KudosLiveBoardFeed/REG005_AllKudosFeed — `/kudos`
+- **Owned screens**: none (embedded in host screens: SCR006_KudoDetail — `/kudos/:id` (atomic); SCR007_KudosLiveBoardFeed/REG003_HighlightKudos and SCR007_KudosLiveBoardFeed/REG005_AllKudosFeed — `/kudos` (composite); SCR015_OtherProfile — `/profile/:userId` (atomic); SCR016_OwnProfile — `/profile` (atomic))
+- **Exit screens**: SCR001_Login (on guest or expired session toggling a heart, redirected to `/login`)
+
+### F006_AwardsPortal
+
+- **Entry screen**: SCR011_Homepage — `/`
+- **Owned screens**:
+  - SCR010_CountdownPrelaunch — `/countdown` (atomic)
+  - SCR011_Homepage — `/` (atomic)
+  - SCR008_AwardsSystem — `/awards` (atomic)
+  - SCR012_Rules — `/rules` (atomic)
+  - SCR009_CommunityStandards — `/community-standards` (atomic)
+- **Exit screens**: SCR007_KudosLiveBoardFeed (on "ABOUT KUDOS", the Sun* Kudos banner button or "Viết KUDOS")
+
+### F007_AdminModeration
+
+- **Entry screen**: SCR013_AdminReviewContent — `/admin/review`
+- **Owned screens**:
+  - SCR013_AdminReviewContent — `/admin/review` (atomic)
+- **Exit screens**: SCR002_AdminLayout (on bấm mục menu khác của khu Admin: Overview, Users, Settings); SCR001_Login (on khách hoặc phiên hết hạn mở `/admin/review`, redirect `/login`); SCR004_Error403 (on người không phải Admin, hoặc Admin vừa bị hạ role, tải trang `/admin/review`)
+
+### F008_SpotlightBoard
+
+- **Entry screen**: SCR007_KudosLiveBoardFeed/REG004_SpotlightBoard — `/kudos`
+- **Owned screens**:
+  - SCR007_KudosLiveBoardFeed/REG004_SpotlightBoard — `/kudos` (composite)
+- **Exit screens**: SCR015_OtherProfile (on clicking a name in the cloud), SCR016_OwnProfile (when the clicked name is the viewer's own)
+
+### F009_HeroBadges
+
+- **Entry screen**: SCR007_KudosLiveBoardFeed — `/kudos`
+- **Owned screens**: none (embedded in host screens: SCR007_KudosLiveBoardFeed/REG_HighlightKudos, SCR007_KudosLiveBoardFeed/REG_AllKudosFeed, SCR006_KudoDetail, SCR012_Rules, SCR015_OtherProfile, SCR016_OwnProfile; Level column/filter source for SCR018_AdminUser)
+- **Exit screens**: none
+
+### F010_SecretBoxRewards
+
+- **Entry screen**: SCR007_KudosLiveBoardFeed/REG006_RewardsColumn — `/kudos`
+- **Owned screens**:
+  - SCR007_KudosLiveBoardFeed/REG006_RewardsColumn — `/kudos` (composite)
+- **Exit screens**: SCR007_KudosLiveBoardFeed (on closing the Secret Box modal the page refreshes in place and the `secretBox` deep-link parameter is removed)
+
+### F011_AdminCampaigns
+
+- **Entry screen**: SCR014_AdminCampaignSettings — `/admin/settings`
+- **Owned screens**:
+  - SCR014_AdminCampaignSettings — `/admin/settings` (atomic)
+- **Exit screens**: SCR019_AdminOverview, SCR013_AdminReviewContent, SCR018_AdminUser (on picking another section in the admin menu)
+
+### F012_Profile
+
+- **Entry screen**: SCR016_OwnProfile — `/profile`
+- **Owned screens**:
+  - SCR016_OwnProfile — `/profile` (atomic)
+  - SCR015_OtherProfile — `/profile/:userId` (atomic)
+- **Exit screens**: SCR006_KudoDetail (on "Xem chi tiết" of a Kudo card), SCR007_KudosLiveBoardFeed (on "Quay lại Live board" of the not-found state)
+
+### F013_Notifications
+
+- **Entry screen**: SCR017_AllNotifications — `/notifications`
+- **Owned screens**:
+  - SCR017_AllNotifications — `/notifications` (atomic)
+  - SCR003_AppLayout/REG001_NotificationBell — `(không có route riêng, nằm trong header của AppLayout ở mọi route Sunner)` (composite)
+- **Exit screens**: SCR006_KudoDetail (on bấm dòng thông báo Kudo mới, tim, Kudo bị ẩn hoặc Kudos Quốc Dân), SCR007_KudosLiveBoardFeed (on bấm dòng thông báo hộp quà, `/kudos?secretBox=open`), SCR016_OwnProfile (on bấm dòng thông báo lên bậc Hero hoặc đủ bộ icon), SCR009_CommunityStandards (on bấm liên kết "Tiêu chuẩn cộng đồng" trong dòng Kudo bị ẩn)
+
+### F014_AdminUserManagement
+
+- **Entry screen**: SCR018_AdminUser — `/admin/users`
+- **Owned screens**:
+  - SCR018_AdminUser — `/admin/users` (atomic)
+- **Exit screens**: SCR002_AdminLayout (on bấm mục menu khác của khu Admin: Overview, Review content, Settings), SCR004_Error403 (on người không phải Admin mở thẳng `/admin/users`, hoặc Admin vừa bị hạ role thao tác tiếp)
+
+### F015_AdminOverview
+
+- **Entry screen**: SCR019_AdminOverview — `/admin/overview`
+- **Owned screens**:
+  - SCR019_AdminOverview — `/admin/overview` (atomic)
+- **Exit screens**: SCR013_AdminReviewContent, SCR018_AdminUser, SCR014_AdminCampaignSettings (on bấm tab "Review content", "User", "Settings" ở thanh trên khu Admin — thanh này thuộc SCR002_AdminLayout của F002, F015 không có lối ra riêng)
 
 ---
 
@@ -82,17 +193,17 @@ graph TD
 | SCR001_Login | START | Lỗi OAuth hoặc sai tên miền, quay lại `/login?error=` | Lỗi `domain_not_allowed` / `auth_failed` | |
 | SCR020_OnboardingDepartment | SCR011_Homepage | Chọn phòng ban rồi gửi form | `departmentId` hợp lệ; `next` mặc định `/` | |
 | SCR010_CountdownPrelaunch | SCR011_Homepage | Đồng hồ máy chủ về 0 (`router.replace`) | Proxy cho `/` qua (sau `LAUNCH_AT`) | |
-| SCR010_CountdownPrelaunch | SCR001_Login | Mở `/login` | Khách; `/login` luôn công khai | |
+| SCR010_CountdownPrelaunch | SCR001_Login | Tự gõ `/login` (màn không có nút hay link tới `/login`) | Khách; `/login` luôn công khai | |
 | SCR011_Homepage | SCR008_AwardsSystem | Bấm ABOUT AWARDS hoặc thẻ giải `/awards#<slug>` | Không có | |
 | SCR011_Homepage | SCR007_KudosLiveBoardFeed | Bấm ABOUT KUDOS hoặc banner Kudos | Không có | |
 | SCR008_AwardsSystem | SCR007_KudosLiveBoardFeed | Bấm nút trong KudosBanner | Không có | |
 | SCR012_Rules | SCR007_KudosLiveBoardFeed | Bấm "Viết KUDOS" | Không có | |
 | SCR012_Rules | SCR011_Homepage | Bấm Đóng | Không có trang trước cùng origin để quay lại | |
-| SCR003_AppLayout | SCR011_Homepage | Bấm logo hoặc mục Về SAA | Không có | |
-| SCR003_AppLayout | SCR008_AwardsSystem | Bấm mục Thông tin giải | Không có | |
-| SCR003_AppLayout | SCR007_KudosLiveBoardFeed | Bấm mục Sun* Kudos | Không có | |
+| SCR003_AppLayout | SCR011_Homepage | Bấm logo hoặc mục About SAA 2025 (header hoặc footer) | Không có | |
+| SCR003_AppLayout | SCR008_AwardsSystem | Bấm mục Award Information (header hoặc footer) | Không có | |
+| SCR003_AppLayout | SCR007_KudosLiveBoardFeed | Bấm mục Sun* Kudos (header hoặc footer) | Không có | |
 | SCR003_AppLayout | SCR012_Rules | Bấm link Thể lệ ở footer | Không có | |
-| SCR003_AppLayout | SCR009_CommunityStandards | Bấm link Tiêu chuẩn cộng đồng ở footer | Không có | |
+| SCR003_AppLayout | SCR009_CommunityStandards | Bấm link "Tiêu chuẩn chung" ở footer | Không có | |
 | SCR003_AppLayout | SCR016_OwnProfile | Menu tài khoản › Profile | Không có | |
 | SCR003_AppLayout | SCR019_AdminOverview | Menu tài khoản › Dashboard | Chỉ hiện với admin (cosmetic, quyền thật do proxy và layout kiểm) | |
 | SCR003_AppLayout | SCR001_Login | Menu tài khoản › Logout (`signOut`) | Đăng xuất thành công | |
@@ -100,20 +211,22 @@ graph TD
 | SCR003_AppLayout | SCR006_KudoDetail | Bấm dòng thông báo nhận Kudo, tim, Kudo bị ẩn hoặc Kudos Quốc Dân | Dòng có `kudoId` | SCR003_AppLayout/REG001_NotificationBell |
 | SCR003_AppLayout | SCR007_KudosLiveBoardFeed | Bấm dòng thông báo hộp quà (`/kudos?secretBox=open`) | Dòng loại `secret_box_granted` | SCR003_AppLayout/REG001_NotificationBell |
 | SCR003_AppLayout | SCR016_OwnProfile | Bấm dòng thông báo lên bậc Hero hoặc đủ bộ icon | Dòng loại `hero_tier_up` / `icon_set_completed` | SCR003_AppLayout/REG001_NotificationBell |
-| SCR007_KudosLiveBoardFeed | SCR006_KudoDetail | Bấm "Xem chi tiết" trên thẻ Kudo | Kudo công khai, hoặc spam của chính chủ | SCR007_KudosLiveBoardFeed/REG003_HighlightKudos |
-| SCR007_KudosLiveBoardFeed | SCR006_KudoDetail | Bấm "Xem chi tiết" trên thẻ Kudo | Kudo công khai, hoặc spam của chính chủ | SCR007_KudosLiveBoardFeed/REG005_AllKudosFeed |
+| SCR007_KudosLiveBoardFeed | SCR006_KudoDetail | Bấm "Xem chi tiết" trên thẻ Kudo | Kudo công khai (Live board không bao giờ hiện Kudo spam) | SCR007_KudosLiveBoardFeed/REG003_HighlightKudos |
+| SCR007_KudosLiveBoardFeed | SCR006_KudoDetail | Bấm "Xem chi tiết" trên thẻ Kudo | Kudo công khai (Live board không bao giờ hiện Kudo spam) | SCR007_KudosLiveBoardFeed/REG005_AllKudosFeed |
 | SCR007_KudosLiveBoardFeed | SCR015_OtherProfile | Chọn một Sunner trong kết quả tìm | Không phải chính mình | SCR007_KudosLiveBoardFeed/REG002_SunnerProfileSearch |
 | SCR007_KudosLiveBoardFeed | SCR016_OwnProfile | Chọn chính mình trong kết quả tìm | Ô tìm không loại chính mình (`excludeSelf=false`) | SCR007_KudosLiveBoardFeed/REG002_SunnerProfileSearch |
 | SCR007_KudosLiveBoardFeed | SCR015_OtherProfile | Bấm tên người nhận trong đám mây Spotlight | Không có | SCR007_KudosLiveBoardFeed/REG004_SpotlightBoard |
 | SCR007_KudosLiveBoardFeed | SCR015_OtherProfile | Bấm tên hoặc avatar người có tên trên thẻ Kudo | Người gửi không ẩn danh | SCR007_KudosLiveBoardFeed/REG005_AllKudosFeed |
+| SCR007_KudosLiveBoardFeed | SCR015_OtherProfile | Bấm tên hoặc avatar người có tên trên thẻ Highlight | Người gửi không ẩn danh | SCR007_KudosLiveBoardFeed/REG003_HighlightKudos |
 | SCR007_KudosLiveBoardFeed | SCR009_CommunityStandards | Bấm link trong thanh công cụ của composer | Composer đang mở | SCR007_KudosLiveBoardFeed/REG001_KudoComposer |
 | SCR006_KudoDetail | SCR007_KudosLiveBoardFeed | Bấm Đóng hoặc nút về Live board ở trạng thái 404 | Không có | |
 | SCR006_KudoDetail | SCR015_OtherProfile | Bấm tên hoặc avatar người có tên | Người gửi không ẩn danh | |
 | SCR015_OtherProfile | SCR016_OwnProfile | Mở `/profile/{userId}` | `userId` là chính mình (`redirect`) | |
 | SCR015_OtherProfile | SCR006_KudoDetail | Bấm "Xem chi tiết" trên thẻ | Không có | |
+| SCR015_OtherProfile | SCR015_OtherProfile | Bấm tên hoặc avatar người có tên trên thẻ Kudo (`/profile/{id}`) | Người gửi không ẩn danh; trùng chính mình thì chuyển SCR016 | |
 | SCR015_OtherProfile | SCR007_KudosLiveBoardFeed | Bấm nút về Live board ở trạng thái 404 | `userId` sai định dạng hoặc không tồn tại | |
 | SCR016_OwnProfile | SCR006_KudoDetail | Bấm "Xem chi tiết" trên thẻ | Không có | |
-| SCR016_OwnProfile | SCR015_OtherProfile | Bấm tên người trong thẻ | Không phải chính mình | |
+| SCR016_OwnProfile | SCR015_OtherProfile | Bấm tên người trong thẻ (link `/profile/{id}` cho mọi người; tên của chính mình được chuyển lại `/profile`) | Thẻ không nằm dưới lớp phủ spam | |
 | SCR017_AllNotifications | SCR006_KudoDetail | Bấm dòng thông báo có `kudoId` | Không có | |
 | SCR017_AllNotifications | SCR007_KudosLiveBoardFeed | Bấm dòng thông báo hộp quà | Dòng loại `secret_box_granted` | |
 | SCR017_AllNotifications | SCR016_OwnProfile | Bấm dòng thông báo lên bậc Hero hoặc đủ bộ icon | Không có | |
@@ -123,9 +236,12 @@ graph TD
 | SCR002_AdminLayout | SCR018_AdminUser | Bấm mục User | Admin | |
 | SCR002_AdminLayout | SCR014_AdminCampaignSettings | Bấm mục Settings | Admin | |
 | SCR002_AdminLayout | SCR011_Homepage | Bấm logo ADMIN | Không có | |
+| SCR002_AdminLayout | SCR016_OwnProfile | Menu tài khoản › Profile | Không có | |
+| SCR002_AdminLayout | SCR019_AdminOverview | Menu tài khoản › Dashboard (trùng mục Overview) | Admin | |
+| SCR002_AdminLayout | SCR001_Login | Menu tài khoản › Logout (`signOut`) | Đăng xuất thành công | |
 | SCR004_Error403 | SCR011_Homepage | Bấm "Về trang chủ" | Không có | |
 | SCR005_Error404 | SCR011_Homepage | Bấm nút Home | Đã đăng nhập | |
-| SCR005_Error404 | SCR001_Login | Bấm nút Login | Khách | |
+| SCR005_Error404 | SCR001_Login | Bấm nút Login | `getShellUser()` trả rỗng: thực tế chỉ khi có phiên nhưng thiếu dòng profile; khách thật bị proxy chuyển `/login?next=` trước khi trang 404 dựng (`shared/auth/route-access-policy.ts:35-39`) | |
 
 > Region column: fill with `SCR###/REG###` for region-scoped transitions; leave blank for whole-screen transitions.
 
@@ -178,7 +294,7 @@ graph TD
 - Tới SCR016_OwnProfile, SCR019_AdminOverview, SCR001_Login: menu tài khoản
 
 **Decision Points**:
-- Không có phiên: `/login`; chưa có phòng ban: `/onboarding/department?next=`; có phiên nhưng không có profile: HTTP 401 (không redirect để tránh vòng lặp với luật `/login` → `/`)
+- Không có phiên: `/login`; chưa có phòng ban: `/onboarding/department` (`requireSunner()` không mang `next`, chọn xong về `/`); có phiên nhưng không có profile: HTTP 401 (không redirect để tránh vòng lặp với luật `/login` → `/`)
 - Dòng thông báo chọn đích theo loại: Kudo/tim/Kudo bị ẩn/Quốc Dân → SCR006_KudoDetail; hộp quà → `/kudos?secretBox=open`; bậc Hero/bộ icon → SCR016_OwnProfile
 
 ---
@@ -322,7 +438,7 @@ graph TD
 - Quay lại trang trước hoặc tới SCR011_Homepage: Đóng
 
 **Decision Points**:
-- Đóng: có lịch sử và `document.referrer` cùng origin → `router.back()`; ngược lại → `router.push('/')`
+- Đóng: có lịch sử cùng origin → `router.back()` (ưu tiên Navigation API `currentEntry.index > 0`, trình duyệt không hỗ trợ thì dùng `history.length > 1` và `document.referrer` cùng origin); ngược lại → `router.push('/')`
 
 ---
 
@@ -428,7 +544,7 @@ graph TD
 - Điều hướng khu admin qua SCR002_AdminLayout
 
 **Decision Points**:
-- Đổi khoảng ngày đủ cả hai đầu: `router.replace` URL; khoảng ngược bị từ chối ngay trong ô chọn
+- Đổi một hoặc cả hai đầu khoảng ngày: `router.replace` URL (đầu để trống được server coi là không giới hạn); khoảng ngược (cả hai đầu có giá trị và đầu > cuối) bị chặn ngay trong ô chọn, không điều hướng (`features/admin-moderation/components/review-date-range-filter.tsx:64-69`)
 - URL có khoảng ngược hoặc sai định dạng: hiện lỗi lọc trên bảng toàn thời gian
 
 ---
@@ -436,7 +552,7 @@ graph TD
 ### SCR020_OnboardingDepartment (OnboardingDepartment)
 
 **Entry Points**:
-- `requireSunner()` đưa người chưa có phòng ban tới `/onboarding/department?next=`
+- `requireSunner()` đưa người chưa có phòng ban tới `/onboarding/department` không kèm `next` (`shared/auth/current-user.ts:51`); chỉ callback OAuth mới mang `?next=` (`features/auth/server/complete-login.ts:51-52`)
 - Từ SCR001_Login: sau OAuth lần đầu
 
 **Exit Points**:
@@ -538,17 +654,20 @@ graph LR
 | SCR013_AdminReviewContent | Đọc bảng lỗi | `AdminLoadErrorPanel` kèm thử lại | screen |
 | SCR013_AdminReviewContent | Tham số URL sai | Lỗi lọc trên trang 1 chưa lọc | screen |
 | SCR013_AdminReviewContent | Mark Spam / Un Spam lỗi | Toast `moderation.failed` hoặc `moderation.notFound` | screen |
-| SCR013_AdminReviewContent | Xuất CSV lỗi (kể cả server từ chối quá `EXPORT_MAX_ROWS` bằng 422 `export_too_large`) | Toast lỗi chung `failed`, nút xuất mở khoá lại | screen |
+| SCR013_AdminReviewContent | Xuất CSV lỗi | Toast lỗi chung `failed` "Không xuất được tệp. Vui lòng thử lại.", nút xuất mở khoá lại | screen |
+| SCR013_AdminReviewContent | Server từ chối quá `EXPORT_MAX_ROWS` (422 `export_too_large`) | Toast riêng `export.tooLarge` "Có quá nhiều dòng để xuất. Hãy thu hẹp bộ lọc." (`features/admin-moderation/components/review-export-button.tsx:45`), nút xuất mở khoá lại | screen |
 | SCR014_AdminCampaignSettings | Đọc danh sách lỗi | Trạng thái lỗi E14 kèm link tải lại | screen |
 | SCR014_AdminCampaignSettings | Campaign đã xoá hoặc đã kết thúc (`NOT_FOUND`, `ENDED`) | Đóng hộp thoại, toast lỗi theo mã `errors.<code>`, bảng tải lại | screen |
 | SCR014_AdminCampaignSettings | Chồng giờ (`OVERLAP`), nhập sai | Lỗi hiện trong hộp thoại, không đóng | screen |
 | SCR018_AdminUser | Đọc bảng lỗi | `AdminLoadErrorPanel` kèm thử lại | screen |
-| SCR018_AdminUser | Đọc lựa chọn Unit lỗi | Dropdown rỗng, bảng vẫn dùng được | screen |
-| SCR018_AdminUser | Server từ chối đổi role (`SELF_DEMOTE`, `LAST_ADMIN`, `ENV_ADMIN`, `NOT_FOUND`, `FORBIDDEN`) | Lỗi `roleErrors.*` hiện trong hộp xác nhận và hộp không đóng; menu đã khoá sẵn cho chính mình và admin env | screen |
+| SCR018_AdminUser | Đọc lựa chọn Unit lỗi | Dropdown chỉ còn hai mục cố định "Tất cả" và "Chưa gán đơn vị", bảng vẫn dùng được | screen |
+| SCR018_AdminUser | Server từ chối đổi role (`SELF_DEMOTE`, `LAST_ADMIN`, `ENV_ADMIN`, `NOT_FOUND`, `FORBIDDEN`) | Lỗi `roleErrors.*` hiện trong hộp xác nhận và hộp không đóng; menu đã khoá sẵn cho chính mình và admin env. `FORBIDDEN` ("Bạn không còn quyền Admin.") chỉ xảy ra khi actor bị hạ trong lúc giao dịch chờ khoá | screen |
+| SCR018_AdminUser | Admin đã bị hạ trước khi bấm Xác nhận | Proxy bước 4b trả JSON 403 cho Server Action; client bắt lỗi thành `UNEXPECTED` → "Không cập nhật được role. Vui lòng thử lại." trong hộp (suy từ code: `shared/auth/session-proxy.ts:93-110`, `features/admin-users/components/admin-user-role-menu.tsx:24-33`) | screen |
 | SCR019_AdminOverview | Đọc số liệu lỗi | `AdminLoadErrorPanel` kèm thử lại | screen |
 | SCR018_AdminUser | Lỗi render bất ngờ | `error.tsx` hiện thông báo kèm nút thử lại | screen |
 | SCR019_AdminOverview | Lỗi render bất ngờ | `error.tsx` hiện thông báo kèm nút thử lại | screen |
 | SCR020_OnboardingDepartment | Phòng ban không hợp lệ | Thông báo `invalid_department` dưới nhóm radio | screen |
+| SCR020_OnboardingDepartment | Lỗi DB khi lưu hoặc phiên không có profile | Thông báo `unexpected` "Không lưu được lựa chọn, vui lòng thử lại." (`features/auth/server/choose-department-action.ts:58-66`) | screen |
 
 > Scope values: `screen` (affects entire screen) | `region:REG###` (error contained within the named region).
 
@@ -611,7 +730,10 @@ if (isAdminPath(path) && profile.role != admin) {
 **source:** `features/awards-portal/server/prelaunch-gate.ts:56`
 **logic:**
 ```pseudo
-if (now >= LAUNCH_AT) → /countdown (page load) redirects to / ; else pass
+if (now >= LAUNCH_AT):            // after launch
+  if (path == /countdown and page load) → redirect /
+  else → pass
+// prelaunch only (now < LAUNCH_AT):
 if (isPublicPath(path)) → pass
 if (signed in and role == admin) → pass
 if (page load) → redirect /countdown

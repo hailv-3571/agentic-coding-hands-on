@@ -59,7 +59,7 @@
 **Components**: 4 (`features/auth/components`)
 
 **Related Screens**:
-- SCR001_Login: màn đăng nhập cho khách, nút "Đăng nhập bằng Google" và banner lỗi `domain_not_allowed` / `auth_failed`
+- SCR001_Login: màn đăng nhập cho khách, nút "LOGIN With Google" và banner lỗi `domain_not_allowed` / `auth_failed`
 - SCR020_OnboardingDepartment: bước chọn phòng ban ở lần đăng nhập đầu, nhóm radio bắt buộc, gửi một lần
 
 **Related User Stories**:
@@ -220,6 +220,7 @@
 **Related APIs/Routes**:
 - (GET) /api/kudos — ROUTE007
 - (GET) /api/kudos/highlight — ROUTE008
+- (GET) /api/sunners/search — ROUTE018 (dùng chung với F003, F007: ô tìm profile Sunner REG002)
 
 **Related Data Models**:
 - MODEL003_Kudo
@@ -272,7 +273,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 26 (module nguồn trong `features/awards-portal`, không tính test)
+**Components**: 19 (`features/awards-portal/components`)
 
 **Related Screens**:
 - SCR008_AwardsSystem: Trang Hệ thống giải với 6 khối giải và menu neo; hash lạ thì trang đứng ở đầu
@@ -308,7 +309,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 36 (module nguồn trong `features/admin-moderation`, không tính test)
+**Components**: 19 (`features/admin-moderation/components`)
 
 **Related Screens**:
 - SCR013_AdminReviewContent: Bảng Review content của Admin với lọc; tìm; sắp theo tim; phân trang; Mark Spam hoặc Un Spam từng dòng và xuất CSV
@@ -324,6 +325,7 @@
 - (GET) /api/admin/kudos/export — ROUTE002
 - (POST) /admin/review — ROUTE027 (server action markKudoSpam)
 - (POST) /admin/review — ROUTE028 (server action unSpamKudo)
+- (GET) /api/sunners/search — ROUTE018 (dùng chung với F003, F004: bộ lọc người gửi/nhận)
 
 **Related Data Models**:
 - MODEL003_Kudo
@@ -344,7 +346,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 30 (module nguồn trong `features/spotlight-board`, không tính test)
+**Components**: 11 (`features/spotlight-board/components`)
 
 **Related Screens**:
 - SCR007_KudosLiveBoardFeed/REG004_SpotlightBoard: Vùng Spotlight Board của Live board; feature chỉ sở hữu vùng này còn khung màn hình thuộc feature khác
@@ -375,7 +377,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 9 (module nguồn trong `features/hero-badges`, không tính test)
+**Components**: 3 (`features/hero-badges/components`)
 
 **Related Screens**:
 - None
@@ -404,7 +406,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 35 (module nguồn trong `features/secret-box-rewards`, không tính test)
+**Components**: 11 (`features/secret-box-rewards/components`)
 
 **Related Screens**:
 - SCR007_KudosLiveBoardFeed/REG006_RewardsColumn: Cột phần thưởng của Live board gồm thống kê cá nhân; nút Mở Secret Box; 10 người nhận quà mới nhất; feature chỉ sở hữu vùng này còn khung màn hình thuộc feature khác
@@ -444,7 +446,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 10
+**Components**: 10 (`features/admin-campaigns/components`)
 
 **Related Screens**:
 - SCR014_AdminCampaignSettings: Trang Admin › Settings: bảng campaign, menu từng dòng, nút Add Campaign, hộp thoại thêm/sửa và hộp xác nhận xoá
@@ -477,7 +479,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 9
+**Components**: 9 (`features/profile/components`)
 
 **Related Screens**:
 - SCR015_OtherProfile: Hồ sơ đồng nghiệp `/profile/{userId}`: thông tin, icon, nút gửi cảm ơn, danh sách Kudo "Đã nhận"
@@ -512,11 +514,11 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 7
+**Components**: 7 (`features/notifications/components`)
 
 **Related Screens**:
 - SCR017_AllNotifications: Trang `/notifications`: panel danh sách, nút đánh dấu đọc tất cả, cuộn vô hạn, trạng thái rỗng và lỗi
-- SCR003/REG001_NotificationBell: Chuông thông báo và dropdown 10 thông báo mới nhất ở header (composite screen; feature chỉ sở hữu vùng này, vỏ AppLayout thuộc feature App Shell)
+- SCR003_AppLayout/REG001_NotificationBell: Chuông thông báo và dropdown 10 thông báo mới nhất ở header (composite screen; feature chỉ sở hữu vùng này, vỏ AppLayout thuộc feature App Shell)
 
 **Related User Stories**:
 - US023_BrowseNotifications: Xem danh sách thông báo ở chuông và ở trang tất cả thông báo
@@ -560,7 +562,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 9
+**Components**: 9 (`features/admin-users/components`)
 
 **Related Screens**:
 - SCR018_AdminUser: Trang Admin › User: bảng Sunner, bộ lọc, tìm kiếm, sắp xếp, menu đổi role và nút Export
@@ -594,7 +596,7 @@
 
 **Workspace**: my-app (Next.js)
 **Languages**: TypeScript
-**Components**: 3
+**Components**: 3 (`features/admin-overview/components`)
 
 **Related Screens**:
 - SCR019_AdminOverview: Trang Admin › Overview: bảng số liệu theo Unit kèm dòng All, bộ chọn khoảng ngày và nút Export
@@ -633,17 +635,17 @@
 
 ## Cross-Reference Validation
 
-- [ ] All F### codes are unique (kiểm sau khi merge fragment)
+- [x] All F### codes are unique (kiểm sau khi merge fragment)
 - [ ] All F### codes are referenced in UserStories.md (US không mang mã F###; quan hệ nằm ở Related User Stories của từng feature, kiểm sau khi merge fragment)
-- [ ] All screen references are valid (SCR### or SCR###/REG### in ScreenList; bare-SCR refs and region refs both accepted) (kiểm sau khi merge fragment)
-- [ ] All user story references are valid (US### in UserStories) (kiểm sau khi merge fragment)
-- [ ] All route references are valid (ROUTE### in RouteList) (kiểm sau khi merge fragment)
-- [ ] All data model references are valid (MODEL### in DataModel) (kiểm sau khi merge fragment)
-- [ ] All behavior logic references are valid (BL### in BehaviorLogic) (kiểm sau khi merge fragment)
-- [ ] All permission references are valid (PERM### in Permissions) (kiểm sau khi merge fragment)
-- [ ] Every US has a parent feature (F###) (kiểm sau khi merge fragment)
-- [ ] Every screen has a parent feature (F###) (kiểm sau khi merge fragment)
-- [ ] Every route maps to a feature (F###) (kiểm sau khi merge fragment)
-- [ ] Every data model maps to a feature (F###) (kiểm sau khi merge fragment)
-- [ ] Every background logic maps to a feature (F###) (kiểm sau khi merge fragment)
-- [ ] Every permission maps to a feature (F###) (kiểm sau khi merge fragment)
+- [x] All screen references are valid (SCR### or SCR###/REG### in ScreenList; bare-SCR refs and region refs both accepted) (kiểm sau khi merge fragment)
+- [x] All user story references are valid (US### in UserStories) (kiểm sau khi merge fragment)
+- [x] All route references are valid (ROUTE### in RouteList) (kiểm sau khi merge fragment)
+- [x] All data model references are valid (MODEL### in DataModel) (kiểm sau khi merge fragment)
+- [x] All behavior logic references are valid (BL### in BehaviorLogic) (kiểm sau khi merge fragment)
+- [x] All permission references are valid (PERM### in Permissions) (kiểm sau khi merge fragment)
+- [x] Every US has a parent feature (F###) (kiểm sau khi merge fragment)
+- [x] Every screen has a parent feature (F###) (kiểm sau khi merge fragment)
+- [x] Every route maps to a feature (F###) (kiểm sau khi merge fragment)
+- [x] Every data model maps to a feature (F###) (kiểm sau khi merge fragment)
+- [x] Every background logic maps to a feature (F###) (kiểm sau khi merge fragment)
+- [x] Every permission maps to a feature (F###) (kiểm sau khi merge fragment)

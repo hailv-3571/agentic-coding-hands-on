@@ -1,270 +1,330 @@
+---
+authored_by: rebuild-spec
+---
+<!-- layout-exempt: rebuild-spec owns all docs/system|features|generated|flows paths — all references here are output targets or internal definitions -->
+<!-- Contract: references/feature-spec-researcher-contract.md -->
+<!-- Nửa BA/QA của cặp spec: đọc file này là trả lời được "làm gì, ứng xử ra sao, màn hình hiện gì" mà không phải mở file khác. Chi tiết kỹ thuật (đường dẫn, trích nguồn, ghi dữ liệu) nằm ở technical-spec.md. -->
+
 # Functional Spec — F002_AppShell
 
 **Priority**: P0
 **Type**: ui
-**Generated**: 2026-11-08
+**Generated**: 2026-11-24
 
-**See also:** [`technical-spec.md`](./technical-spec.md) — handler dự kiến, quy tắc kỹ thuật, cấu hình kỹ thuật cho Dev/QA/SA.
+**See also:** [`technical-spec.md`](./technical-spec.md) — luồng xử lý từng action, trích nguồn, thiết kế dữ liệu, cấu hình kỹ thuật cho Dev/QA/SA.
 
-**Traceability:** F002_AppShell → TBD (draft)
+**Traceability:** F002_AppShell → SCR002_AdminLayout, SCR003_AppLayout, SCR004_Error403, SCR005_Error404 → US001_NavigateAdminSections, US002_OpenAdminDashboard, US017_ReturnToLoginFromNotFound, US020_SwitchLanguage, US021_NavigateSunnerPages, US022_ReturnHomeFromErrorPage → ROUTE036
 
 ## 1. Overview
 
-**Problem:** Mọi trang sau đăng nhập cần cùng một khung điều hướng, đổi ngôn ngữ, menu tài khoản và trang lỗi. Nếu mỗi feature tự dựng thì giao diện lệch nhau và lặp việc.
-**Solution:** Một khung dùng chung gồm header, footer, đổi ngôn ngữ Việt/Anh, menu avatar, khung và menu riêng cho khu Admin, cùng trang lỗi 404 và 403. Khung không chứa nội dung nghiệp vụ của trang nào.
-**Scope:** Header (logo, 3 liên kết điều hướng, chỗ đặt chuông thông báo, đổi ngôn ngữ, avatar + menu), footer, menu thu gọn trên màn hình nhỏ, khung Admin với menu 4 mục, trang 404 và 403.
-**Non-Scope:** Đăng nhập, phiên, kiểm tra quyền (F001_Auth). Nội dung chuông thông báo và danh sách thông báo (F013_Notifications). Nội dung các trang đích như Homepage, Hệ thống giải (F006_AwardsPortal). Nút nổi (FAB) của Live board chưa có chủ, xem D003. Ứng dụng native.
+**Problem:** Mọi trang sau đăng nhập cần cùng một khung: điều hướng, đổi ngôn ngữ, menu tài khoản, và trang báo lỗi khi vào sai chỗ hoặc thiếu quyền. Nếu mỗi tính năng tự dựng thì giao diện lệch nhau, và khu Admin có nguy cơ lộ phần giao diện quản trị cho người không phải admin.
+**Solution:** Một khung dùng chung cho khu Sunner (header, footer, chuông thông báo, thông báo gửi Kudo), một khung riêng cho khu Admin (thanh trên mang nhãn ADMIN, bốn mục menu), nút đổi ngôn ngữ Tiếng Việt / English, menu tài khoản, và hai trang lỗi dùng chung cho cả hai khu: không có quyền (403) và không tìm thấy (404). Khung chỉ chứa phần dùng chung, không chứa nội dung nghiệp vụ của trang nào.
+**Scope:** Điều hướng chính và footer của khu Sunner; menu thu gọn trên màn hình nhỏ; menu tài khoản (Profile, Dashboard cho admin, Logout); đổi và nhớ ngôn ngữ; khung Admin; cổng chặn trước khi khung hiện; hai trang lỗi.
+**Non-Scope:** Đăng nhập, đăng xuất, tạo phiên và kiểm tra quyền (F001_Auth). Nội dung chuông và danh sách thông báo (F013_Notifications). Hộp thoại viết Kudo (F003_KudosAuthoring). Nội dung các trang nằm trong khung. Nút nổi viết Kudo trên Homepage (xem D001). Ngôn ngữ thứ ba ngoài Tiếng Việt và English.
 
 **Actors**
 
 | Actor | Description | Primary goal |
 |-------|--------------|---------------|
-| Sunner | Nhân viên Sun* đã đăng nhập | Đi tới các trang chính, đổi ngôn ngữ, mở menu tài khoản |
-| Admin | Sunner có thêm quyền quản trị | Vào khu Admin và chuyển giữa các mục quản trị |
-| Khách chưa đăng nhập | Người chưa có phiên | Thấy trang lỗi 404 khi vào địa chỉ không tồn tại (chi tiết xem D002, D005) |
+| Sunner | Nhân viên Sun* đã đăng nhập và đã chọn đơn vị | Đi tới các trang chính, đổi ngôn ngữ, mở menu tài khoản, quay về trang chủ khi gặp trang lỗi |
+| Admin | Sunner có thêm role quản trị | Vào khu Admin, chuyển giữa các mục quản trị, quay về khu Sunner |
+| Khách | Người chưa có phiên đăng nhập | Đổi ngôn ngữ ở trang đăng nhập và đếm ngược; được đưa về đăng nhập khi vào trang cần phiên |
+
+Feature này chưa tham gia luồng liên-feature nào được ghi trong thư mục luồng của tài liệu (hiện chưa có luồng nào).
 
 ## 2. Functional Capabilities
 
 | ID | Capability | What the user can do | User Stories | Requirements | Business Rules | Screens |
 |----|------------|------------------------|-----------------|---------------|-------------------|---------|
-| CAP-01 | Common Navigation | Đi tới About SAA 2025, Award Information, Sun* Kudos từ header; xem footer; dùng menu thu gọn trên màn nhỏ | US001_NavigateWithHeader | FR-101, FR-102, FR-103, FR-104, FR-105, FR-402 | — | TBD (draft) — SCR003_AppLayout |
-| CAP-02 | Account Menu | Mở menu avatar để vào Profile, vào khu Admin (nếu là Admin) hoặc đăng xuất | US003_OpenAccountMenu | FR-201, FR-601 | BR-002, DEC-001 | TBD (draft) — SCR003_AppLayout |
-| CAP-03 | Language Switching | Chọn Tiếng Việt hoặc English, giao diện đổi ngay và được nhớ cho lần sau | US002_SwitchLanguage | FR-001, FR-002, FR-202, FR-401 | BR-001 | TBD (draft) — SCR003_AppLayout |
-| CAP-04 | Admin Frame | Dùng khung riêng của khu Admin và chuyển giữa Overview, Review content, User, Settings | US004_UseAdminMenu | FR-301, FR-302, FR-303, FR-602 | — | TBD (draft) — SCR002_AdminLayout |
-| CAP-05 | Error Pages | Thấy trang 404 hoặc 403 rõ ràng và quay về trang chính | US005_SeeNotFoundPage, US006_SeeForbiddenPage | FR-351, FR-352, FR-353, FR-603 | DEC-002 | TBD (draft) — SCR005_Error404, SCR004_Error403 |
+| CAP-01 | Điều hướng khung Sunner | Đi tới About SAA 2025, Award Information, Sun* Kudos từ header; dùng menu thu gọn trên màn nhỏ; mở Thể lệ và Tiêu chuẩn chung từ footer; chưa đăng nhập hoặc chưa chọn đơn vị thì được đưa về đúng bước | US021_NavigateSunnerPages | FR-101, FR-102, FR-103, FR-104, FR-105, FR-203 | BR-003, DEC-001 | SCR003_AppLayout |
+| CAP-02 | Menu tài khoản | Mở menu avatar để vào Profile, vào Dashboard của khu Admin (chỉ admin thấy) hoặc đăng xuất | US002_OpenAdminDashboard | FR-201, FR-601 | BR-002, DEC-006 | N/A — menu này nằm trong cả khung Sunner và khung Admin, màn hình được tính ở CAP-01 và CAP-04 |
+| CAP-03 | Đổi ngôn ngữ | Chọn Tiếng Việt hoặc English, toàn bộ giao diện đổi ngay và được nhớ cho lần sau; ngôn ngữ ban đầu theo trình duyệt | US020_SwitchLanguage | FR-001, FR-002, FR-202, FR-401 | BR-001, BR-005, DEC-005 | N/A — nút đổi ngôn ngữ nằm trong mọi khung, màn hình được tính ở CAP-01 và CAP-04 |
+| CAP-04 | Khung Admin | Chuyển giữa Overview, Review content, User, Settings; quay về khu Sunner bằng logo ADMIN; người không phải admin không bao giờ nhận phần giao diện này | US001_NavigateAdminSections | FR-301, FR-302, FR-303, FR-304, FR-602 | BR-004, DEC-002, DEC-003 | SCR002_AdminLayout |
+| CAP-05 | Trang lỗi 403 và 404 | Thấy trang báo không có quyền hoặc không tìm thấy, và quay về trang chủ (hoặc đăng nhập, nếu chưa có phiên) bằng một cú bấm | US017_ReturnToLoginFromNotFound, US022_ReturnHomeFromErrorPage | FR-351, FR-352, FR-353, FR-603 | DEC-004 | SCR004_Error403, SCR005_Error404 |
 
 ## 3. Open Decisions
 
 | D### | Decision | Default proposal | Rationale | Blocks work |
 |------|----------|-------------------|-----------|--------------|
-| D001 | Ngôn ngữ nằm trong địa chỉ trang (tiền tố /vi, /en) hay chỉ lưu lựa chọn, địa chỉ giữ nguyên? | Chỉ lưu lựa chọn, địa chỉ không có tiền tố | Web nội bộ, không cần SEO; đơn giản hơn, liên kết chia sẻ không phụ thuộc ngôn ngữ | no |
-| D002 | Trang chưa đăng nhập (Login, Countdown) có dùng nút đổi ngôn ngữ của khung không? | Có, chỉ dùng riêng nút đổi ngôn ngữ, không có menu điều hướng | Người chưa đăng nhập vẫn cần đọc được màn hình; tái dùng một thành phần | no |
-| D003 | Ai sở hữu nút nổi (FAB) trên Live board? | Feature Live board (F004/F003) sở hữu, khung chung không chứa | Hành động của FAB gắn với Kudos, không phải với khung | no |
-| D004 | Ngôn ngữ đã chọn lưu ở đâu? | Chỉ lưu trên trình duyệt, không ghi vào hồ sơ Sunner | Không cần thêm cột dữ liệu; đổi thiết bị thì chọn lại | no |
-| D005 | Trang 404 và 403 có hiện header/footer không, và khách chưa đăng nhập thấy nút nào? | 404 hiện khung chung nếu đã đăng nhập; 403 dùng trang đơn giản có nút về trang chủ; khách thấy nút về trang đăng nhập | Tránh dựng thêm biến thể; 403 không cần menu | no |
-| D006 | Nội dung footer (liên kết, bản quyền, logo) là gì? | [NEEDS_DOMAIN_CONFIRMATION] Logo + dòng bản quyền + 3 liên kết như header | Chưa đọc được chi tiết footer từ thiết kế trong lượt này | no |
+| D001 | Có làm nút nổi (hình bút / logo Kudos) trên Homepage để mở hộp thoại viết Kudo không? Thiết kế có vẽ nút này, hiện chưa có chủ và chưa làm | Chưa làm; khung không chứa nút nổi, Kudo viết từ ô trên Live board | Hành động của nút gắn với Kudo, không gắn với khung; BTC chưa xác nhận | no |
 
 ## 4. Requirements
 
 ### Foundation (0xx)
 
-- **FR-001** Mọi chữ hiển thị trong khung (nhãn menu, nút, thông báo lỗi) có đủ bản tiếng Việt và tiếng Anh.
-- **FR-002** Lần đầu vào, ngôn ngữ được chọn theo quy tắc ở BR-001.
+- **FR-001** Mọi chữ trong khung (nhãn menu, nút, thông báo lỗi, nội dung hai trang lỗi) có đủ bản Tiếng Việt và English.
+- **FR-002** Ngôn ngữ lúc vào lần đầu được chọn theo thứ tự ở BR-001.
 
 ### Navigation (1xx)
 
-- **FR-101** Header có logo và ba liên kết: About SAA 2025, Award Information, Sun* Kudos.
-- **FR-102** Liên kết của trang đang mở được đánh dấu là đang chọn.
-- **FR-103** Footer hiện ở cuối mọi trang sau đăng nhập.
-- **FR-104** Trên màn hình nhỏ, ba liên kết gộp vào một nút menu thu gọn; bấm mở ra, chọn một mục hoặc bấm ra ngoài thì đóng lại.
-- **FR-105** Header chừa chỗ cho chuông thông báo; nội dung và số chưa đọc do F013_Notifications cung cấp.
+- **FR-101** Header khu Sunner có logo (về trang chủ) và ba link: About SAA 2025, Award Information, Sun* Kudos.
+- **FR-102** Link của trang đang mở được đánh dấu "trang hiện tại"; trang con của một mục vẫn làm mục đó sáng (BR-003).
+- **FR-103** Footer đầy đủ có logo và năm link: About SAA, Award Information, Sun* Kudos, Thể lệ, Tiêu chuẩn chung, kèm dòng bản quyền.
+- **FR-104** Dưới breakpoint màn hình trung bình, ba link của header gom vào một nút menu; menu đóng khi chọn một mục, bấm ra ngoài hoặc nhấn Esc.
+- **FR-105** Khung Sunner chừa chỗ cho chuông thông báo ở header và một vùng hiện thông báo gửi/sửa Kudo trên mọi trang; nội dung của hai thứ này do feature khác cấp.
 
 ### App Layout (2xx)
 
-- **FR-201** Bấm avatar mở menu gồm Profile, Admin Dashboard (chỉ Admin) và Logout.
-- **FR-202** Nút đổi ngôn ngữ cho thấy ngôn ngữ hiện tại và liệt kê hai lựa chọn Tiếng Việt, English; chọn xong, trang đổi ngôn ngữ ngay.
+- **FR-201** Bấm avatar mở menu gồm Profile, Dashboard (chỉ admin) và Logout; Esc hoặc bấm ra ngoài đóng menu.
+- **FR-202** Nút ngôn ngữ hiện mã ngôn ngữ đang dùng (VN hoặc EN) và liệt kê Tiếng Việt, English; chọn ngôn ngữ khác thì cả trang đổi ngay.
+- **FR-203** Khung Sunner chỉ hiện sau khi cổng kiểm tra cho qua: khách về trang đăng nhập, người chưa chọn đơn vị về trang chọn đơn vị (DEC-001).
 
-### Admin Layout and Error Pages (3xx)
+### Admin Layout (3xx)
 
-- **FR-301** Khu Admin có khung riêng với menu bốn mục: Overview, Review content, User, Settings.
-- **FR-302** Mục Admin của trang đang mở được đánh dấu là đang chọn.
-- **FR-303** Khung Admin có lối quay về khu Sunner và có menu avatar như khung chung.
-- **FR-351** Địa chỉ không tồn tại hiện trang 404 với lời giải thích và nút quay về trang chính.
-- **FR-352** Truy cập trái quyền hiện trang 403 với lời giải thích và nút quay về trang chính.
-- **FR-353** Cả hai trang lỗi đều theo ngôn ngữ đang chọn.
+- **FR-301** Khu Admin có thanh trên riêng với bốn mục Overview, Review content, User, Settings; mục của trang đang mở được đánh dấu, dưới màn hình trung bình bốn mục gom vào nút menu.
+- **FR-302** Logo kèm nhãn ADMIN đưa về khu Sunner; tên truy cập của link nói rõ đích đến.
+- **FR-303** Địa chỉ gốc của khu Admin chuyển thẳng sang trang Overview.
+- **FR-304** Khung Admin không có chuông thông báo; footer chỉ có dòng bản quyền; ngôn ngữ và menu tài khoản dùng chung với khung Sunner.
+
+### Error Pages (35x)
+
+- **FR-351** Địa chỉ không khớp trang nào hiện trang 404 với tiêu đề, minh hoạ, lời giải thích và một nút (DEC-004).
+- **FR-352** Người đã đăng nhập mà không đủ quyền hiện trang 403 với tiêu đề, minh hoạ, lời giải thích và nút "Về trang chủ".
+- **FR-353** Hai trang lỗi là trang trần, không header, không footer, và hiện theo ngôn ngữ đang chọn.
 
 ### Interaction (4xx)
 
-- **FR-401** Ngôn ngữ đã chọn được nhớ cho các lần vào sau trên cùng trình duyệt.
-- **FR-402** Khung dùng được trên desktop và màn hình nhỏ; bố cục tablet theo quyết định chung về tablet.
+- **FR-401** Ngôn ngữ đã chọn được nhớ một năm trên cùng trình duyệt, kể cả khi chưa đăng nhập.
 
 ### Security (6xx)
 
-- **FR-601** Mục Admin Dashboard trong menu avatar chỉ hiện với người dùng có role Admin.
-- **FR-602** Khung Admin chỉ hiện sau khi F001_Auth xác nhận quyền Admin; khung không tự quyết định quyền.
-- **FR-603** Trang lỗi không để lộ thông tin nội bộ (đường dẫn máy chủ, nội dung lỗi kỹ thuật).
+- **FR-601** Mục Dashboard trong menu tài khoản chỉ hiện với người dùng có role admin (BR-002).
+- **FR-602** Khung Admin chỉ được dựng sau khi xác nhận người dùng là admin; người không phải admin nhận trang 403 và không có chút giao diện admin nào trong phản hồi (BR-004).
+- **FR-603** Hai trang lỗi không để lộ chi tiết kỹ thuật (đường dẫn máy chủ, nội dung lỗi).
 
 ## 5. Business Rules
 
-- Ngôn ngữ chọn theo thứ tự: lựa chọn đã lưu, rồi ngôn ngữ của trình duyệt (nếu là Việt hoặc Anh), cuối cùng là Tiếng Việt (BR-001)
-- Menu avatar lấy role từ phiên của F001_Auth; ẩn mục Admin chỉ để gọn giao diện, không phải lớp bảo vệ (BR-002)
-- Người dùng role Admin thấy mục Admin Dashboard trong menu avatar, người khác không thấy (DEC-001)
-- F001_Auth báo "không đủ quyền" thì hiện trang 403; địa chỉ không tồn tại thì hiện trang 404; chưa đăng nhập do F001_Auth chuyển tới đăng nhập, khung không xử lý (DEC-002)
+- Ngôn ngữ được chọn theo thứ tự: lựa chọn đã lưu, rồi ngôn ngữ ưu tiên của trình duyệt (chỉ nhận Việt hoặc Anh, theo mức ưu tiên), cuối cùng là Tiếng Việt; giá trị lạ trong lựa chọn đã lưu bị bỏ qua (BR-001)
+- Mục Dashboard ẩn với người không phải admin chỉ để giao diện gọn; lớp chặn thật nằm ở cổng của khu Admin, nên gõ thẳng địa chỉ vẫn bị chặn (BR-002)
+- Mục đang mở trong thanh điều hướng được tính theo đường dẫn: trang chủ chỉ sáng đúng ở trang chủ, các mục khác sáng ở chính trang đó và mọi trang con (BR-003)
+- Quyền admin luôn được đọc lại từ hồ sơ ở mỗi lần vào trang hay gọi hành động, không dựa vào dữ liệu lưu trong trình duyệt; người bị hạ quyền giữa phiên bị chặn ở lần vào kế tiếp (BR-004)
+- Chỉ nhận hai giá trị ngôn ngữ vi và en; giá trị khác không đổi gì; lựa chọn lưu một năm và chỉ gửi kèm các lần vào trang của chính trình duyệt này (BR-005)
+- Vào trang cần phiên: không có phiên thì về đăng nhập; có phiên nhưng chưa chọn đơn vị thì về trang chọn đơn vị; có phiên nhưng không có hồ sơ thì nhận trang lỗi chưa xác thực (DEC-001)
+- Vào khu Admin: khách về đăng nhập; người đã đăng nhập không phải admin nhận trang 403 (DEC-002)
+- Người không phải admin mở trang trong khu Admin nhận trang 403 kèm đúng mã lỗi; hành động gửi từ khu Admin của người không phải admin bị từ chối bằng thông điệp lỗi gọn, không có trang (DEC-003)
+- Ở trang 404, người có phiên và có hồ sơ thấy nút "Về trang chủ"; người không có phiên hoặc thiếu hồ sơ thấy nút "Đăng nhập" (DEC-004)
+- Chọn lại đúng ngôn ngữ đang dùng chỉ đóng danh sách; chọn ngôn ngữ khác thì đổi rồi làm mới trang; đổi thất bại thì giữ ngôn ngữ cũ và báo lỗi (DEC-005)
+- Đăng xuất thành công thì rời khỏi trang; thất bại thì ở lại và báo lỗi ngay dưới menu (DEC-006)
 
 ## 6. Screens
 
 | Screen Name | SCR### | What User Sees | What User Can Do |
 |-------------|--------|-----------------|-------------------|
-| App Layout | TBD (draft) — SCR003_AppLayout | Header (logo, 3 liên kết, chuông, đổi ngôn ngữ, avatar), footer; nút menu thu gọn trên màn nhỏ | Đi tới trang chính, đổi ngôn ngữ, mở menu avatar |
-| Admin Layout | TBD (draft) — SCR002_AdminLayout | Khung Admin với menu 4 mục và avatar | Chuyển mục Admin, quay về khu Sunner |
-| Not Found Page | TBD (draft) — SCR005_Error404 | Thông báo trang không tồn tại | Quay về trang chính |
-| Forbidden Page | TBD (draft) — SCR004_Error403 | Thông báo không đủ quyền truy cập | Quay về trang chính |
+| App Layout | SCR003_AppLayout | Header (logo, ba link, chuông thông báo, nút ngôn ngữ, avatar), vùng nội dung của trang, footer năm link kèm bản quyền; thông báo "đã gửi / đã lưu Kudo" nổi trên mọi trang | Mở các trang Sunner từ header và footer, mở menu thu gọn trên màn nhỏ, đổi ngôn ngữ, mở menu avatar (Profile, Dashboard cho admin, Logout) |
+| Admin Layout | SCR002_AdminLayout | Thanh trên với logo kèm nhãn ADMIN, bốn mục Overview / Review content / User / Settings, nút ngôn ngữ, avatar; nội dung trang quản trị; footer chỉ có dòng bản quyền; không có chuông | Chuyển mục quản trị, bấm logo ADMIN để về khu Sunner, đổi ngôn ngữ, mở menu avatar |
+| Forbidden Page | SCR004_Error403 | Trang trần: tiêu đề "Không có quyền truy cập", minh hoạ, lời giải thích "Bạn không có quyền truy cập tài nguyên này." | Bấm "Về trang chủ" |
+| Not Found Page | SCR005_Error404 | Trang trần: tiêu đề "KHÔNG TÌM THẤY", minh hoạ, lời giải thích "Tài nguyên bạn tìm không tồn tại hoặc đã bị xóa." | Bấm "Về trang chủ" (đã đăng nhập) hoặc "Đăng nhập" (chưa có phiên) |
 
 ### User Journey
 
-1. Sunner vào một trang sau đăng nhập và thấy header, nội dung trang, footer.
-2. Sunner bấm "Sun* Kudos" trên header — trang chuyển đi, liên kết đó được đánh dấu đang chọn.
-3. Sunner bấm nút ngôn ngữ, chọn English — toàn bộ chữ của khung và trang đổi sang tiếng Anh, vẫn ở trang cũ.
-4. Sunner bấm avatar, chọn Logout — phiên kết thúc (do F001_Auth xử lý).
-5. Admin bấm avatar, chọn Admin Dashboard — vào khung Admin, chuyển giữa Overview, Review content, User, Settings.
-6. Sunner thường gõ địa chỉ khu Admin — thấy trang 403 và nút quay về trang chính.
+1. Sunner vào một trang sau đăng nhập và thấy Header, nội dung trang, Footer; mục của trang đang mở sáng lên.
+2. Sunner bấm "Sun* Kudos" trên Header — trang chuyển đi, mục đó sáng lên.
+3. Sunner bấm nút ngôn ngữ và chọn English — cả khung và nội dung trang đổi sang tiếng Anh, vẫn ở trang cũ; lần sau vào vẫn là English.
+4. Admin mở menu avatar và chọn Dashboard — vào Admin Layout, trang Overview; chuyển qua Review content, User, Settings bằng thanh trên.
+5. Admin bấm logo ADMIN — quay về App Layout ở trang chủ.
+6. Sunner thường gõ địa chỉ khu Admin — thấy Forbidden Page và bấm "Về trang chủ" để quay về trang chủ.
+7. Sunner gõ nhầm một địa chỉ không có — thấy Not Found Page và bấm "Về trang chủ".
 
 ## 7. User Stories
 
-### US001_NavigateWithHeader — Navigate with header
-
-**Actor:** Sunner
-**Goal:** Đi nhanh tới About SAA 2025, Award Information hoặc Sun* Kudos từ bất kỳ trang nào.
-**Business value:** Người dùng không bị lạc giữa cổng giải thưởng và Kudos, tăng lượt dùng cả hai.
-
-**Acceptance Criteria:**
-- [ ] Header có logo và ba liên kết ở mọi trang sau đăng nhập.
-- [ ] Liên kết của trang đang mở được đánh dấu.
-- [ ] Trên màn hình nhỏ, ba liên kết nằm trong nút menu thu gọn.
-
-### US002_SwitchLanguage — Switch language
-
-**Actor:** Sunner
-**Goal:** Đọc giao diện bằng Tiếng Việt hoặc English theo ý mình.
-**Business value:** Phục vụ nhân sự đọc tiếng Anh tốt hơn tiếng Việt và ngược lại, không rào cản dùng hệ thống.
-
-**Acceptance Criteria:**
-- [ ] Chọn ngôn ngữ khác thì chữ của khung và trang đổi ngay, không cần đăng nhập lại.
-- [ ] Vào lại lần sau vẫn thấy ngôn ngữ đã chọn.
-
-### US003_OpenAccountMenu — Open account menu
-
-**Actor:** Sunner
-**Goal:** Mở menu avatar để xem Profile hoặc đăng xuất.
-**Business value:** Một chỗ cố định cho việc liên quan tới tài khoản, người dùng khỏi phải tìm.
-
-**Acceptance Criteria:**
-- [ ] Menu có Profile và Logout.
-- [ ] Mục Admin Dashboard chỉ xuất hiện với Admin.
-
-### US004_UseAdminMenu — Use admin menu
+### US001_NavigateAdminSections — Navigate Admin Sections
 
 **Actor:** Admin
-**Goal:** Chuyển nhanh giữa Overview, Review content, User, Settings.
-**Business value:** BTC theo dõi số liệu và kiểm duyệt nhanh, ít thao tác thừa.
+**Goal:** Chuyển giữa các mục của khu Admin mà không phải gõ địa chỉ.
+**Business value:** BTC làm việc nhanh giữa duyệt nội dung, quản lý người dùng, cấu hình và thống kê trong cùng một khung.
 
 **Acceptance Criteria:**
-- [ ] Khung Admin có menu đủ 4 mục, mục đang mở được đánh dấu.
-- [ ] Có lối quay về khu Sunner.
+- [ ] Thanh trên có bốn mục Overview, Review content, User, Settings; mục khớp trang hiện tại (kể cả trang con) được đánh dấu.
+- [ ] Bấm một mục mở đúng trang của mục đó; địa chỉ gốc của khu Admin chuyển sang Overview.
+- [ ] Dưới màn hình trung bình, bốn mục gom vào nút menu; chọn một mục thì menu đóng và trang mở; Esc hoặc bấm ra ngoài cũng đóng.
+- [ ] Logo kèm nhãn ADMIN đưa về khu Sunner.
+- [ ] Khung Admin không có chuông; người không phải admin không nhận phần giao diện này.
+- [ ] Khi bảng campaign ở trang Settings đọc lỗi, khối lỗi có link tải lại mở lại đúng trang Settings.
 
-### US005_SeeNotFoundPage — See not-found page
+### US002_OpenAdminDashboard — Open Admin Dashboard
+
+**Actor:** Admin
+**Goal:** Mở Dashboard từ menu tài khoản để vào thẳng trang Overview của khu Admin.
+**Business value:** Admin ở bất kỳ trang Sunner nào cũng vào được khu quản trị bằng hai cú bấm.
+
+**Acceptance Criteria:**
+- [ ] Menu avatar của admin có mục "Dashboard"; Sunner thường không thấy mục này.
+- [ ] Mục "Dashboard" có ở cả header Sunner lẫn thanh trên của khu Admin.
+- [ ] Bấm "Dashboard" mở trang Overview và đóng menu.
+- [ ] Mục ẩn chỉ là phần giao diện; trang đích vẫn tự kiểm tra quyền admin.
+
+### US017_ReturnToLoginFromNotFound — Return To Login From Not Found
+
+**Actor:** Khách
+**Goal:** Quay về trang đăng nhập từ trang 404 thay vì kẹt ở một địa chỉ không tồn tại.
+**Business value:** Người chưa có phiên (hoặc có phiên nhưng thiếu hồ sơ) có lối đi tiếp, không bị dừng ở ngõ cụt.
+
+**Acceptance Criteria:**
+- [ ] Địa chỉ không khớp trang nào hiện trang 404 trần với tiêu đề, minh hoạ và lời giải thích, không có chi tiết kỹ thuật.
+- [ ] Người không có phiên (hoặc có phiên nhưng không có hồ sơ) thấy một nút duy nhất "Đăng nhập"; người đã có phiên và hồ sơ thấy "Về trang chủ".
+- [ ] Bấm "Đăng nhập" mở trang đăng nhập sạch, không mang theo địa chỉ không tồn tại.
+
+### US020_SwitchLanguage — Switch Language
 
 **Actor:** Sunner
-**Goal:** Biết rõ địa chỉ vừa vào không tồn tại và quay về được.
-**Business value:** Tránh màn hình trắng hoặc lỗi kỹ thuật làm người dùng bỏ đi.
+**Goal:** Đổi giao diện giữa Tiếng Việt và English để đọc bằng ngôn ngữ mình quen.
+**Business value:** Nhân sự đọc tiếng Anh tốt hơn tiếng Việt (và ngược lại) dùng hệ thống không gặp rào cản.
 
 **Acceptance Criteria:**
-- [ ] Địa chỉ không tồn tại hiện trang 404 theo ngôn ngữ đang chọn.
-- [ ] Có nút quay về trang chính.
+- [ ] Nút ngôn ngữ ở header hiện mã đang dùng (VN hoặc EN) và mở danh sách Tiếng Việt, English; chọn lại đúng ngôn ngữ đang dùng thì không làm gì.
+- [ ] Chọn ngôn ngữ khác thì cả trang đổi ngôn ngữ ngay và lựa chọn được nhớ một năm.
+- [ ] Giá trị ngoài hai ngôn ngữ hỗ trợ không làm đổi gì.
+- [ ] Đổi thất bại thì hiện "Không thể đổi ngôn ngữ, vui lòng thử lại." và giữ ngôn ngữ cũ; trong lúc chờ nút bị khoá.
+- [ ] Esc hoặc bấm ra ngoài đóng danh sách; khách cũng đổi được ở trang đăng nhập và đếm ngược.
 
-### US006_SeeForbiddenPage — See forbidden page
+### US021_NavigateSunnerPages — Navigate Sunner Pages
 
 **Actor:** Sunner
-**Goal:** Biết rõ mình không có quyền vào khu vừa mở.
-**Business value:** Người dùng hiểu đây là giới hạn quyền, không phải hệ thống hỏng; giảm câu hỏi hỗ trợ.
+**Goal:** Mở các trang Sunner từ header, footer, menu tài khoản và dropdown chuông để tới đúng nội dung cần.
+**Business value:** Người dùng không bị lạc giữa cổng giải thưởng, Kudos, thể lệ và tiêu chuẩn cộng đồng, nên dùng cả hai mảng nội dung.
 
 **Acceptance Criteria:**
-- [ ] Sunner thường vào khu Admin thì hiện trang 403, không lộ nội dung Admin.
-- [ ] Có nút quay về trang chính.
+- [ ] Header có logo (về trang chủ) và ba link About SAA 2025, Award Information, Sun* Kudos; dưới màn hình trung bình ba link gom vào menu; link của trang hiện tại được đánh dấu.
+- [ ] Footer đầy đủ có logo và năm link: About SAA, Award Information, Sun* Kudos, Thể lệ, Tiêu chuẩn chung.
+- [ ] Menu tài khoản có "Profile" mở trang hồ sơ của chính mình.
+- [ ] Dropdown chuông có "Xem tất cả" mở trang thông báo (link này thuộc F013_Notifications).
+- [ ] Mọi đích đều qua cổng của khung: chưa có phiên thì về đăng nhập, chưa chọn đơn vị thì về trang chọn đơn vị.
+
+### US022_ReturnHomeFromErrorPage — Return Home From Error Page
+
+**Actor:** Sunner
+**Goal:** Quay về trang chủ bằng một cú bấm từ trang lỗi 403 hoặc 404 để tiếp tục làm việc.
+**Business value:** Trang lỗi không trở thành ngõ cụt, giảm số người bỏ phiên làm việc.
+
+**Acceptance Criteria:**
+- [ ] Trang 403 có đúng một nút "Về trang chủ"; trang 404 cho người đã đăng nhập cũng có "Về trang chủ".
+- [ ] Bấm nút đi tới trang chủ.
+- [ ] Hai trang là trang trần không header, không footer và không bao giờ hiện chi tiết lỗi.
+- [ ] Người chưa chọn đơn vị bấm nút vẫn được đưa tiếp về trang chọn đơn vị.
 
 ## 8. Scenarios
 
-### US001_NavigateWithHeader — Happy Path
+### US001_NavigateAdminSections — Happy Path
 
-**Given** Sunner đang ở một trang sau đăng nhập, **When** bấm "Award Information" trên header, **Then** chuyển tới trang Hệ thống giải và liên kết đó được đánh dấu.
+**Given** Admin đang ở trang Overview, **When** bấm mục "Review content", **Then** trang Review content mở, mục này sáng lên và mục Overview hết sáng.
 
-### US001_NavigateWithHeader — Error: màn hình nhỏ
+### US001_NavigateAdminSections — Error: không phải admin
 
-**Given** Sunner dùng điện thoại, **When** mở nút menu rồi bấm ra ngoài vùng menu, **Then** menu đóng lại, trang giữ nguyên.
+**Given** Sunner thường đã đăng nhập, **When** gõ địa chỉ trang User của khu Admin, **Then** nhận trang 403 và trong phản hồi không có thanh trên Admin nào.
 
-### US002_SwitchLanguage — Happy Path
+### US002_OpenAdminDashboard — Happy Path
 
-**Given** giao diện đang bằng Tiếng Việt, **When** Sunner chọn English trong nút ngôn ngữ, **Then** chữ của khung và trang đổi sang tiếng Anh, vẫn ở trang cũ.
+**Given** Admin đang ở trang chủ Sunner, **When** mở menu avatar và bấm "Dashboard", **Then** trang Overview mở với bảng số liệu theo đơn vị và menu đóng.
 
-### US002_SwitchLanguage — Error: lựa chọn đã lưu không hợp lệ
+### US002_OpenAdminDashboard — Error: Sunner thường
 
-**Given** trình duyệt giữ một giá trị ngôn ngữ không được hỗ trợ, **When** Sunner vào trang, **Then** giao diện dùng Tiếng Việt và không báo lỗi.
+**Given** Sunner thường, **When** mở menu avatar, **Then** menu chỉ có Profile và Logout; nếu gõ thẳng địa chỉ Overview thì nhận trang 403.
 
-### US003_OpenAccountMenu — Happy Path
+### US017_ReturnToLoginFromNotFound — Happy Path
 
-**Given** Sunner thường đã đăng nhập, **When** bấm avatar, **Then** menu hiện Profile và Logout, không có Admin Dashboard.
+**Given** người có phiên nhưng không có hồ sơ mở một địa chỉ không tồn tại, **When** bấm "Đăng nhập" trên trang 404, **Then** trang đăng nhập mở.
 
-### US003_OpenAccountMenu — Error: đăng xuất thất bại
+### US017_ReturnToLoginFromNotFound — Error: khách không thấy 404
 
-**Given** mạng bị lỗi, **When** Sunner bấm Logout, **Then** Sunner vẫn ở trang hiện tại và thấy "Không thể đăng xuất, vui lòng thử lại."
+**Given** khách chưa có phiên gõ một địa chỉ lạ, **When** cổng của hệ thống xử lý, **Then** khách được chuyển tới trang đăng nhập (kèm địa chỉ muốn tới) và không thấy trang 404.
 
-### US004_UseAdminMenu — Happy Path
+### US020_SwitchLanguage — Happy Path
 
-**Given** Admin đang ở khung Admin, **When** bấm "Review content", **Then** chuyển sang trang đó và mục này được đánh dấu.
+**Given** Sunner đang xem giao diện Tiếng Việt, **When** mở danh sách và chọn English, **Then** lựa chọn được lưu, trang làm mới bằng tiếng Anh và nút hiện EN.
 
-### US004_UseAdminMenu — Error: mất quyền giữa chừng
+### US020_SwitchLanguage — Error: đổi thất bại
 
-**Given** Admin vừa bị đổi về role User, **When** bấm một mục Admin, **Then** thấy trang 403.
+**Given** việc lưu lựa chọn thất bại, **When** Sunner chọn English, **Then** giao diện giữ ngôn ngữ cũ và hiện "Không thể đổi ngôn ngữ, vui lòng thử lại."
 
-### US005_SeeNotFoundPage — Happy Path
+### US021_NavigateSunnerPages — Happy Path
 
-**Given** Sunner đã đăng nhập, **When** gõ địa chỉ không tồn tại, **Then** thấy trang 404 và nút "Về trang chủ".
+**Given** Sunner đang ở một trang Kudo, **When** bấm "Award Information" trên header, **Then** trang giải thưởng mở và link đó được đánh dấu trang hiện tại.
 
-### US005_SeeNotFoundPage — Error: khách chưa đăng nhập
+### US021_NavigateSunnerPages — Error: phiên hết hạn
 
-**Given** người chưa đăng nhập, **When** gõ địa chỉ không tồn tại, **Then** thấy trang 404 với nút dẫn tới đăng nhập (theo D005).
+**Given** phiên hết hạn trước khi bấm "Profile", **When** Sunner bấm, **Then** hệ thống đưa về trang đăng nhập thay vì mở hồ sơ.
 
-### US006_SeeForbiddenPage — Happy Path
+### US022_ReturnHomeFromErrorPage — Happy Path
 
-**Given** Sunner thường đã đăng nhập, **When** gõ địa chỉ khu Admin, **Then** thấy trang 403 và nút "Về trang chủ", không thấy gì từ khu Admin.
+**Given** Sunner thường vừa nhận trang 403 khi vào khu Admin, **When** bấm "Về trang chủ", **Then** trang chủ Sunner mở với header và footer.
 
-### US006_SeeForbiddenPage — Error: không có đường quay về
+### US022_ReturnHomeFromErrorPage — Error: phiên hết hạn trên trang lỗi
 
-**Given** người dùng mở thẳng trang 403 trong tab mới, **When** bấm nút quay về, **Then** được đưa tới trang chính.
+**Given** phiên hết hạn trong lúc đang xem trang 403 hoặc 404, **When** bấm "Về trang chủ", **Then** hệ thống đưa về trang đăng nhập thay vì vào trang chủ.
 
 ## 9. Edge Cases
 
 | Scenario | What Happens | User-Facing Message |
 |----------|--------------|----------------------|
-| Tên người dùng rất dài | Tên bị cắt bằng dấu ba chấm trong header, tên đầy đủ hiện trong menu | "None — silent handling" |
-| Người dùng chưa có ảnh đại diện | Hiện chữ cái đầu của tên thay cho ảnh | "None — silent handling" |
-| Đổi ngôn ngữ khi đang nhập dở trong form hoặc modal | [EXPECTED] Chữ đổi, nội dung đang nhập được giữ nguyên | "None — silent handling" |
-| Phiên hết hạn khi đang mở menu avatar | F001_Auth chuyển người dùng tới trang đăng nhập khi thao tác tiếp | "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại." |
-| Đổi cỡ cửa sổ khi menu thu gọn đang mở | Menu tự đóng khi chuyển sang bố cục desktop | "None — silent handling" |
-| Sunner thường gõ địa chỉ khu Admin | Hiện trang 403, không tải nội dung Admin | "Bạn không có quyền truy cập trang này." |
+| Người không phải admin mở trang trong khu Admin (DEC-002, DEC-003) | Cổng chặn trước khi khung Admin được dựng; phản hồi là trang 403, không có giao diện admin | "Không có quyền truy cập — Bạn không có quyền truy cập tài nguyên này." |
+| Admin bị hạ quyền giữa phiên rồi bấm sang mục khác (BR-004) | Quyền được đọc lại từ hồ sơ ở lần vào kế tiếp nên trang mới nhận trang 403; trang đang mở không tự thay đổi | "Không có quyền truy cập — Bạn không có quyền truy cập tài nguyên này." |
+| Người không phải admin gửi một hành động quản trị (DEC-003) | Cổng từ chối ngay bằng thông điệp lỗi gọn, hành động không chạy | None — không có trang; cách từng form báo lỗi xem RISK-04 |
+| Khách gõ địa chỉ lạ (DEC-004) | Chuyển tới trang đăng nhập kèm địa chỉ muốn tới, không thấy trang 404 | None — chuyển trang im lặng |
+| Người đã đăng nhập mở địa chỉ không tồn tại (DEC-004) | Hiện trang 404 trần, nút "Về trang chủ" | "KHÔNG TÌM THẤY — Tài nguyên bạn tìm không tồn tại hoặc đã bị xóa." |
+| Có phiên nhưng không có hồ sơ mở địa chỉ không tồn tại (DEC-004) | Hiện trang 404 trần, nút "Đăng nhập" | "KHÔNG TÌM THẤY — Tài nguyên bạn tìm không tồn tại hoặc đã bị xóa." |
+| Sunner chưa chọn đơn vị mở trang Sunner (DEC-001) | Cổng đưa về trang chọn đơn vị trước khi khung hiện | None — chuyển trang im lặng |
+| Có phiên nhưng không có hồ sơ mở trang Sunner (DEC-001) | Hệ thống trả trang lỗi chưa xác thực thay vì chuyển trang, để tránh vòng lặp chuyển hướng | "Chưa xác thực" (trang lỗi mặc định của hệ thống) |
+| Đổi ngôn ngữ thất bại hoặc mất mạng (DEC-005) | Giữ ngôn ngữ cũ, nút khoá trong lúc chờ rồi mở lại | "Không thể đổi ngôn ngữ, vui lòng thử lại." |
+| Chọn lại ngôn ngữ đang dùng (DEC-005) | Chỉ đóng danh sách, không gọi gì | None — không có thay đổi |
+| Giá trị ngôn ngữ lạ trong lựa chọn đã lưu (BR-001, BR-005) | Bị bỏ qua, giao diện theo ngôn ngữ trình duyệt rồi Tiếng Việt | None — im lặng |
+| Đăng xuất thất bại (DEC-006) | Ở lại trang, menu giữ nguyên | "Không thể đăng xuất, vui lòng thử lại." |
+| Sunner thường mở menu avatar (BR-002, DISC role = user) | Menu chỉ có Profile và Logout | None — mục Dashboard vắng mặt |
+| Admin mở menu avatar (BR-002, DISC role = admin) | Menu có thêm Dashboard giữa Profile và Logout | None — mục Dashboard hiện |
+| Hệ thống không dựng được trang 403 có minh hoạ (DEC-003) | Vẫn trả mã từ chối nhưng với chữ thuần, không có nút | "403 Forbidden" (chữ thuần) |
+| Phiên hết hạn lúc bấm "Về trang chủ" trên trang lỗi | Cổng đưa về trang đăng nhập | None — chuyển trang im lặng |
 
 ## 10. Edge Behaviours to Verify
 
-- **FR-001** → Chuyển ngôn ngữ, không còn nhãn nào của khung giữ nguyên tiếng cũ hoặc hiện khoá dịch trần.
-- **FR-002** → Xoá lựa chọn đã lưu, đặt trình duyệt tiếng Anh thì vào bằng English; trình duyệt ngôn ngữ khác thì vào bằng Tiếng Việt.
-- **FR-102** → Mở từng trang đích, đúng một liên kết được đánh dấu.
-- **FR-104** → Ở màn hình nhỏ, mở rồi đóng menu bằng cả nút lẫn bấm ra ngoài.
-- **FR-401** → Chọn English, đóng trình duyệt, mở lại: vẫn English.
-- **FR-601** → Đăng nhập bằng tài khoản User: menu avatar không có Admin Dashboard.
-- **FR-602** → Tài khoản User gõ địa chỉ khu Admin: thấy 403, không thấy menu Admin nào.
-- **FR-603** → Trang 404 và 403 không chứa đường dẫn máy chủ hay nội dung lỗi kỹ thuật.
+- **FR-001** → Chuyển ngôn ngữ sang English rồi mở trang 403, trang 404, menu avatar: không còn chữ tiếng Việt trong khung.
+- **FR-002** → Trình duyệt ưu tiên tiếng Anh, chưa chọn gì: giao diện là English; lựa chọn đã lưu thắng ngôn ngữ trình duyệt; giá trị lưu lạ rơi về ngôn ngữ trình duyệt hoặc Tiếng Việt.
+- **FR-102** → Ở trang chi tiết một Kudo, mục Sun* Kudos vẫn sáng; ở trang chủ chỉ mục About SAA 2025 sáng, không sáng theo kiểu "bắt đầu bằng dấu gạch chéo".
+- **FR-103** → Footer có đủ năm link và dòng bản quyền; footer khu Admin chỉ có dòng bản quyền.
+- **FR-104** → Ở màn 375 điểm ảnh, bấm nút menu mở danh sách; chọn mục, bấm ra ngoài hoặc Esc đều đóng; Esc trả tiêu điểm về nút menu.
+- **FR-203** → Khách vào trang Sunner về đăng nhập; người chưa chọn đơn vị về trang chọn đơn vị; không bao giờ thấy header Sunner trước khi cổng cho qua.
+- **FR-201** → Menu avatar của Sunner thường có Profile và Logout; của admin có thêm Dashboard.
+- **FR-202** → Nút ngôn ngữ đọc to đúng mã đang dùng; chọn xong cả trang đổi và vẫn ở trang cũ.
+- **FR-301** → Admin thấy đúng bốn mục theo thứ tự, mục Overview sáng khi mở khu Admin; nhãn ADMIN hiện cạnh logo.
+- **FR-303** → Gõ địa chỉ gốc khu Admin dẫn thẳng tới Overview.
+- **FR-304** → Khu Admin không có chuông; footer chỉ có dòng bản quyền.
+- **FR-351** → Địa chỉ lạ cho người đã đăng nhập: phản hồi mang trạng thái 404, không header, không footer, nút "Về trang chủ".
+- **FR-401** → Chọn English rồi tải lại trang và mở trình duyệt lại: vẫn là English.
+- **FR-601** → Sunner thường không thấy "Dashboard" trong menu.
+- **FR-602** → Người không phải admin vào trang khu Admin nhận phản hồi trạng thái 403 và trong nội dung không có chữ "ADMIN", "Overview", "Review content".
+- **FR-603** → Hai trang lỗi chỉ có tiêu đề, minh hoạ, lời giải thích và một nút; không có đường dẫn máy chủ hay chi tiết lỗi.
 
 ## 11. Risks & Known Issues
 
 | ID | Type | Description | Impact | Status |
 |----|------|--------------|--------|--------|
-| RISK-01 | risk | Footer, thứ tự các nút bên phải header và vị trí menu Admin (thanh bên hay thanh trên) chưa được đối chiếu với frame thiết kế trong lượt soạn này | Dựng giao diện có thể lệch thiết kế nếu không đọc lại frame trước khi code | [NEEDS_DOMAIN_CONFIRMATION] |
+| RISK-01 | known-issue | Nhánh khách của trang 404 gần như không với tới: cổng của hệ thống chuyển khách khỏi mọi đường dẫn ngoài danh sách công khai sang trang đăng nhập trước khi trang 404 dựng. Nút "Đăng nhập" chỉ tới được ở hai ca hẹp: có phiên nhưng thiếu hồ sơ, hoặc địa chỉ nằm ngoài phạm vi cổng mà Next vẫn dựng 404. Bài kiểm tra tự động hiện có chỉ phủ nhánh người đã đăng nhập | Người đọc spec dễ tưởng khách thường thấy trang 404 | [INFERRED] |
+| RISK-02 | known-issue | Nhãn link footer cuối cùng là "Tiêu chuẩn chung" (English: "Community Standards"), trong khi tài liệu và user story gọi là "Tiêu chuẩn cộng đồng" | Tester dò theo tên trong user story sẽ không thấy chữ khớp | confirmed |
+| RISK-03 | risk | Trang 403 do cổng dựng bằng cách tự tải nội bộ trang không có quyền (tối đa 5 giây); nếu tải lỗi hoặc quá hạn, người dùng nhận chữ thuần "403 Forbidden", không có minh hoạ và không có nút về trang chủ | Người bị chặn gặp ngõ cụt khi máy chủ chậm hoặc cấu hình địa chỉ nội bộ sai | confirmed |
+| RISK-04 | risk | Hành động gửi từ trang quản trị của admin vừa bị hạ quyền bị cổng từ chối bằng thông điệp lỗi gọn, không phải trang; cách từng form hiển thị kết quả này thuộc feature của form và chưa được kiểm trong lượt này | Admin bị hạ quyền có thể thấy form "không phản ứng" thay vì thông báo rõ | [UNVERIFIED] |
 
 ## 12. Dependencies
 
 | Dependency | Type | Why this feature needs it | Evidence |
 |------------|------|-----------------------------|----------|
-| F001_Auth | feature | Cung cấp phiên, role Admin/User, hành động đăng xuất và kiểm tra quyền khu Admin | FR-201, FR-601, FR-602 |
-| F013_Notifications | feature | Cung cấp nội dung chuông thông báo đặt trong header | FR-105 |
-| F006_AwardsPortal | feature | Là trang đích của About SAA 2025 và Award Information | FR-101 |
-| F004_KudosFeed | feature | Là trang đích của Sun* Kudos | FR-101 |
-| F012_Profile | feature | Là trang đích của mục Profile trong menu avatar | FR-201 |
-| Thư viện đa ngôn ngữ (next-intl) | external-service | Nạp bản dịch Việt/Anh | FR-001, FR-002 |
+| F001_Auth | feature | Phiên đăng nhập, cổng chặn khách và người chưa chọn đơn vị, hành động đăng xuất, trang đăng nhập đích khi bị chuyển | FR-203, DEC-001, DEC-006 |
+| F013_Notifications | feature | Chuông thông báo và dropdown nằm trong header Sunner; khung chỉ chừa chỗ | FR-105, SCR003_AppLayout |
+| F003_KudosAuthoring | feature | Vùng hiện thông báo gửi/sửa Kudo đặt trong khung Sunner | FR-105 |
+| F006_AwardsPortal | feature | Đích của link Homepage, Award Information, Thể lệ, Tiêu chuẩn chung | FR-101, FR-103 |
+| F004_KudosFeed | feature | Đích của link Sun* Kudos | FR-101 |
+| F012_Profile | feature | Đích của mục Profile trong menu tài khoản | FR-201 |
+| F015_AdminOverview | feature | Đích của mục Overview và của Dashboard; trang Overview tự kiểm tra quyền admin | FR-301, FR-601, BR-002 |
+| F007_AdminModeration | feature | Đích của mục Review content | FR-301 |
+| F014_AdminUserManagement | feature | Đích của mục User | FR-301 |
+| F011_AdminCampaigns | feature | Đích của mục Settings; khối lỗi tải lại của bảng campaign nằm trong khung điều hướng Admin | FR-301, US001_NavigateAdminSections |
+| Hồ sơ Sunner (tên, avatar, role, đơn vị) | data | Hiện tên và avatar, quyết định mục Dashboard, nút của trang 404, và quyền vào khu Admin | FR-201, FR-602, DEC-004 |
+| Dịch vụ xác thực và cơ sở dữ liệu của nền tảng | infrastructure | Xác nhận phiên ở mỗi lần vào trang và đọc hồ sơ | BR-004 |
+| Địa chỉ nội bộ của chính ứng dụng | config | Cổng tự tải trang "không có quyền" từ địa chỉ này để dựng trang 403 | RISK-03 |
 
 ## 13. Configuration
 
 ```text
-SUPPORTED_LOCALES = vi, en    # hai ngôn ngữ giao diện được hỗ trợ
-DEFAULT_LOCALE = vi           # ngôn ngữ dùng khi không có lựa chọn và trình duyệt không thuộc hai ngôn ngữ trên
-LANGUAGE_REMEMBER_DAYS = 365  # đề xuất: nhớ lựa chọn ngôn ngữ bao lâu, chờ xác nhận
+SUPPORTED_LANGUAGES = vi, en       # chỉ hai ngôn ngữ; ngôn ngữ mặc định là Tiếng Việt
+LANGUAGE_CHOICE_TTL_DAYS = 365     # lựa chọn ngôn ngữ được nhớ một năm trên trình duyệt
+HEADER_LINKS = 3                   # About SAA 2025, Award Information, Sun* Kudos
+FOOTER_LINKS = 5                   # About SAA, Award Information, Sun* Kudos, Thể lệ, Tiêu chuẩn chung
+ADMIN_MENU_ITEMS = 4               # Overview, Review content, User, Settings
 ```

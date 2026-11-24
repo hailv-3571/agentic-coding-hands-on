@@ -1,23 +1,17 @@
 ---
-failed: 2
+failed: 3
 warnings: 3
 missing: 0
 result: FAIL
 ---
-<!--
-`failed`: count of critical issues (0 = all pass).
-`warnings`: count of warning issues.
-`missing`: fcodes flagged MISSING due to `.pending` marker (none: F014 and F015 each hold exactly technical-spec.md + functional-spec.md, no `.pending`).
-`result`: PASS iff `failed === 0 && missing === 0`.
-Batch: WaveFS5.batch-02 (feature-spec-review F014..F015). Core artifact sections skipped (handled by W7a).
--->
 
-# Review Report — Rebuild-Spec Feature Specs (batch-02)
+# Review Report — Rebuild-Spec Feature Specs (WaveFS5 batch-02: F007, F009, F011)
 
 **Reviewer**: Staff Engineer (automated)
 **Date**: 2026-11-24
-**Scope**: 2 feature specs (F014_AdminUserManagement, F015_AdminOverview); core artifacts not re-reviewed (W7a)
-**Validator pre-check**: `fs-validation-summary.json` F014 PASS (0/0), F015 PASS (0/0); citation, feature_screen_link, feature_api_link, reading_guide_db_impact all PASS. No warning rule_ids to cite for these two fcodes (overall WARN comes from F010, outside this batch).
+**Scope**: 3 feature specs (F007_AdminModeration, F009_HeroBadges, F011_AdminCampaigns), 6 files. Core artifacts skipped. Cross-ref: `docs/generated/feature-list.md`, `route-list.md`, `permissions-matrix.md`. Source spot-checks: about 60 DEC/BR/ALG/SM/FR claims against code.
+**Validator notes**: overall WARN. F007 PASS, F011 PASS, F009 PASS plus `feature_screen_link` `link.pre_migration` on F009 functional-spec (background feature, no SCR; accepted). Rules marked `[deterministic-pass]` were not re-checked. `.pending` markers: none present for the 3 fcodes (verified with `ls -a`); `missing = 0`.
+**Critical counting**: one critical per feature, listing every uncovered FR (33 FRs total: F007 2, F009 10, F011 21).
 
 ---
 
@@ -25,168 +19,128 @@ Batch: WaveFS5.batch-02 (feature-spec-review F014..F015). Core artifact sections
 
 | Metric | Value |
 |--------|-------|
-| Artifacts reviewed | 0 core + 2 feature specs (4 files) |
-| Critical issues | 2 |
+| Artifacts reviewed | 0 core + 3 feature specs |
+| Critical issues | 3 |
 | Warnings | 3 |
 | Missing (`.pending` markers) | 0 |
 | Result | **FAIL** |
 
-Semantic read: both specs are well grounded. About 75 `Source` citations spot-checked against real code (all ranges contain the described logic), cross-refs to feature-list / user-stories / screen-list / route-list / entities / permissions-matrix resolve, UI strings match `messages/vi.json`. Defects are verification coverage (reviewer-only rule, no validator catches it) and three behavior/wording inaccuracies.
+Semantics are strong: every DEC/BR/ALG/SM/INT claim spot-checked matches code, user-facing strings match `messages/vi.json`, ROUTE/PERM/MODEL cross-refs match `docs/generated/*`. The only blocking defect class is FR to SC coverage (reviewer-only rule, no validator checks it). Fix is mechanical: add or extend `(covers ...)` SC lines in `technical-spec.md § 5.1`.
 
 ---
 
 ## Critical Issues
 
-### C1: F014 — five FRs verified by no SC (§ 5.1 coverage hole) — OPEN
+### C1: F007 — 2 FRs in functional-spec § 4 covered by no SC — OPEN
 - **Severity**: critical
-- **Location**: `plans/261108-0048-saa-2025-kudos-platform/artifacts/features/F014_AdminUserManagement/technical-spec.md:411-421`
-- **Description**: Checklist rule "Every FR-### is covered by >=1 SC-### via the `(covers ...)` back-ref in § 5.1; uncovered FR = critical". Set difference of the 29 FR-### in `functional-spec.md § 4` vs the union of `(covers ...)` in SC-001..SC-011 leaves FR-101 (menu entry), FR-102 (URL is the state), FR-201 (column set, 8-char id, date format), FR-208 ("—" for empty cells), FR-210 (header totals over the whole filter). No validator enforces this, so the deterministic PASS says nothing about it. The US009 Acceptance Scenarios (lines 429-432) cover paging, `q` too long, page clamp and unaccented search only, so they do not close the gap. These are the A1 behaviours a tester most needs (columns, dash, whole-filter totals, URL round-trip).
-- **Fix**: add two SC lines under § 5.1, e.g. `SC-012 (A1) Bảng có đủ 12 cột đúng thứ tự, ID rút gọn 8 ký tự, ô chưa có giá trị hiện "—", tiêu đề hai cột Kudo kèm tổng của cả bộ lọc chứ không chỉ trang đang xem (covers FR-201, FR-208, FR-210)` and `SC-013 (A1) Mục "User" trên menu Admin mở /admin/users; đổi lọc, tìm, sắp xếp, trang ghi lên URL, tải lại hoặc mở link ở tab khác ra cùng kết quả (covers FR-101, FR-102)`. Optionally mirror FR-102/FR-208/FR-210 in `functional-spec.md § 10`.
+- **Location**: `F007_AdminModeration/technical-spec.md:575-586` (SC-001..SC-012); FRs declared at `F007_AdminModeration/functional-spec.md:58` (FR-101), `:63` (FR-202)
+- **Description**: Uncovered: FR-101, FR-202 (26/28 covered; computed as § 4 FR ids minus union of `(covers ...)` in § 5.1).
+- **Fix**: add after SC-012 (line 586):
+  - `- **SC-013** *(A1)* Dòng bảng hiện 8 ký tự đầu của ID, tiêu đề đậm trên lời nhắn text thuần cắt 4 dòng không hiện ký hiệu Markdown, hashtag mỗi thẻ một dòng, số tim thô không nhân x2, ô trống hiện "—" (covers FR-202)`
+  - `- **SC-014** *(A1)* Mục "Review content" của menu Admin mở /admin/review; trong lúc tải hiện ReviewContentSkeleton từ loading.tsx (covers FR-101)`
 
-### C2: F015 — three FRs verified by no SC (§ 5.1 coverage hole) — OPEN
+### C2: F009 — 10 FRs in functional-spec § 4 covered by no SC — OPEN
 - **Severity**: critical
-- **Location**: `plans/261108-0048-saa-2025-kudos-platform/artifacts/features/F015_AdminOverview/technical-spec.md:386-395`
-- **Description**: Same rule as C1. Of 18 FR-###, uncovered by any `(covers ...)` in SC-001..SC-010: FR-001 (each Sunner in at most one unit, figures follow the current `department_id`, no history), FR-101 (Overview tab and Dashboard menu entry), FR-206 (whole table on one page, no pagination; only mentioned as an assumption at line 422, not verified). SC-010 covers FR-102 only.
-- **Fix**: extend `SC-010` to `(A1) /admin chuyển về /admin/overview; tab "Overview" và mục "Dashboard" cùng mở trang (covers FR-101, FR-102)`; add `SC-011 (A2) Đổi department_id của một Sunner thì lần đọc kế số liệu của người đó chuyển sang đơn vị mới (hoặc "Chưa gán đơn vị"), không có lịch sử (covers FR-001)`; append to `SC-001` or `SC-007` "nhiều đơn vị vẫn hiện trên một trang, không phân trang (covers FR-206)".
+- **Location**: `F009_HeroBadges/technical-spec.md:410-416` (SC-001..SC-006; line numbers per ART file, § 5.1 block); FRs at `F009_HeroBadges/functional-spec.md:57` (FR-004), `:61` (FR-401), `:63` (FR-403), `:64` (FR-404), `:66` (FR-406), `:70-72` (FR-201..203), `:76-77` (FR-601, FR-602)
+- **Description**: Uncovered: FR-004, FR-201, FR-202, FR-203, FR-401, FR-403, FR-404, FR-406, FR-601, FR-602 (6/16 covered). Only 6 SC lines exist for 4 actions; A2 (badge render) has no SC at all.
+- **Fix** (extend/add in § 5.1):
+  - SC-006: change to `(covers FR-405, FR-406, BR-006)` and append "vượt nhiều ngưỡng chỉ báo bậc đạt được; bậc tụt vì Spam không báo lại bậc cũ".
+  - `- **SC-007** *(A1)* Cột Level và bộ lọc Level của Admin dùng `distinctSenderCountSubquery` + `tierCountRange` cùng luật đếm với huy hiệu; kết quả bậc chỉ khoá theo id đã yêu cầu, không mang id người gửi (covers FR-004, FR-602)`
+  - `- **SC-008** *(A0, A1)* `HeroTierQuery` có `import "server-only"`, không có route/server action nào lộ truy vấn; client chỉ nhận tên bậc trong view (covers FR-601)`
+  - `- **SC-009** *(A2)* `tier` null thì HeroBadge và slot không vẽ gì (không viên nhãn rỗng, không dấu chấm); bốn cỡ card/tooltip/rules/hoverCard cùng một hình theo bậc; trang Thể lệ liệt kê đủ bốn bậc từ cùng khoá `hero.*` (covers FR-201, FR-202, FR-203)`
+  - `- **SC-010** *(A3)* Tooltip mở khi rê chuột, focus bàn phím hoặc chạm; hiện tiêu đề và mô tả của đúng bậc; ở màn 375 px panel kẹp cách mép 16 px và không nhận focus (covers FR-401, FR-403, FR-404)`
+
+### C3: F011 — 21 FRs in functional-spec § 4 covered by no SC — OPEN
+- **Severity**: critical
+- **Location**: `F011_AdminCampaigns/technical-spec.md:336-340` (SC-001..SC-005); FRs at `F011_AdminCampaigns/functional-spec.md:50-89`
+- **Description**: Uncovered: FR-001, FR-002, FR-101, FR-201, FR-202, FR-203, FR-204, FR-205, FR-206, FR-301, FR-302, FR-303, FR-304, FR-305, FR-306, FR-308, FR-309, FR-310, FR-402, FR-404, FR-602 (5/25 covered: FR-003, FR-307, FR-401, FR-601 plus none other). Only 5 SC lines for 5 actions; A1 (list) and A4 (delete UI) have no behavior SC.
+- **Fix** (add after SC-005, line 340; also extend SC-004 `(covers FR-401, FR-402, BR-001)` and SC-005 `(covers FR-601, FR-602)` with "bảng `campaigns` bật RLS không policy, REVOKE ALL cho anon/authenticated"):
+  - `- **SC-006** *(A1)* Bảng bốn cột ID/Name/Time/Actions sắp `starts_at DESC, id DESC` không phân trang, giờ theo ADMIN_TIMEZONE giống nhau cho mọi Admin, tên dài cắt một dòng có `title`; dòng đã kết thúc không có "⋯"; rỗng hiện dòng gợi ý; đọc lỗi hiện khối lỗi + "Thử lại"; skeleton lúc tải (covers FR-002, FR-101, FR-201, FR-202, FR-204, FR-205, FR-206, FR-404)`
+  - `- **SC-007** *(A2)* Hộp Add có 3 ô bắt buộc, focus vào ô tên; tên 1-100 ký tự, mốc thật từ 2000, end sau start và sau hiện tại; lỗi dưới từng ô, focus ô lỗi đầu; OVERLAP nêu tên và khoảng giờ dưới End Date; thành công đóng hộp + toast 5 giây; Cancel/Esc đóng, bấm nền không đóng; đang lưu ô readOnly, hai nút khoá, Esc không đóng; lỗi bất ngờ giữ hộp và dữ liệu (covers FR-001, FR-203, FR-301, FR-303, FR-304, FR-305, FR-309, FR-310)`
+  - `- **SC-008** *(A3)* Hộp Edit điền sẵn, nút "Save Campaign"; campaign đang chạy khoá Start kèm lý do, vẫn sửa tên và End; `startsAt` khác phút đã lưu bị `startLocked` (covers FR-302, FR-306)`
+  - `- **SC-009** *(A4)* Hộp xác nhận xoá nêu tên campaign, Cancel có focus; Cancel/Esc không xoá; đang xoá hai nút khoá; lỗi khác giữ hộp với "Không xoá được" (covers FR-308, FR-309, FR-310)`
 
 ---
 
 ## Warnings
 
-### W1: F014 — functional spec states the wrong trigger for the in-dialog "Bạn không còn quyền Admin." — OPEN
+### W1: F007 — content search matches raw Markdown source of the message, undocumented — OPEN
 - **Severity**: warning
-- **Location**: `plans/261108-0048-saa-2025-kudos-platform/artifacts/features/F014_AdminUserManagement/functional-spec.md:206-208` (same claim again at `:250`; related `:154`, `:167`)
-- **Description**: § 8 scenario "Error: người thao tác đã bị hạ" says an Admin demoted while the dialog is open, on "Xác nhận", sees "Bạn không còn quyền Admin." in the dialog; § 9 row at :250 repeats it for "bị hạ trong lúc đang mở trang". Code: `setUserRoleAction` calls `requireAdmin()` first (`set-user-role-action.ts:19`), which re-reads `profiles.role` and calls `forbidden()` (`shared/auth/admin-guard.ts:30-35`); on a server-action POST the proxy step 4b already answers JSON 403 (`shared/auth/session-proxy.ts:93-110`). Test `tests/integration/admin-users/set-user-role-action.test.ts:48` ("answers 403 to ... an admin demoted after signing in, and writes nothing"). The in-band `FORBIDDEN` (dialog text) only occurs when the actor is demoted while the transaction waits on the admin-row lock (`user-role-service.ts:47`), exactly what canonical `user-stories.md:669` ("Actor bị hạ trong lúc chờ khoá") and `technical-spec.md:442` say. The twin tech spec already has it right (edge row `:191`). A QA case written from § 8/§ 9 would fail against the build. Which UI the 403 produces (403 page vs generic "Không cập nhật được role...") was not run here, so it is unproven.
-- **Fix**: § 8: change the Given to "Admin bị hạ trong lúc lệnh của họ đang chờ khoá" (keep the dialog message). Add a second scenario/§ 9 row "Admin đã bị hạ trước khi bấm Xác nhận → bị chặn ở lớp kiểm tra quyền (403), không ghi gì", user-facing message taken from an e2e observation or tagged `[UNVERIFIED]`. Reword :250 to the lock-wait case.
+- **Location**: `F007_AdminModeration/functional-spec.md:66` (FR-205), `:102` (BR-004); `F007_AdminModeration/technical-spec.md:95, 500, 531`
+- **Description**: `buildAdminKudoWhere` runs `f_unaccent(coalesce(title,'') || ' ' || body) ILIKE` on the stored `body` (`features/admin-moderation/server/admin-kudo-where-builder.ts:20`, `shared/db/schema/kudos.ts:42` is `text` Markdown), while the table shows stripped plain text (`kudo-message-plain-text.ts:20-23`). Searching `**`, `](` or a link URL matches rows whose visible text lacks it; QA has no expected behavior. Spec says only "trên tiêu đề cộng lời nhắn".
+- **Fix**: add to tech § 3.5 Edge cases: `| A1 · A2 · A7 | Từ khoá trùng ký hiệu Markdown hoặc URL của liên kết | Khớp vì tìm chạy trên nguồn Markdown của lời nhắn, không phải chữ hiển thị; dòng có thể hiện mà không thấy từ khoá (BR-004) |`; add a § 9 row in functional-spec with message "None — silent handling" and a RISK-08 (known-issue, [INFERRED]) in § 11.
 
-### W2: F015 — department example "CECV2 / CECV10" is a typo of the real names "CEVC2 / CEVC10" — OPEN
+### W2: F007 — row rendering details diverge between functional and technical spec — OPEN
 - **Severity**: warning
-- **Location**: `plans/261108-0048-saa-2025-kudos-platform/artifacts/features/F015_AdminOverview/functional-spec.md:51` (also `functional-spec.md:210`, `technical-spec.md:103`, `technical-spec.md:356`, `technical-spec.md:392`)
-- **Description**: Seeded names are `CEVC1..` (`db/seeds/departments.ts:11-14`), the code comment says "CEVC2 before CEVC10" (`features/admin-overview/server/add-all-row.ts:7`), and sibling F014 spells it correctly. The ordering rule (FR-202, SC-007, ALG-002) is expressed through a department name that does not exist; a tester seeding "CECV2" or searching the table for it gets nothing.
-- **Fix**: replace `CECV` with `CEVC` in all five places.
+- **Location**: `F007_AdminModeration/functional-spec.md:63` (FR-202), `:259` (edge row); `F007_AdminModeration/technical-spec.md:81`; code `features/admin-moderation/components/review-table-row.tsx:62-63`
+- **Description**: (a) Tech A1 says the title is "đậm viết hoa" (CSS `uppercase`, line 62); FR-202 and US005 AC say only "đậm", so BA/QA will not expect uppercase. (b) Functional edge row 259 says "Kudo không có tiêu đề ... ô hiện dấu gạch"; code renders `{row.title && <p>…}` and a dash only for an empty message (line 63) and empty hashtags, so a title-less Kudo shows no dash for the title.
+- **Fix**: FR-202: "tiêu đề đậm, viết hoa (chỉ kiểu hiển thị)". Row 259: "Kudo không có tiêu đề thì không hiện dòng tiêu đề; không có hashtag hoặc lời nhắn chỉ có định dạng thì ô hiện dấu gạch".
 
-### W3: F015 — § 9 contradicts itself (and canonical US004) on what Export shows after a lost Admin role — OPEN
+### W3: F009 — English template trailer left in § 5.5 — OPEN
 - **Severity**: warning
-- **Location**: `plans/261108-0048-saa-2025-kudos-platform/artifacts/features/F015_AdminOverview/functional-spec.md:201`
-- **Description**: Row :201 "Admin bị hạ role giữa chừng | thao tác kế (đổi ngày, Export) bị từ chối | 'Bạn không có quyền truy cập tài nguyên này.'" while row :198 and § 8 `US004 — Error` (:172) give "Không xuất được tệp. Vui lòng thử lại." for the same Export call, and canonical `user-stories.md:386` says "Endpoint trả 403, hiện toast lỗi". Code: Export route returns JSON `{ code: "forbidden" }` (`admin-api-guard.ts:22`) and `ReviewExportButton` maps any `!response.ok` to the `export.failed` toast (`review-export-button.tsx:46`); the 403-page copy appears only for page navigation (date change). Related: row :199 lists the 403-page sentence for a direct Export call (JSON only, no message), and row :198 lists "khoảng ngày sai" as a UI Export failure although the UI exports all-time on a bad range (DEC-003, `admin-overview-screen.tsx:57`), so it is reachable only by a hand-built URL.
-- **Fix**: split :201 into "đổi ngày → trang bị từ chối (403 page)" and "Export → toast 'Không xuất được tệp...', không tệp"; in :199 say "gọi thẳng Export: JSON 403, không có số liệu"; in :198 drop "khoảng ngày sai" or note it applies to a hand-built URL only.
-
----
-
-## Notes (non-blocking, not counted)
-
-- N1 (F015 tech `:250,259,268`): `Source: docs/generated/entities.md § Profile|Kudo|SecretBox > Discriminator Fields` use short names; real headings are `MODEL004_Profile`, `MODEL003_Kudo`, `MODEL011_SecretBox` (F014 uses the full form). Align for anchor resolution.
-- N2 (F014 tech `:477`): § 5.3 item 3 is a resolved drift log vs the "previously published spec" (US001-004 renamed, etc.) filed under "Unresolved Questions". Belongs in a journal/changelog; keep § 5.3 for open items only.
-- N3 (F014 functional § 9): BR-004 documents LIKE-wildcard escaping (`\`, `%`, `_`) but no QA-visible edge row exists for searching those characters, nor for a valid-uuid `unit` that matches no department (empty table + "Xoá bộ lọc").
-- N4 (core artifacts, route to W7a owner): `feature-list.md` F014 lists only MODEL004 and PERM017/018, F015 lists "Related Permissions: None"; `traceability-matrix.md:29` shows F015 PERM "—". The specs' § 5.5 (MODEL001/003/004/008/012/013 + PERM006/014/015; PERM003/014/015) match code and `permissions-matrix.md:576,613`. No spec change.
-- N5 (code-side, informational): comments in `features/admin-users/server/env-admin-email.ts` ("answers 409 ENV_ADMIN") and `lib/admin-user-role-menu-state.ts` ("403 SELF_DEMOTE") describe HTTP codes; the specs correctly say refusals are in-band (C-18). Not a spec defect.
-- N6 (trivial range drift, no action): F015 tech cites `admin-overview-skeleton.tsx:9-22` (actual 9-23), `use-external-reset-key.ts:13-20` (13-21), `admin-csv-filename.ts:5-9` (4-9); logic is inside each range.
+- **Location**: `F009_HeroBadges/technical-spec.md:420`
+- **Description**: `**Codes are written BARE — no braces.**` is template residue in English; F007 and F011 replaced it with the vi `**Rule:**` line. Violates the vi prose directive; no validator catches it.
+- **Fix**: replace with `**Rule:** Mọi mã trong Codes Used phải tồn tại trong artifact nguồn; F009 không sở hữu ROUTE hay SCR nên các hàng API Map, Screens để "—".`
 
 ---
 
 ## Passed Checks
 
-<!-- Reviewer task closure: on successful write of this file, call
-     TaskUpdate(status=completed) on your task id before returning. -->
-
-✓ existence.folder_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ existence.folder_incomplete @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ existence.slug_format @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ existence.orphan_folder @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ existence.canonical_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.required_sections @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.screen_flow_crossref @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.bw_steps @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.deprecated_headings @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.no_appendix @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.edge_cases @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.f_code_format @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.sm_mermaid @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.pseudocode_length @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.pseudocode_fence @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ Universal.no_placeholder @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ citation.file_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ citation.range_invalid @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ citation.range_inverted @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ citation.path_traversal @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ citation.unreadable @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.linked_fr_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.br_linked_fr_present @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.disc_boolean @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.missing_client_behavior_anchor @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.alg_file_schema_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.retired_section_present @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.tech_sections_pre_sot @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.sysdesign_subsections @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.verification_subsections @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.capability_buckets_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.capability_twin_skew @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.us_narrative_present @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.action_index_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.action_key_not_handler @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.action_unclaimed @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.rung_order @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.rung_empty_rendered @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.state_rung_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.action_ref_unglossed @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.rule_bin_misplaced @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.crosscutting_unlabelled @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.diagram_required_missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.diagram_cites_file_line @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.diagram_over_cap @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.missing @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.missing_h2 @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.sections_pre_sot @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.dev_token @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.secret_shape @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.screens_scr_unresolved @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.edge_cases_few_rows @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.rule_density @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.open_decisions_shape @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.code_orphan @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.code_unsurfaced @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.edge_behaviour_dangling @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.capabilities_empty @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.capability_fr_dangling @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.risk_as_rule @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ func.user_story_shape @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ cap.code_unclaimed @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ cap.double_claimed @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ cap.claims_unfilled @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ cap.analysis_required @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ cap.review_advised @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ cap.promote_candidate @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ link.route_unresolved @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ link.feature_unresolved @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ link.owner_mismatch @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ link.pre_migration @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ link.unmapped @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ link.inventory_absent @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ reading_guide.pre_migration @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ reading_guide.malformed @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ reading_guide.unmapped @ F014_AdminUserManagement..F015_AdminOverview (2/2) [deterministic-pass]
-✓ FeatureSpec.polymorphic_behavior_present @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass: validator gated on retired § 3.2, read § 4.2 by hand]
-✓ FeatureSpec.dec_blocks_well_formed @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass: DEC rows are table-shaped, validator vacuous, 5 columns + Source read by hand]
-✓ FeatureSpec.dec_lazy_na @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass: no N/A DEC sections]
-✓ FeatureSpec.source_citations_ground_truth @ F014_AdminUserManagement [manual-pass]
-✓ FeatureSpec.source_citations_ground_truth @ F015_AdminOverview [manual-pass]
-✓ FeatureSpec.crossref_featurelist @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.crossref_userstories @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.crossref_screens @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.crossref_routes @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.crossref_entities @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.crossref_permissions @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.br_depth_and_grounding @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ func.dev_identifier_leak @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FeatureSpec.pending_marker_rule @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FailureTrap.1_proliferation @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass: SCR018/SCR019 atomic, no REG]
-✓ FailureTrap.2_tab_stepper @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FailureTrap.3_shared_data @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FailureTrap.4_loc_over_split @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FailureTrap.5_spec_orphan @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-✓ FailureTrap.6_inferred_signal_abuse @ F014_AdminUserManagement..F015_AdminOverview (2/2) [manual-pass]
-
-Not credited (superseded/retired in the coverage table, so no verdict): `FeatureSpec.ccl_subsections`, `FeatureSpec.ccl_blank`, `FeatureSpec.mapping_table_missing`, `FeatureSpec.mapping_restates_story`, `FeatureSpec.decision_logic_section_present`, `FeatureSpec.action_double_claimed`, `db_impact.*`. Out of FS.5 scope: `BehaviorLogic.*`, `gate.*`.
+✓ Universal.artifact_exists_non_empty @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Universal.no_pending_marker @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Universal.two_file_pair @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Universal.no_placeholder_text @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Universal.required_sections_in_template_order @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Universal.orphan_code_none @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Universal.cross_ref_tokenizer_scr_reg @ F007_AdminModeration
+✓ Universal.cross_ref_tokenizer_scr_reg @ F011_AdminCampaigns
+✓ Universal.content_completeness_source_traceable @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.required_sections [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.sysdesign_subsections [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.verification_subsections [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.action_index_missing [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.action_unclaimed [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.rung_order [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.rung_empty_rendered [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.capability_twin_skew [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ FeatureSpec.state_rung_missing [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.missing_h2 [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.open_decisions_shape [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.code_orphan [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.code_unsurfaced [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.edge_behaviour_dangling [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.capability_fr_dangling [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ cap.code_unclaimed [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ cap.double_claimed [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ func.edge_cases_few_rows [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ validate_source_citations [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ validate_feature_api_link [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ validate_reading_guide_db_impact [deterministic-pass] @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ validate_feature_screen_link [deterministic-pass] @ F007_AdminModeration
+✓ validate_feature_screen_link [deterministic-pass, warn link.pre_migration accepted] @ F009_HeroBadges
+✓ validate_feature_screen_link [deterministic-pass] @ F011_AdminCampaigns
+✓ FailureTrap.trap1_to_6_regions_n_a @ F009_HeroBadges
+✓ FailureTrap.trap1_to_6_regions_n_a @ F011_AdminCampaigns
+✓ FailureTrap.trap1_to_6_no_REG_declared @ F007_AdminModeration
+✓ Semantic.fr_in_sc_coverage_computed @ F007_AdminModeration..F011_AdminCampaigns (3/3, see C1-C3)
+✓ Semantic.business_rule_traceable_to_tech @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Semantic.br_dec_sm_alg_source_claims_match_code @ F007_AdminModeration
+✓ Semantic.br_dec_sm_alg_source_claims_match_code @ F009_HeroBadges
+✓ Semantic.br_dec_sm_alg_source_claims_match_code @ F011_AdminCampaigns
+✓ Semantic.user_facing_strings_match_messages_vi @ F007_AdminModeration
+✓ Semantic.user_facing_strings_match_messages_vi @ F011_AdminCampaigns
+✓ Semantic.route_perm_model_xref_matches_docs_generated @ F007_AdminModeration
+✓ Semantic.route_perm_model_xref_matches_docs_generated @ F009_HeroBadges
+✓ Semantic.route_perm_model_xref_matches_docs_generated @ F011_AdminCampaigns
+✓ Semantic.ROUTE018_shared_F003_F004_F007_documented @ F007_AdminModeration
+✓ Semantic.admin_gate_layers_4b_vs_api_admin_accurate @ F007_AdminModeration
+✓ Semantic.admin_gate_layers_4b_vs_api_admin_accurate @ F011_AdminCampaigns
+✓ Semantic.demoted_admin_unexpected_copy_documented @ F007_AdminModeration
+✓ Semantic.demoted_admin_unexpected_copy_documented @ F011_AdminCampaigns
+✓ Semantic.unverified_claims_tagged_as_assumptions @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Semantic.no_double_link_template_conflict_grep @ F007_AdminModeration..F011_AdminCampaigns (3/3)
+✓ Semantic.language_directive_vi_prose @ F007_AdminModeration
+✓ Semantic.language_directive_vi_prose @ F011_AdminCampaigns
 
 ---
 
@@ -194,51 +148,12 @@ Not credited (superseded/retired in the coverage table, so no verdict): `Feature
 
 | Metric | Value |
 |--------|-------|
-| Feature Specs | 2 |
-| User Stories | 6 (US009-US012, US003, US004) |
-| Screens | 2 (SCR018, SCR019) |
-| Background Logic Items | 0 |
-| Permissions | 6 referenced (PERM003, 006, 014, 015, 017, 018) |
-| Backend Route Rows | 3 (ROUTE003, ROUTE004, ROUTE032) |
-| Frontend Pages | 2 (/admin/users, /admin/overview; /admin is a redirect) |
-| Data Model Entities | 7 referenced (MODEL001, 003, 004, 008, 011, 012, 013) |
-
----
-
-## Edge Cases Turned Up (scouting pass, beyond the diff)
-
-- Demoted actor has two distinct paths (guard 403 before the service vs in-band `FORBIDDEN` while waiting on the admin-row lock); only the second shows the dialog text. Drives W1.
-- `target.role === role` returns ok before the actor-still-admin check (`user-role-service.ts:40` before `:47`): a demoted actor re-promoting an existing Admin gets success with no write. Already recorded as F014 RISK-01, correct.
-- Mutual demotion with exactly two Admins: traced through READ COMMITTED lock re-check; loser sees `admins.length == 1` and gets `LAST_ADMIN` before the `FORBIDDEN` check, as the spec says.
-- `/api/admin/*` is outside proxy gate 4b (`isAdminPath` matches `/admin`, `/admin/*` only): export routes rely solely on `requireAdminApi()`; both specs document this (F014 RISK-02, F015 RISK-07). `tests/prod/production-admin-403-status.ts:144-152` covers it.
-- F015: unit with zero members and zero activity still renders (FULL JOIN + coalesce); a recipient with NULL `department_id` lands in "Chưa gán đơn vị" and in "All"; sum of the distinct-recipient column is valid only while a profile has one department (assumption recorded at § 5.2).
-- F015: Export on a bad URL range exports all-time (DEC-003); a hand-built bad range returns 400 from the route.
-- F014: LIKE wildcards in search are escaped (`user-admin-sql-fragments.ts:71`); `page` regex caps at 9 digits so `page=0`/10 digits is `invalid_params` (covered by "giá trị lạ", not itemised).
-- F014 `listForExport` computes `count(*) over ()` / `sum(...) over ()` windows it does not need; perf only, RISK-03 already covers cost growth.
-
----
-
-## Done Well
-
-- Citations are precise and verified: F014 role service, guards, SQL fragments, CSV, UI handlers; F015 query, date-range, table, screen. Only trivial off-by-one drift (N6), no fabricated ranges.
-- Honest uncertainty: `[INFERRED]` / `[UNVERIFIED]` tags, "did not run app/test/DB" assumptions, F015 declining to repeat an `EXPLAIN ANALYZE` figure it could not find evidence for.
-- Safety-critical F014 logic (lock order, three guards in a stated order, conditional UPDATE, in-band refusals) is described exactly as coded, with the concurrency edge cases and RISK-01 side effect called out.
-- Cross-cutting guard documented once as A0/Bin 3 with the proxy gap on `/api/admin/*` made explicit; shared components credited to F007/F011/F002 instead of re-described.
-- Twin-file discipline held: functional file free of class names, HTTP verbs, paths; UI copy matches `messages/vi.json`.
-
----
-
-## Actions In Order
-
-1. C1 (F014) and C2 (F015): add the missing `(covers ...)` SC lines in § 5.1 (3 SC edits F015, 2 SC lines F014). Smallest fix that flips `failed` to 0.
-2. W1 (F014): correct the demoted-actor scenario/edge row in `functional-spec.md` § 8 and § 9; add the pre-submit 403 case.
-3. W3 (F015): split row :201 (page 403 vs Export toast) and tidy :198/:199.
-4. W2 (F015): `CECV` to `CEVC` in five places.
-5. Optional: N1-N3. Route N4 to the core-artifact owner.
-
----
-
-## Still Unresolved
-
-- Observable UI after a pre-submit demotion (403 page vs generic failure toast) was not run; W1 fix must take it from an e2e/manual observation or mark `[UNVERIFIED]`.
-- `TaskUpdate(status=completed)` could not be called: no task id was supplied and the tool is not available in this reviewer session; orchestrator should close the task.
+| Feature Specs | 3 (of 15) |
+| User Stories | 8 (US005, US006, US007, US008, US040, US013, US014, US015) |
+| Screens | 2 (SCR013, SCR014; F009 owns none) |
+| Background Logic Items | 1 (BL014) |
+| Permissions | 6 cited (PERM003, PERM014, PERM015, PERM019, PERM020, PERM021) |
+| Backend Route Rows | 8 (ROUTE001, 002, 018, 027, 028, 029, 030, 031) |
+| Frontend Pages | 2 (/admin/review, /admin/settings) |
+| Data Model Entities | 9 distinct (MODEL002, 003, 004, 005, 008, 009, 015, 016 plus F007 DISC set) |
+| FR to SC coverage | F007 26/28, F009 6/16, F011 5/25 |

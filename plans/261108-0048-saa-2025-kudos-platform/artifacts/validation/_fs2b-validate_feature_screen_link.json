@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-11-24T09:52:14Z",
+  "overall_status": "WARN",
+  "plan": "artifacts",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 1
+  },
+  "validators": {
+    "feature_screen_link": {
+      "issues": [
+        {
+          "location": {
+            "file": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\features\\F009_HeroBadges\\functional-spec.md"
+          },
+          "message": "functional-spec.md \u00a7 5 Screens has no SCR### column (pre-migration); run migrate-feature-screen-ids.py",
+          "rule_id": "link.pre_migration",
+          "severity": "warning",
+          "validator": "feature_screen_link"
+        }
+      ],
+      "status": "WARN",
+      "summary": {
+        "critical": 0,
+        "warning": 1
+      }
+    }
+  }
+}

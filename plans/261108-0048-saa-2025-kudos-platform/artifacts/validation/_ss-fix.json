@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-11-24T10:14:39Z",
+  "overall_status": "PASS",
+  "plan": "artifacts",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 0
+  },
+  "validators": {
+    "reading_guide_db_impact": {
+      "issues": [],
+      "status": "PASS",
+      "summary": {
+        "critical": 0,
+        "warning": 0
+      }
+    }
+  }
+}

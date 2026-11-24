@@ -28,7 +28,7 @@
 | SCR002_AdminLayout | AccountMenu: link Dashboard | navigation | Mở `/admin/overview` (story OpenAdminDashboard) | N/A |
 | SCR002_AdminLayout | AccountMenu: nút Logout | secondary-action | `signOut` phạm vi thiết bị rồi về `/login` (story SignOut) | POST server action signOut (ROUTE035) |
 | SCR003_AppLayout | AppHeader: logo, 3 NavLinks, MobileNavMenu | navigation | Về SAA, Thông tin giải, Sun* Kudos (story NavigateSunnerPages) | N/A |
-| SCR003_AppLayout | AppFooter: logo và 5 link | navigation | Về SAA, Thông tin giải, Sun* Kudos, Thể lệ, Tiêu chuẩn cộng đồng (story NavigateSunnerPages) | N/A |
+| SCR003_AppLayout | AppFooter: logo và 5 link | navigation | About SAA 2025, Award Information, Sun* Kudos, Thể lệ, Tiêu chuẩn chung (story NavigateSunnerPages) | N/A |
 | SCR003_AppLayout | LanguageSwitcher | secondary-action | Đổi vi/en (story SwitchLanguage) | POST server action setLocaleAction (ROUTE036) |
 | SCR003_AppLayout | AccountMenu: link Profile | navigation | Mở `/profile` (story NavigateSunnerPages) | N/A |
 | SCR003_AppLayout | AccountMenu: link Dashboard (chỉ admin) | navigation | Mở `/admin/overview` (story OpenAdminDashboard) | N/A |
@@ -188,7 +188,7 @@
 | US037_GiveHeartToKudo | Give Heart To Kudo | ui | P1 | SCR006, SCR007/REG003, SCR007/REG005, SCR015, SCR016 |
 | US038_WithdrawHeartFromKudo | Withdraw Heart From Kudo | ui | P1 | SCR006, SCR007/REG003, SCR007/REG005, SCR015, SCR016 |
 | US039_CopyKudoLink | Copy Kudo Link | ui | P2 | SCR006, SCR007/REG003, SCR007/REG005, SCR015, SCR016 |
-| US040_ViewHeroBadgeTooltip | View Hero Badge Tooltip | ui | P2 | SCR007/REG003, SCR007/REG005, SCR015, SCR016 |
+| US040_ViewHeroBadgeTooltip | View Hero Badge Tooltip | ui | P2 | SCR006, SCR007/REG003, SCR007/REG005, SCR015, SCR016 |
 | US041_BrowseProfileKudos | Browse Profile Kudos | ui | P2 | SCR015, SCR016 |
 | US042_SearchSpotlightNames | Search Spotlight Names | ui | P2 | SCR007/REG004 |
 | US043_ToggleSpotlightFullscreen | Toggle Spotlight Fullscreen | ui | P2 | SCR007/REG004 |
@@ -915,7 +915,7 @@ Là Khách, tôi muốn đăng nhập bằng tài khoản Google của công ty 
 
 ### Acceptance Criteria
 
-- [ ] Criterion 1: `/login` hiện nút "Đăng nhập bằng Google" cho khách chưa có phiên; người đã có phiên mở `/login` bị proxy đưa về `/`.
+- [ ] Criterion 1: `/login` hiện nút "LOGIN With Google" cho khách chưa có phiên; người đã có phiên mở `/login` bị proxy đưa về `/`.
 - [ ] Criterion 2: Bấm nút gửi form tới Server Action `signInWithGoogle`: làm sạch `next` bằng `safeNextPath`, dựng `redirectTo` là `/auth/callback` (kèm `next` khi khác `/`), gọi Supabase `signInWithOAuth` với provider `google` và `hd` bằng tên miền công ty, rồi chuyển trình duyệt tới Google.
 - [ ] Criterion 3: Trong lúc action chạy nút khoá kèm spinner nên bấm đôi không khởi động hai luồng OAuth; lỗi khi khởi động (hoặc thiếu URL) hiện banner `auth_failed`.
 - [ ] Criterion 4: Sau Google, `GET /auth/callback` đổi `code` lấy phiên (PKCE), kiểm lại tên miền của email, cập nhật `last_login_at` (và đặt `role = 'admin'` cho email thuộc `ADMIN_EMAILS`, ở mọi lần đăng nhập), rồi chuyển tới trang chọn phòng ban nếu chưa có phòng ban, ngược lại tới `next` đã làm sạch (mặc định `/`).
@@ -948,7 +948,7 @@ Là Khách, tôi muốn đăng nhập bằng tài khoản Google của công ty 
 
 | Scenario | Given | When | Then |
 |----------|-------|------|------|
-| Happy Path (lần đầu) | Khách có email công ty, chưa có phòng ban | Bấm "Đăng nhập bằng Google" và chấp nhận ở Google | Về `/auth/callback`, có phiên, `last_login_at` được ghi, chuyển tới trang chọn phòng ban |
+| Happy Path (lần đầu) | Khách có email công ty, chưa có phòng ban | Bấm "LOGIN With Google" và chấp nhận ở Google | Về `/auth/callback`, có phiên, `last_login_at` được ghi, chuyển tới trang chọn phòng ban |
 | Return Path | Khách mở `/login?next=/kudos/123`, đã có phòng ban | Đăng nhập thành công | Chuyển tới `/kudos/123` |
 | Foreign Domain | Khách chọn tài khoản Google ngoài tên miền công ty | Google chuyển về callback | Về `/login?error=domain_not_allowed`, hiện banner tên miền; không có phiên |
 | Cancelled | Khách đóng màn hình đồng ý của Google | Callback nhận lỗi, không có `code` | Về `/login?error=auth_failed` |
@@ -1149,7 +1149,7 @@ Là một Sunner, tôi muốn mở các trang Sunner từ header, footer, menu t
 ### Acceptance Criteria
 
 - [ ] Criterion 1: Header có logo (về `/`) và ba link About SAA 2025 (`/`), Award Information (`/awards`), Sun* Kudos (`/kudos`); dưới `md` ba link gom vào menu di động, đóng khi chọn, bấm ngoài hoặc Esc; link của trang hiện tại mang `aria-current="page"` (khớp theo tiền tố đường dẫn).
-- [ ] Criterion 2: Footer đầy đủ có logo (về `/`) và năm link: About SAA, Award Information, Sun* Kudos, Thể lệ (`/rules`), Tiêu chuẩn cộng đồng (`/community-standards`); footer của admin chỉ có dòng bản quyền.
+- [ ] Criterion 2: Footer đầy đủ có logo (về `/`) và năm link: About SAA 2025, Award Information, Sun* Kudos, Thể lệ (`/rules`), Tiêu chuẩn chung (`/community-standards`); footer của admin chỉ có dòng bản quyền.
 - [ ] Criterion 3: Menu tài khoản có "Profile" mở `/profile`; admin dùng chung link này.
 - [ ] Criterion 4: Dropdown chuông có "Xem tất cả" mở `/notifications` và đóng panel; dòng thông báo Kudo bị ẩn do spam có thêm link "Tiêu chuẩn cộng đồng" mở `/community-standards`, đặt trên vùng link kéo giãn của dòng nên hai link không lồng nhau.
 - [ ] Criterion 5: Mọi đích đều qua `requireSunner()`: chưa có phiên thì về `/login`, chưa có đơn vị thì về trang chọn đơn vị.
@@ -2076,10 +2076,11 @@ Là một Sunner, tôi muốn xem giải thích bậc Hero khi rê, focus hoặc
 - **Endpoint**: N/A — tooltip hiển thị từ dữ liệu bậc đã có trên thẻ và header profile, không gọi thêm API
 - **Data Required**: `HeroTier` (`new`, `rising`, `super`, `legend`) tính khi đọc từ số người gửi public khác nhau của người nhận: bỏ spam, tính cả Kudo ẩn danh, bỏ tự gửi; ngưỡng 1, 5, 10, 21 (`features/hero-badges/server/hero-tier-constants.ts:6-9`, `hero-tier-query.ts:20,42-49`)
 - **Dependencies**: PERM008_SunnerAreaGate; trigger và panel ở `features/hero-badges/components/hero-badge-tooltip.tsx:23-122` và `hero-badge-tooltip-panel.tsx:27-65`; khe huy hiệu ở `features/kudos-feed/components/kudo-card-hero-badge-slot.tsx:12-28`; header profile ở `features/profile/components/profile-header.tsx:32-37`
-- **Notes**: Index chỉ liệt kê REG003, REG005, SCR015, SCR016, nhưng `KudoDetailView` (SCR006) cũng dùng `KudoCardPeople` nên có cùng huy hiệu; tooltip dùng nguyên văn các thông điệp `hero.*` của trang Thể lệ, viết ngôi thứ hai ("cho bạn") kể cả khi xem huy hiệu người khác.
+- **Notes**: `KudoDetailView` (SCR006) cũng dùng `KudoCardPeople` nên có cùng huy hiệu; tooltip dùng nguyên văn các thông điệp `hero.*` của trang Thể lệ, viết ngôi thứ hai ("cho bạn") kể cả khi xem huy hiệu người khác.
 
 ### Screens
 
+- SCR006: KudoDetail
 - SCR007/REG003: HighlightKudos
 - SCR007/REG005: AllKudosFeed
 - SCR015: OtherProfile

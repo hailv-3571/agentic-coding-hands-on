@@ -115,7 +115,7 @@
 
 | Method | Path | Code | Owner F### | Handler | Middleware |
 |--------|------|------|------------|---------|------------|
-| GET | /api/sunners/search | ROUTE018 | F003 | GET | proxy(session→401 JSON, prelaunch→403 JSON); requireApiSunner; parseSunnerSearchParams (400 VALIDATION) |
+| GET | /api/sunners/search | ROUTE018 | F003, F004, F007 | GET | proxy(session→401 JSON, prelaunch→403 JSON); requireApiSunner; parseSunnerSearchParams (400 VALIDATION) |
 
 ### File: app/api/sunners/[userId]/card/route.ts
 

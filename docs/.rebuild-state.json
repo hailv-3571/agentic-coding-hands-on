@@ -1,26 +1,26 @@
 {
   "doc_shas": {
     "api-map.md": "998268aefcc20b19a9aff3fdf5a37aba79eceb7110acfd41db86fe5bcf65efbf",
-    "behavior-logic.md": "b845a3bda52d17135f518fa01e08ab554b395807135a1f62322ac7d4a1179174",
-    "data-model.md": "7496e70b40de54fedb97fbd4e8b6d80ad12cb375eec63a5b61d0d0097aca6df7",
-    "feature-list.md": "0d80f08ecc1b20fe2e57d93ebb61646850c1f7c2c473dbfea18373079ac264dd",
+    "behavior-logic.md": "c765d75af9aafe184e1341589ff09bc4940f1c99311e26d5a71f81a747f2c7cb",
+    "data-model.md": "21743f3f3d76a64e9c5ea6d4c08872a7106988d7da41108178a96f538a89a9b6",
+    "feature-list.md": "fcac72827d080e5049aa66dd1eef221331f23f4ee5e621fcf289a56c39b334f4",
     "permissions.md": "f14f87f65f97887d4802e8957edd126a33adb098ef9c9f801417b6a14d6e8b74",
-    "route-list.md": "f850d71923985925bfee6c67bb0c7289ea1327ed3e358839daaee9bf42d2ff1b",
-    "screen-flow.md": "4e576ec3e34581cfbf972d6a620128e8057af5467594c395b89b63bc06c891d7",
-    "screen-list.md": "a611bed97067062c79f41c04f9cf16953414e0d1cda63c278c83fb9e63ba9797",
+    "route-list.md": "f42b953abf5270147f1754a764fe57fe42bfbf0d636d29c6a03d68c0072a5afb",
+    "screen-flow.md": "73cc57c76cff5c744b957cea893ec90342c224dc7010834e19bfcf364f42cce1",
+    "screen-list.md": "b95879227a902a27e190bfcffeddbc9d54ff0937975f05d3c7edc25719f7be34",
     "system-overview.md": "a169497ee50b5fb1535e672686fb98b69d2214665cafd563dc162c6e982f4a9a",
-    "user-stories.md": "f33fb7e1a979562bf0d3b157f24153b1c4baf08c1f56a02a707482826dcf9845"
+    "user-stories.md": "231ae2607eea238850331098beec78e2b906e31ba54746bed1b7558715f6118c"
   },
-  "fcode_index_sha": "25d9daf7ddd023560bda19e4d81005a1dccde130e007d160be6f47c65f983792",
+  "fcode_index_sha": "e58482829e157582b73e1ec660b8ed75ce1043e3c506500d471218a9edfe4d8b",
   "last_api_contracts_run_sha": "",
-  "last_feature_spec_run_sha": "6e34454be286ddd20f3d960db132a33c249d9f66",
+  "last_feature_spec_run_sha": "b68d5235309d1190c2f23dd453d42ab053acb1f5",
   "last_flows_run_sha": "",
   "last_glossary_run_sha": "",
-  "last_rebuild_sha": "6e34454be286ddd20f3d960db132a33c249d9f66",
+  "last_rebuild_sha": "b68d5235309d1190c2f23dd453d42ab053acb1f5",
   "last_test_cases_run_sha": "",
-  "mode": "full",
+  "mode": "incremental",
   "primary_lang": "vi",
-  "rebuilt_at": "2026-11-24T04:14:47Z",
+  "rebuilt_at": "2026-11-24T10:19:37Z",
   "schema_version": "22.1.0",
   "screen_spec_shas": {
     "SCR001": "414923f15faf4bd5d6b2f4480440bf9d0662d5ed48a1f793794590c1d800f16f",
@@ -42,14 +42,7 @@
     "SCR017": "82ea798fff9e7cdd78b2fa5bd95bf9b45af014590f1c22e30a8eb15f2cf9e03e",
     "SCR018": "f4a24221ab0303601c407e749d93646a95086d20bb1d00b42a560bac3c1bd3e2",
     "SCR019": "79e91a88b9e238d297b0d5f58d7449177b95ac5e51fb79040c14888f88936d19",
-    "SCR020": "87898a05c9c1421696a20c0ce1294bbe14255a785cb15b88002e7c5ebdacb2d4",
-    "SCR021": "d9eee888985e472240035c9b45c09a0ea494c2236b528ea0efcd37310c712138",
-    "SCR022": "7ff3a821d5f2818883e1687753e873b4945ca129a9d085565ba10af0be89caed",
-    "SCR023": "317b61f46ed8ccc86b212d8b1b7cc4575c2f5897f31c4b9fb7073e9086217e08",
-    "SCR024": "172ba9388cf0bc8edb0e1264ca6c34027ab6837cebff6a8112f45632f65e254c",
-    "SCR025": "2308d9b2695a1f0527b40317372f8ad3329dee3d1ccf1bec7bece6a9c91246d0",
-    "SCR026": "5844afacba266ab0a1e23ec9019248679d048768e90f611821b7f6df692eafb4",
-    "SCR027": "b355f56893b105a0d22d60208423af020ff20dd827009730936ff42df68b2414"
+    "SCR020": "87898a05c9c1421696a20c0ce1294bbe14255a785cb15b88002e7c5ebdacb2d4"
   },
   "translations": {}
 }

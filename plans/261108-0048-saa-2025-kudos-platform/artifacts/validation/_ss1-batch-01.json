@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-11-24T09:34:54Z",
+  "overall_status": "WARN",
+  "plan": "artifacts",
+  "schema_version": 1,
+  "totals": {
+    "critical": 0,
+    "failed_specs": 0,
+    "passed_specs": 0,
+    "warning": 2
+  },
+  "validators": {
+    "reading_guide_db_impact": {
+      "issues": [
+        {
+          "location": {
+            "file": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\screens\\SCR013_AdminReviewContent\\spec.md"
+          },
+          "message": "'## Source Walkthrough' still carries an unfilled `{...}` template placeholder",
+          "rule_id": "reading_guide.unmapped",
+          "severity": "warning",
+          "validator": "reading_guide_db_impact"
+        },
+        {
+          "location": {
+            "file": "C:\\Users\\luong.viet.hai\\my-app\\plans\\261108-0048-saa-2025-kudos-platform\\artifacts\\screens\\SCR016_OwnProfile\\spec.md"
+          },
+          "message": "'## Source Walkthrough' still carries an unfilled `{...}` template placeholder",
+          "rule_id": "reading_guide.unmapped",
+          "severity": "warning",
+          "validator": "reading_guide_db_impact"
+        }
+      ],
+      "status": "WARN",
+      "summary": {
+        "critical": 0,
+        "warning": 2
+      }
+    }
+  }
+}

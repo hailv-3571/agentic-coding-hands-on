@@ -232,7 +232,7 @@ Trước `LAUNCH_AT` (so với đồng hồ server ở mỗi request, không lư
 
 ### Description
 
-Chỉ email có đúng một `@` và domain công ty (khớp chính xác, không chấp nhận sub-domain) mới tạo được tài khoản hoặc đăng nhập. Trong DB có hai lớp dùng chung vị từ `is_sunner_email`: auth hook `before_user_created_hook` trả 403 `domain_not_allowed` (`db/migrations/0005_auth_user_triggers.sql:20-33`), và hai trigger BEFORE INSERT, BEFORE UPDATE khi email đổi trên `auth.users` làm chốt chặn cứng cho mọi đường ghi (`0005_auth_user_triggers.sql:37-45, 80-88`). Hook phải bật cả ở bản hosted (dashboard); cấu hình local ở `supabase/config.toml:297-301`. Thiếu hook thì trigger vẫn fail closed, người dùng chỉ thấy lỗi chung `auth_failed` (`0005_auth_user_triggers.sql:7-9`). Lớp app kiểm lại với `ALLOWED_EMAIL_DOMAIN` (`features/auth/server/complete-login.ts:23-26, 39-41`); sai thì `signOut` local và chuyển `/login?error=` (`app/auth/callback/route.ts:78-81`). Tham số `hd` gửi cho Google chỉ thu hẹp màn chọn tài khoản (UX), không phải cổng chặn (`features/auth/server/sign-in-with-google-action.ts:24-26, 43`).
+Chỉ email có đúng một `@` và domain công ty (khớp chính xác, không chấp nhận sub-domain) mới tạo được tài khoản hoặc đăng nhập. Trong DB có hai lớp dùng chung vị từ `is_sunner_email`: auth hook `before_user_created_hook` trả 403 `domain_not_allowed` (`db/migrations/0005_auth_user_triggers.sql:20-33`), và hai trigger BEFORE INSERT, BEFORE UPDATE khi email đổi trên `auth.users` làm chốt chặn cứng cho mọi đường ghi (`0005_auth_user_triggers.sql:37-45, 80-88`). Hook phải bật cả ở bản hosted (dashboard); cấu hình local ở `supabase/config.toml:297-301`. Thiếu hook thì trigger vẫn fail closed, người dùng chỉ thấy lỗi chung `auth_failed` (`0005_auth_user_triggers.sql:7-9`). Lớp app kiểm lại với `ALLOWED_EMAIL_DOMAIN` (`features/auth/server/complete-login.ts:23-26, 39-41`); sai thì `signOut` local và chuyển `/login?error=` (`app/auth/callback/route.ts:31-33`). Tham số `hd` gửi cho Google chỉ thu hẹp màn chọn tài khoản (UX), không phải cổng chặn (`features/auth/server/sign-in-with-google-action.ts:24-26, 43`).
 
 ### Related Routes
 
@@ -294,7 +294,7 @@ Email nằm trong `ADMIN_EMAILS` được nâng `profiles.role = 'admin'` ở m�
 
 ### Description
 
-Tham số `next` chỉ được là path cùng origin: bắt đầu bằng đúng một `/`, không có `//`, backslash hay ký tự điều khiển, dài tối đa 2048 ký tự, và được kiểm lại sau khi chuẩn hóa URL vì dot segment có thể biến thành `//host`. Không hợp lệ thì rơi về `/` (`shared/auth/safe-next-path.ts:9-27`). Dùng ở `app/auth/callback/route.ts:64`, `features/auth/server/sign-in-with-google-action.ts:34`, `features/auth/server/complete-login.ts:51`, `features/auth/server/choose-department-action.ts:69` và `app/onboarding/department/page.tsx:27`. Mục đích là chặn open redirect sau OAuth và sau khi chọn phòng ban.
+Tham số `next` chỉ được là path cùng origin: bắt đầu bằng đúng một `/`, không có `//`, backslash hay ký tự điều khiển, dài tối đa 2048 ký tự, và được kiểm lại sau khi chuẩn hóa URL vì dot segment có thể biến thành `//host`. Không hợp lệ thì rơi về `/` (`shared/auth/safe-next-path.ts:9-27`). Dùng ở `app/auth/callback/route.ts:16`, `features/auth/server/sign-in-with-google-action.ts:34`, `features/auth/server/complete-login.ts:51`, `features/auth/server/choose-department-action.ts:69` và `app/onboarding/department/page.tsx:27`. Mục đích là chặn open redirect sau OAuth và sau khi chọn phòng ban.
 
 ### Related Routes
 
@@ -901,7 +901,7 @@ Qua `requireApiSunner()` (401, 403 onboarding), rồi cửa sổ ghi (403 `WRITI
 
 ### Description
 
-Chỉ chủ Kudo (`sender_id` trùng người dùng của phiên) mới sửa được, chỉ khi Kudo còn `public`, cửa sổ ghi mở, và không đổi được người nhận (`features/kudos-authoring/server/update-kudo-action.ts:13-21`). `updateOwnPublicKudo` là một UPDATE có điều kiện (chủ và `public`); thất bại thì đọc lại để phân loại `NOT_FOUND`, `FORBIDDEN` hoặc `SPAM_LOCKED` (423), không lộ nội dung (`features/kudos-authoring/server/kudo-write-repository.ts:69-83`). `GET /api/kudos/{id}/edit` chỉ trả dữ liệu điền sẵn cho chủ: người khác nhận 403 `FORBIDDEN`, id sai hoặc không có nhận 404; Kudo spam vẫn mở được cho chủ nhưng đánh dấu `locked` (`features/kudos-authoring/server/kudo-edit-query.ts:14, 48-49, 73`, `app/api/kudos/[id]/edit/route.ts:27-32`). Admin không có quyền sửa hộ.
+Chỉ chủ Kudo (`sender_id` trùng người dùng của phiên) mới sửa được, chỉ khi Kudo còn `public`, cửa sổ ghi mở, và không đổi được người nhận (`features/kudos-authoring/server/update-kudo-action.ts:13-21`). `updateOwnPublicKudo` là một UPDATE có điều kiện (chủ và `public`); thất bại thì đọc lại để phân loại `NOT_FOUND`, `FORBIDDEN` hoặc `SPAM_LOCKED` (423), không lộ nội dung (`features/kudos-authoring/server/kudo-write-repository.ts:69-83`). `GET /api/kudos/{id}/edit` chỉ trả dữ liệu điền sẵn cho chủ: người khác nhận 403 `FORBIDDEN`, id sai hoặc không có nhận 404; Kudo spam vẫn mở được cho chủ nhưng đánh dấu `locked` (`features/kudos-authoring/server/kudo-edit-query.ts:14, 48-49, 73`, `app/api/kudos/[id]/edit/route.ts:27-32`). Cửa sổ ghi chỉ được kiểm khi lưu (`updateKudo`) và ở nút bút trên thẻ; `GET /api/kudos/{id}/edit` không kiểm nên vẫn trả dữ liệu điền sẵn cho chủ sau `EVENT_END_AT` (`app/api/kudos/[id]/edit/route.ts:22-37`). Admin không có quyền sửa hộ.
 
 ### Related Routes
 
