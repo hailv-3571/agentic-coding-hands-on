@@ -123,16 +123,17 @@ Nguồn: [reviewer-261123-phase-14.md](../reports/reviewer-261123-phase-14.md) v
 | Kiểm cron drain thông báo trên **hosted/staging** (secret Vault thật, URL thật). Đã kiểm trên Supabase local 2026-11-24: pg_cron → pg_net → drain xử lý sự kiện trong khoảng 2 s, route trả 200 (`evidence/post-14-hardening/cron-drain-local-run.txt`). ~~Lên lịch dọn `domain_event_outbox` và `cron.job_run_details`~~ **Xong:** migration `0023` (outbox đã tiêu thụ > 30 ngày lúc 02:00 ICT, lịch sử cron > 7 ngày lúc 02:15 ICT; xem `docs/system/architecture.md`) | [phase 13 L147-152](phase-13-notifications.md#L147) |
 | Chọn host: `redirectTo` OAuth Google lấy từ Host của request, user hoãn tới lúc chọn hosting (A: `APP_ORIGIN` cố định, B: allow-list origin) | [L92](spec/decision-log.md#L92) |
 
-## Phụ lục — tài liệu chưa đồng bộ
+## Phụ lục — tài liệu đã đồng bộ
 
-Các spec `docs/features/F008_SpotlightBoard`, `F010_SecretBoxRewards`, `F012_Profile` và `docs/screens/SCR016`, `SCR021..SCR023` còn bản nháp cũ (theo phase 10/11/12); đồng bộ bằng `rebuild-spec --features F008|F010|F012` ([phase 10 L169](phase-10-secret-box-rewards.md#L168), [phase 11 L154](phase-11-spotlight-board-realtime.md#L152), [phase 12 L163](phase-12-profile.md#L158)). `docs/system/permissions.md` đã cập nhật phần quản lý role (phase 14) ngày 2026-11-23.
+Ngày 2026-11-24 đã chạy `rebuild-spec` đủ: lượt lõi, đặc tả 15 tính năng (F001–F015) và đặc tả 20 màn hình (SCR001–SCR020), sau khi đánh số lại mã màn hình. 22 thư mục `docs/screens` cũ đã xoá. Báo cáo: [rebuild-spec-261124-core-and-features](../reports/rebuild-spec-261124-core-and-features.md), [rebuild-spec-261124-screen-sync-and-fixes](../reports/rebuild-spec-261124-screen-sync-and-fixes.md).
 
 ## E. Còn lại sau vòng hardening 2026-11-24
 
-| # | Việc | Ghi chú |
-|---|------|---------|
-| E1 | **`/tkm:rebuild-spec` bị chặn tới khi cài Python 3** (máy chưa có Python). Sau đó chạy `/tkm:rebuild-spec --features F006,F008,F010,F012,F013,F014,F015` | Vòng này chỉ sửa tay từng dòng: `technical-spec.md` của F006, F013, F014, F015, `docs/system/architecture.md`; không chạm `docs/.rebuild-state.json` |
-| E2 | **Coverage khoảng 49% câu lệnh** (unit + integration gộp: 49,25% câu lệnh, 44,54% nhánh, 43,53% hàm), chưa đặt ngưỡng; chưa đạt mức 80% thường dùng. Playwright không được đo | Cần quyết: giữ khối `coverage.include` trong `vitest.config.mts` hay chỉ truyền bằng lệnh. 10 file thấp nhất (0% ở cả hai): `features/notifications/hooks/use-notification-list.ts`, `features/profile/components/avatar-hover-card.tsx`, `features/kudos-authoring/components/kudo-message-editor.tsx`, `features/admin-campaigns/components/use-campaign-form.ts`, `features/hero-badges/components/hero-badge-tooltip.tsx`, `features/kudos-feed/components/all-kudos-feed.tsx`, `features/profile/components/use-hover-card-keyboard.ts`, `features/awards-portal/components/awards-anchor-menu.tsx`, `features/profile/components/use-profile-kudos-list.ts`, `features/notifications/hooks/use-notification-channel.ts`. Nhiều file đã có e2e (hover card, feed, thông báo): 0% nghĩa là chưa có test unit/integration, không phải chưa test |
-| E3 | **Chưa push**, chờ chủ sản phẩm. Trước khi push: quét lại bí mật (`gitleaks`, lần gần nhất sạch ở `evidence/post-14-hardening/gitleaks-history-scan.txt`; `.gitleaksignore` có 3 fingerprint hằng số test) | Không có thao tác git nào được thực hiện trong vòng này |
-| E4 | **11 cảnh báo `npm audit` mức moderate, chỉ ở dev** (`drizzle-kit`/`esbuild`, `typescript-eslint`/`minimatch`); dependency chạy thật: 0 lỗ hổng (`npm audit --omit=dev`) | Sửa cần `npm audit fix --force` (đổi phiên bản lớn); chưa xử lý |
-| E5 | Kiểm cron drain trên hosted/staging (xem mục D) | Local đã kiểm |
+| # | Việc | Trạng thái |
+|---|------|------------|
+| E1 | Chạy `/tkm:rebuild-spec` | **Xong 2026-11-24** (xem Phụ lục). Còn 9 link chết `screens/SCR###/REG###/spec.md` trong README của F003, F004, F005, F008, F010, F013 do script sinh mục lục của kit; sửa tay sẽ bị ghi đè, cần sửa ở kit |
+| E2 | Coverage unit + integration khoảng 49% câu lệnh, chưa đặt ngưỡng; Playwright không được đo | Hai hook thông báo (`use-notification-list.ts`, `use-notification-channel.ts`) đã lên khoảng 95% (commit `6e34454`). Các file 0% khác phần lớn đã có e2e |
+| E3 | Push lên origin main | **Xong**: user cho push 2026-11-24; gitleaks quét toàn lịch sử sạch |
+| E4 | `npm audit` | Dependency chạy thật: 0. Dev còn 4 mức moderate, đều trong `drizzle-kit` 0.31.11 (esbuild qua `@esbuild-kit`), chờ thư viện cập nhật |
+| E5 | Kiểm cron drain, Realtime, nhịp mở Secret Box trên staging (xem mục D) | Local đã kiểm; chờ chọn hosting |
+| E6 | Cách nộp bài và thư mục `.claude/` | **User chốt 2026-11-24**: nộp bằng link repo `hailv-3571/agentic-coding-hands-on` (không mở PR lên upstream); không commit `.claude/` |

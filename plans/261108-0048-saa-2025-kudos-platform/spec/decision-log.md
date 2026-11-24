@@ -196,3 +196,4 @@ Danh sách đầy đủ ở `system/architecture.md` § Consistency Check (C-01�
 
 ## Session 2026-11-24 — Hardening sau phase 14
 - (2026-11-24) Đợt hardening (migration 0023 dọn outbox 30 ngày / lịch sử cron 7 ngày, sửa toast lưu Kudo bị mất khi feed remount, sửa 2 e2e chập chờn, test:prod 25 kiểm tra, đo coverage, kiểm cron → drain thật ở local, quét gitleaks lịch sử): kiểm thử toàn bộ xanh trên code cuối, review 0 critical, cổng chỉ chờ chữ ký → **user ký duyệt trực tiếp (2026-11-24)**, cho commit và push lên origin main, cho cài Python 3 bằng winget để chạy rebuild-spec.
+- (2026-11-24) **User chốt:** nộp bài bằng link repo `hailv-3571/agentic-coding-hands-on`, không mở PR lên upstream `sun-asterisk-internal/agentic-coding-hands-on`; thư mục `.claude/` (bộ công cụ kit) không commit vào repo.
